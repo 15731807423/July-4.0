@@ -167,6 +167,7 @@
 
 @section('script')
 <script src="/vue/js/c-pagination.js"></script>
+<link rel="stylesheet" type="text/css" href="/vue/css/c-pagination.css">
 <script>
   let app = new Vue({
     el: '#main_content',
