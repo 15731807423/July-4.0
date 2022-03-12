@@ -13,6 +13,10 @@
         @click.stop="render()">
         <div class="md-ripple"><div class="md-button-content">生成 HTML</div></div>
       </button>
+      <button type="button" class="md-button md-dense md-raised md-primary md-theme-default"
+        @click.stop="render('all')">
+        <div class="md-ripple"><div class="md-button-content">全部生成 HTML</div></div>
+      </button>
     </div>
     <div class="jc-options">
       <div class="jc-option" id="contents_filter">
@@ -150,16 +154,27 @@
       <x-menu-item title="查看页面" icon="visibility" href="contextmenu.url" target="_blank" />
     </jc-contextmenu>
   </div>
+
+  <c-pagination
+    ref="pagination"
+    :concise="false"
+    :total="nodesAll.length"
+    @per-page-change="perPage = $event"
+    @current-change="currentPage = $event">
+  </c-pagination>
+
 @endsection
 
 @section('script')
+<script src="/vue/js/c-pagination.js"></script>
 <script>
   let app = new Vue({
     el: '#main_content',
 
     data() {
       return {
-        nodes: @jjson(array_values($models), JSON_PRETTY_PRINT),
+        nodes: [],
+        nodesAll: @jjson(array_values($models), JSON_PRETTY_PRINT),
         molds: @jjson($context['molds'], JSON_PRETTY_PRINT),
         selected: [],
         showSuggestedTemplates: false,
@@ -185,14 +200,34 @@
         editUrl: "{{ short_url('nodes.edit', '_ID_') }}",
         deleteUrl: "{{ short_url('nodes.destroy', '_ID_') }}",
         translateUrl: "{{ short_url('nodes.choose_language', '_ID_') }}",
+        currentPage: 1,
+        perPage: 15
       };
     },
 
     created() {
-      this.original_models = _.cloneDeep(this.nodes);
+      this.original_models = _.cloneDeep(this.nodesAll);
+    },
+
+    mounted() {
+      this.to();
+    },
+
+    watch: {
+      currentPage: function(newVal, oldVal) {
+        this.to();
+      },
+      perPage: function(newVal, oldVal) {
+        this.to();
+      },
     },
 
     methods: {
+      to() {
+        // $('#main_content').scrollTop(0);
+        this.nodes = JSON.parse(JSON.stringify(this.nodesAll)).splice((this.currentPage-1)*this.perPage, this.perPage);
+      },
+
       diffForHumans(time) {
         return moment(time).fromNow();
       },
@@ -253,12 +288,18 @@
       handleFilterByChange(value) {
         if (value === 'url') {
           this.filterValues.url = true;
-          this.$set(this.$data, 'nodes', this.filterByUrl(true));
+          this.$set(this.$data, 'nodesAll', this.filterByUrl(true));
+          this.currentPage = 1;
+          this.$refs.pagination.reset();
+          this.to();
         } else {
           if (value) {
             this.filterValues[value] = null;
           }
-          this.$set(this.$data, 'nodes', _.cloneDeep(this.original_models));
+          this.$set(this.$data, 'nodesAll', _.cloneDeep(this.original_models));
+          this.currentPage = 1;
+          this.$refs.pagination.reset();
+          this.to();
         }
       },
 
@@ -281,7 +322,10 @@
             nodes = this.filterByLangcode(value);
           break;
         }
-        this.$set(this.$data, 'nodes', nodes || _.cloneDeep(this.original_models));
+        this.$set(this.$data, 'nodesAll', nodes || _.cloneDeep(this.original_models));
+        this.currentPage = 1;
+        this.$refs.pagination.reset();
+        this.to();
       },
 
       filterByTitle(value) {
@@ -354,7 +398,11 @@
 
       render(node) {
         const nodes = [];
-        if (node) {
+        if (node === 'all') {
+          this.original_models.forEach(element => {
+            nodes.push(element.id);
+          });
+        } else if (node) {
           nodes.push(node.id);
         } else {
           this.selected.forEach(element => {
