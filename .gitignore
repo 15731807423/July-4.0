@@ -1,0 +1,12 @@
+/*
+!/.gitignore
+!/files/
+!/images/
+!/themes/
+!/system/
+!/.editorconfig
+!/.htaccess
+!/index.php
+!/LICENSE
+!/README.md
+!/robots.txt
