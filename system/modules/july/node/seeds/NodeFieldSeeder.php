@@ -95,6 +95,12 @@ class NodeFieldSeeder extends SeederBase
                 'label' => '主图 alt',
                 'description' => null,
             ],
+            [
+                'id' => 'related_spec',
+                'field_type' => FieldTypes\Input::class,
+                'label' => '关联规格',
+                'description' => null,
+            ],
         ];
 
         $share = [
