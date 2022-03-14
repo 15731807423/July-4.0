@@ -118,6 +118,8 @@ class NodeIndex extends ModelBase
         // 处理关键词
         $keywords = static::normalizeKeywords($keywords);
 
+        $h1 = \Illuminate\Support\Facades\Schema::hasTable('node__h1');
+
 
         // 获取搜索结果
         $results = [];
@@ -132,7 +134,7 @@ class NodeIndex extends ModelBase
                     'weight' => 0,
                 ];
             }
-            $str = DB::table('node__h1')->where('entity_id',$node_id)->value('h1');
+            $str = $h1 ? DB::table('node__h1')->where('entity_id',$node_id)->value('h1') : null;
             $ss = DB::table('entity_path_aliases')->where('entity_id',$node_id)->value('entity_id');
             // foreach ($ss  as $key => $value) {
                 Log::info( $ss);
