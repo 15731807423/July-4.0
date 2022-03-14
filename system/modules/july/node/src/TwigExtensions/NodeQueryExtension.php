@@ -49,6 +49,9 @@ class NodeQueryExtension extends AbstractExtension implements GlobalsInterface
 
             // 获取路由短网址
             new TwigFunction('short_url', [$this, 'short_url']),
+
+            // 获取多语言列表
+            new TwigFunction('langname', [$this, 'langname']),
         ];
     }
 
@@ -170,5 +173,17 @@ class NodeQueryExtension extends AbstractExtension implements GlobalsInterface
     public function short_url($name, ...$parameters)
     {
         return short_url($name, $parameters);
+    }
+
+    /**
+     * 获取多语言列表
+     *
+     * @param  string $name 路由名
+     * @param  array $parameters 路由参数
+     * @return \Specs\Spec
+     */
+    public function langname($name, $language)
+    {
+        return langname($name, $language);
     }
 }
