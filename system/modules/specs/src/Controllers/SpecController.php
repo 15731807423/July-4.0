@@ -8,6 +8,7 @@ use Specs\FieldType;
 use Specs\FieldTypeDefinitions\DefinitionInterface;
 use Specs\Spec;
 use Specs\SpecField;
+use Illuminate\Support\Facades\DB;
 
 class SpecController extends Controller
 {
@@ -57,6 +58,13 @@ class SpecController extends Controller
     public function store(Request $request)
     {
         Spec::create($request->all());
+
+        Db::table('node__related_spec')->insert([
+            'entity_id'         => Db::table('node__related_spec')->max('entity_id') + 1,
+            'related_spec'      => $request->all()['id'],
+            'langcode'          => 'en',
+            'created_at'        => date('Y-m-d H:i:s')
+        ]);
 
         return response('');
     }
