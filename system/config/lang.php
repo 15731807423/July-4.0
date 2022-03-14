@@ -5,7 +5,7 @@ return [
     'multiple' => false,
 
     // 后端资源默认语言
-    'backend' => 'zh-Hans',
+    'backend' => 'zh',
 
     // 前端资源默认语言
     'frontend' => 'en',
@@ -19,7 +19,7 @@ return [
             'accessible' => true,   // 前端可访问该语言页面
             'translatable' => true, // 内容可翻译为该语言
         ],
-        'zh-Hans' => [
+        'zh' => [
             'accessible' => false,
             'translatable' => false,
         ],
@@ -67,7 +67,7 @@ return [
             'native' => 'русский',
             'dir' => 'ltr',
         ],
-        'zh-Hans' => [
+        'zh' => [
             'native' => '简体中文',
             'dir' => 'ltr',
             'alias' => ['zh', 'zh-CN', 'cn'],
