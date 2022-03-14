@@ -118,6 +118,7 @@ class NodeIndex extends ModelBase
         // 处理关键词
         $keywords = static::normalizeKeywords($keywords);
 
+        $h1 = \Illuminate\Support\Facades\Schema::hasTable('node__h1');
 
         // 获取搜索结果
         $results = [];
@@ -132,7 +133,12 @@ class NodeIndex extends ModelBase
                     'weight' => 0,
                 ];
             }
-            $str = DB::table('node__h1')->where('entity_id',$node_id)->value('h1');
+
+            if ($h1) {
+                $str = DB::table('node__h1')->where('entity_id',$node_id)->value('h1');
+            } else {
+                $str = null;
+            }
             $ss = DB::table('entity_path_aliases')->where('entity_id',$node_id)->value('entity_id');
             // foreach ($ss  as $key => $value) {
                 Log::info( $ss);
@@ -353,18 +359,18 @@ class NodeIndex extends ModelBase
     protected function similar($str1, $str2)
     {
         if ($str1 === $str2) {
-			return 1;
-		}
+            return 1;
+        }
 
-		$len1 = strlen($str1);
-		$len2 = strlen($str2);
-		if ($len1 === 0 || $len2 === 0) {
-			return 0;
-		}
+        $len1 = strlen($str1);
+        $len2 = strlen($str2);
+        if ($len1 === 0 || $len2 === 0) {
+            return 0;
+        }
 
-		$maxlen = max($len1, $len2);
-		if (strpos($str1, $str2) !== false || strpos($str2, $str1) !== false) {
-			return abs($len1 - $len2) / $maxlen;
+        $maxlen = max($len1, $len2);
+        if (strpos($str1, $str2) !== false || strpos($str2, $str1) !== false) {
+            return abs($len1 - $len2) / $maxlen;
         }
 
         // 长度相差 3 倍以上
@@ -372,9 +378,9 @@ class NodeIndex extends ModelBase
             return 0;
         }
 
-		$levenshtein = levenshtein($str1, $str2);
-		$levenshtein -= ($levenshtein - levenshtein(strtolower($str1), strtolower($str2))) / 2;
+        $levenshtein = levenshtein($str1, $str2);
+        $levenshtein -= ($levenshtein - levenshtein(strtolower($str1), strtolower($str2))) / 2;
 
-		return ($maxlen - $levenshtein) / $maxlen;
+        return ($maxlen - $levenshtein) / $maxlen;
     }
 }
