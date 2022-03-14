@@ -244,7 +244,7 @@
 
       // 是否预留设置，预留设置不可更改
       isReserved(langcode) {
-        return langcode === 'en' || langcode === 'zh-Hans';
+        return langcode === 'en' || langcode === 'zh';
       },
 
       // 提交
