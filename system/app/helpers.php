@@ -106,6 +106,20 @@ if (! function_exists('langname')) {
     }
 }
 
+if (! function_exists('langname_by_chinese')) {
+    /**
+     * 返回已添加语言的中文名称
+     *
+     * @param  string  $alias
+     * @param  string|null  $langcode 语言代码
+     * @return string|null
+     */
+    function langname_by_chinese(string $code)
+    {
+        return lang()->getLangNameByChinese($code);
+    }
+}
+
 if (! function_exists('cast')) {
     function cast($value, $caster, $force = true)
     {
