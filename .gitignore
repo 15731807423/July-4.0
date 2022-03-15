@@ -1,5 +1,11 @@
 /*
 !/system/
+/system/database/database.db3
+/system/language/
+!/system/language/en.php
+!/system/language/zh.php
+/system/storage/
+/system/vendor/
 !/themes/
 !/vue/
 !/.editorconfig
