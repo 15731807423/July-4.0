@@ -829,6 +829,10 @@ h2.jc-form-info-item {
   border: 1px dashed #bebfb9;
 }
 
+.jc-embeded-field > .el-form-item__content .icon {
+  width: 22px;
+}
+
 .jc-embeded-field__header {
   display: flex;
   align-items: center;

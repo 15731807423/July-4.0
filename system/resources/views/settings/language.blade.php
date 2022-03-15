@@ -47,6 +47,7 @@
                                 <th>语言 [代码]</th>
                                 <th>可翻译</th>
                                 <th>可访问</th>
+                                <th>图标</th>
                                 <th>删除</th>
                             </tr>
                         </thead>
@@ -55,6 +56,27 @@
                                 <td><span>@{{ info.name+' ['+langcode+']' }}</span></td>
                                 <td><el-switch v-model="info['translatable']" :disabled="langcode==='en'" @change="handleTranslatableChange(langcode)"></el-switch></td>
                                 <td><el-switch v-model="info['accessible']" :disabled="langcode==='en'" @change="handleAccessibleChange(langcode)"></el-switch></td>
+                                <td>
+                                    <el-upload
+                                    class="upload-demo"
+                                    ref="upload"
+                                    name="files"
+                                    action="{{ short_url('media.upload') }}"
+                                    :limit="1"
+                                    :on-success="uploadSuccess"
+                                    :auto-upload="true"
+                                    :show-file-list="false"
+                                    :data="data">
+
+                                        <div class="jc-operators">
+                                            <button type="button" class="md-button md-icon-button md-primary md-theme-default" title="上传" @click="select(langcode)">
+                                                <img v-if="info.icon" class="icon" :src="info.icon">
+                                                <i v-else class="md-icon md-icon-font md-theme-default">upload</i>
+                                            </button>
+                                        </div>
+
+                                    </el-upload>
+                                </td>
                                 <td>
                                     <div class="jc-operators">
                                         <button type="button" class="md-button md-icon-button md-accent md-theme-default" title="删除" :disabled="isReserved(langcode)" @click.stop="removeLanguage(langcode)">
@@ -114,12 +136,17 @@ const app = new Vue({
             selected: null,
             langnames: @jjson(lang()->getLangnames()),
             langcode: '',
+            fileList: [],
+            uploadCode: '',
+            data: {
+                _token: '{{ csrf_token() }}',
+                cwd: 'images',
+            }
         };
     },
 
     created() {
         this.original_settings = _.cloneDeep(this.settings);
-        console.log(this.settings)
     },
 
     computed: {
@@ -223,6 +250,24 @@ const app = new Vue({
         // 是否预留设置，预留设置不可更改
         isReserved(langcode) {
             return langcode === 'en' || langcode === 'zh';
+        },
+
+        select(code) {
+            this.uploadCode = code;
+        },
+
+        // 上传图标
+        upload(langcode) {
+            console.log(langcode)
+        },
+
+        uploadSuccess(response, file, fileList) {
+            var _this = this, path = '/images/' + file.name;
+            $('.upload-demo').each(function (index) {
+                _this.$refs.upload[index].clearFiles();
+            });
+            this.settings['lang.available'][this.uploadCode].icon = path;
+            this.$forceUpdate();
         },
 
         // 提交
