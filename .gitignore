@@ -4,7 +4,11 @@
 /system/language/*
 !/system/language/en.php
 !/system/language/zh.php
-
+/system/storage/debugbar/*
+/system/storage/framework/sessions/*
+/system/storage/framework/views/*
+/system/storage/logs/*
+/system/storage/settings/*
 /system/vendor/*
 !/themes/
 !/vue/
