@@ -374,11 +374,11 @@
 
         const category = path.replace(/\/.*/, '');
         if (category === 'files') {
-          return '{{ implode(",", config("media.categories.files.valid_mime")) }}';
+          return '{{ implode(",",config("media.categories.files.valid_mime")) }}';
         }
 
         if (category === 'images') {
-          return '{{ implode(",", config("media.categories.images.valid_mime")) }}';
+          return '{{ implode(",",config("media.categories.images.valid_mime")) }}';
         }
       },
     },
@@ -910,7 +910,7 @@
       },
 
       handleSubmitUpload() {
-        if (this.upload.status === 'ready') {console.log(this.$refs.media_upload.submit)
+        if (this.upload.status === 'ready') {
           this.$refs.media_upload.submit({
             _token: '{{ csrf_token() }}',
             cwd: this.currentPath,

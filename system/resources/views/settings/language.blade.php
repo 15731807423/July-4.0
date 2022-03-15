@@ -256,11 +256,6 @@ const app = new Vue({
             this.uploadCode = code;
         },
 
-        // 上传图标
-        upload(langcode) {
-            console.log(langcode)
-        },
-
         uploadSuccess(response, file, fileList) {
             var _this = this, path = '/images/' + file.name;
             $('.upload-demo').each(function (index) {
