@@ -162,8 +162,7 @@
             const changed = this.getChanged();
             @if ($context['mode'] === 'edit')
               if (!changed.length) {
-                // window.location.href = "{{ short_url('nodes.index') }}";
-                history.go(-1)
+                document.referrer === '' ? window.location.href = "{{ short_url('nodes.index') }}" : window.location.href = document.referrer;
                 return;
               }
             @endif
@@ -180,9 +179,7 @@
 
             axios.{{ $context['mode'] !== 'create' ? 'put' : 'post' }}(action, model)
               .then((response) => {
-                // console.log(response);
-                // window.location.href = "{{ short_url('nodes.index') }}";
-                history.go(-1)
+                document.referrer === '' ? window.location.href = "{{ short_url('nodes.index') }}" : window.location.href = document.referrer;
               })
               .catch((error) => {
                 loading.close();

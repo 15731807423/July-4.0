@@ -101,7 +101,7 @@ class Lang
 
         // 获取正确形式
         if ($code) {
-            return static::getLangcodeMap()[strtolower($code)] ?? null;
+            return static::getLangcodeMap()[strtolower($code)] ?? strtolower($code);
         }
 
         return null;
@@ -162,7 +162,7 @@ class Lang
      * @param string|null 列表的语言版本
      * @return array
      */
-    public static function getLangnames(?string $langcode = null)
+    public static function getLangnames(?string $langcode = null, bool $alias = false)
     {
         if ($langcode !== 'native') {
             $langcode = static::make($langcode ?: config('lang.backend'))->getLangcode();
@@ -182,8 +182,13 @@ class Lang
             $langnames = [];
             foreach (array_keys(config('lang.all')) as $code) {
                 $langnames[$code] = $names[$code] ?? $code;
+                if ($alias && isset($value['alias']) && is_array($value['alias']) && count($value['alias']) > 0) {
+                    foreach ($value['alias'] as $k => $val) {
+                        $langnames[$val] = $names[$code] ?? $code;
+                    }
+                }
             }
-            static::$cache['langnames'][$langcode] = $langnames;
+            // static::$cache['langnames'][$langcode] = $langnames;
             return $langnames;
         }
 
@@ -281,7 +286,8 @@ class Lang
 
         $langnames = [];
         foreach (static::getTranslatableLangcodes() as $code) {
-            $langnames[$code] = $names[$code] ?? $code;
+            // $langnames[$code] = $names[$code] ?? $code;
+            $langnames[$code] = langname_by_chinese($code);
         }
 
         return $langnames;
@@ -338,7 +344,12 @@ class Lang
         }
 
         $names = static::getLangnames($langcode);
-        return $names[$this->langcode] ?? $this->langcode;
+        if (isset($names[$this->langcode])) {
+            return $names[$this->langcode];
+        } else {
+            $code = array_search(config('lang.available')[$this->langcode]['name'], static::getLangnames('zh'));
+            return $names[$code] ?? $this->langcode;
+        }
     }
 
     /**
@@ -350,6 +361,17 @@ class Lang
     public function getName(?string $langcode = null)
     {
         return $this->getLangname($langcode);
+    }
+
+    /**
+     * 返回已添加语言的中文名称
+     *
+     * @param string|null $langcode 语言代码
+     * @return string|null
+     */
+    public function getLangNameByChinese(?string $langcode = null)
+    {
+        return config('lang.available')[$langcode]['name'] ?? null;
     }
 
     /**

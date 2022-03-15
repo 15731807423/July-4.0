@@ -850,6 +850,10 @@ h2.jc-form-info-item {
   margin: 0 0 0 10px;
 }
 
+.jc-embeded-field__header .jc-embeded-field__buttons > .el-input {
+  margin: 0 0 0 10px;
+}
+
 .jc-embeded-field__header .jc-embeded-field__buttons > .md-icon-button {
   width: 30px;
   min-width: 30px;

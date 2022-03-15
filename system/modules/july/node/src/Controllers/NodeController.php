@@ -148,7 +148,9 @@ class NodeController extends Controller
      */
     public function update(Request $request, Node $node)
     {
-        $langcode = langcode('request') ?? $node->getOriginalLangcode();
+        // $langcode = langcode('request') ?? $node->getOriginalLangcode();
+
+        $langcode = langname_by_chinese($request->input('langcode')) ? $request->input('langcode') : null;
 
         $node->translateTo($langcode);
 

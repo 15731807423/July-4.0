@@ -33,10 +33,11 @@
               <el-option
                 v-for="(langname, langcode) in langnames"
                 :key="langcode"
-                :label="'['+langcode+'] '+langname"
-                :value="langcode">
+                :label="langname"
+                :value="langname">
               </el-option>
             </el-select>
+            <el-input v-model="langcode" size="small" placeholder="输入代码"></el-input>
             <button type="button" class="md-button md-raised md-dense md-primary md-theme-default"
               @click.stop="addLanguage" :disabled="!isLangcodeSelectable">
               <div class="md-ripple">
@@ -63,7 +64,7 @@
             </thead>
             <tbody>
               <tr v-for="(info, langcode) in settings['lang.available']" :key="langcode">
-                <td><span>@{{ langnames[langcode]+' ['+langcode+']' }}</span></td>
+                <td><span>@{{ info.name+' ['+langcode+']' }}</span></td>
                 <td><el-switch v-model="info['translatable']" :disabled="langcode==='en'" @change="handleTranslatableChange(langcode)"></el-switch></td>
                 <td><el-switch v-model="info['accessible']" :disabled="langcode==='en'" @change="handleAccessibleChange(langcode)"></el-switch></td>
                 <td>
@@ -97,7 +98,7 @@
         <el-option
           v-for="langcode in translatableLangcodes"
           :key="langcode"
-          :label="'['+langcode+'] '+langnames[langcode]"
+          :label="'['+langcode+'] '+settings['lang.available'][langcode].name"
           :value="langcode">
         </el-option>
       </el-select>
@@ -115,7 +116,7 @@
         <el-option
           v-for="langcode in accessibleLangcodes"
           :key="langcode"
-          :label="'['+langcode+'] '+langnames[langcode]"
+          :label="'['+langcode+'] '+settings['lang.available'][langcode].name"
           :value="langcode">
         </el-option>
       </el-select>
@@ -141,6 +142,7 @@
         settings: @jjson($settings),
         selected: null,
         langnames: @jjson(lang()->getLangnames()),
+        langcode: '',
       };
     },
 
@@ -150,8 +152,8 @@
 
     computed: {
       isLangcodeSelectable() {
-        const code = this.selected;
-        return code && this.langnames[code] && !this.settings['lang.available'][code];
+        const code = this.langcode, name = this.selected;
+        return code && name && !this.settings['lang.available'][code];
       },
 
       translatableLangcodes() {
@@ -183,8 +185,10 @@
         if (!this.isLangcodeSelectable) {
           return;
         }
-        const code = this.selected;
-        if (this.settings['lang.available'][code]) {
+        const code = this.langcode, name = this.selected;
+        if (code.length > 5) {
+          this.$message.warning('代码最长5位');
+        } else if (this.settings['lang.available'][code]) {
           this.$message.warning('已存在');
         } else {
           const list = _.cloneDeep(this.settings['lang.available']);
@@ -193,8 +197,9 @@
             accessible: true,
           };
           this.$set(this.settings, 'lang.available', list);
+          this.selected = null;
+          this.langcode = null;
         }
-        this.selected = null;
       },
 
       // 从可用列表移除指定语言
@@ -229,7 +234,7 @@
 
       // 响应语言可翻译性改变事件
       handleTranslatableChange(langcode) {
-        const status = this.settings['lang.available'][langcode];
+        const config = this.settings['lang.available'][langcode];
         if (config['accessible'] && !config['translatable']) {
           config['accessible'] = false;
         }
