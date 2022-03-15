@@ -150,7 +150,7 @@ class Media
         if (Str::startsWith($file->getMimeType(), 'image')) {
             $thumb = $this->path($this->thumb($legalName));
             $this->mkdir('_thumbs/');
-            Image::make($file)->widen(200)->save($thumb);
+            // Image::make($file)->widen(200)->save($thumb);
         }
 
         return [$name => $legalName];
