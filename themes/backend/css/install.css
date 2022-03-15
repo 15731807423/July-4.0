@@ -1,0 +1,72 @@
+body {
+  background-color: #0a3f70;
+  background-color: #0074bd;
+  height: auto;
+}
+
+#install {
+  display: block;
+  width: 720px;
+  margin: 40px auto;
+  padding: 0;
+  background-color: #ffffff;
+  border-radius: 2px;
+}
+
+.jc-install-title {
+  text-align: center;
+  margin: 0;
+  padding: 40px 20px 30px;
+  line-height: 1.15;
+  color: #0074bd;
+  border-bottom: 1px solid #bfbfbf;
+}
+
+.el-steps {
+  padding: 30px 20px 0;
+}
+
+#install_steps {
+  padding: 30px 20px;
+}
+
+.jc-install-step-content,
+.jc-install-step-footer {
+  display: flex;
+  justify-content: center;
+  margin: 15px auto 20px;
+}
+
+.jc-env-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.jc-env {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  line-height: 20px;
+  padding: 10px 16px;
+  border: 1px solid #bfbfbf;
+  width: 360px;
+  font-size: 13px;
+  color: #333;
+}
+
+.jc-env + .jc-env {
+  border-top: none;
+}
+
+.jc-env::after {
+  content: "\e79d";
+  font-family: element-icons;
+  color: #ff5151;
+  font-size: 20px;
+}
+
+.jc-env.is-ok::after {
+  content: "\e79c";
+  color: #67c23a;
+}
