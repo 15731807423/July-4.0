@@ -4,11 +4,15 @@
 /system/language/*
 !/system/language/en.php
 !/system/language/zh.php
-/system/storage/*
+/system/storage/debugbar/*
 !/system/storage/debugbar/.gitignore
+/system/storage/framework/sessions/*
 !/system/storage/framework/sessions/.gitignore
+/system/storage/framework/views/*
 !/system/storage/framework/views/.gitignore
+/system/storage/logs/*
 !/system/storage/logs/.gitignore
+/system/storage/settings/*
 !/system/storage/settings/.gitignore
 /system/vendor/*
 !/themes/
