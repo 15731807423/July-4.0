@@ -62,10 +62,6 @@ return [
             'dir' => 'ltr',
             'alias' => ['jp']
         ],
-        'pt' => [
-            'native' => 'Português',
-            'dir' => 'ltr',
-        ],
         'ru' => [
             'native' => 'русский',
             'dir' => 'ltr',

@@ -252,10 +252,12 @@ const app = new Vue({
             return langcode === 'en' || langcode === 'zh';
         },
 
+        // 确定上传图标的语言
         select(code) {
             this.uploadCode = code;
         },
 
+        // 上传成功
         uploadSuccess(response, file, fileList) {
             var _this = this, path = '/images/' + file.name;
             $('.upload-demo').each(function (index) {
@@ -282,7 +284,6 @@ const app = new Vue({
                 axios.post("{{ short_url('settings.update', $name) }}", this.settings).then(response => {
                     loading.close();
                     this.original_settings = _.cloneDeep(this.settings);
-                    // console.log(response);
                     this.$message.success('设置已更新');
                 }).catch(err => {
                     loading.close();
