@@ -167,16 +167,21 @@
                         model._changed = changed;
 
                         @if ($context['mode'] !== 'create')
-                        const action = "{{ short_url('nodes.update', $model['id']) }}";
+                        var action = "{{ short_url('nodes.update', $model['id']) }}", node = parseInt("{{ $model['id'] }}");
                         @else
-                        const action = "{{ short_url('nodes.store') }}";
+                        var action = "{{ short_url('nodes.store') }}", node = null;
                         @endif
 
-                        axios.{{ $context['mode'] !== 'create' ? 'put' : 'post' }}(action, model)
-                        .then((response) => {
-                            document.referrer === '' ? window.location.href = "{{ short_url('nodes.index') }}" : window.location.href = document.referrer;
-                        })
-                        .catch((error) => {
+                        axios.{{ $context['mode'] !== 'create' ? 'put' : 'post' }}(action, model).then((response) => {
+                            node = node || response.data.node_id;
+
+                            axios.post("{{ short_url('nodes.render') }}", {nodes: [node]}).then((response) => {
+                                window.location.href = window.referrer === '' ? "{{ short_url('nodes.index') }}" : document.referrer;
+                            }).catch(err => {
+                                loading.close();
+                                this.$message.error('发生错误');
+                            });
+                        }).catch((error) => {
                             loading.close();
                             this.$message.error(error);
                         });
