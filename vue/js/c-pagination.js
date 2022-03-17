@@ -4,10 +4,10 @@ Vue.component('c-pagination', {
             type: Number,
             required: true,
         },
-        // perPage: {
-        //   type: Number,
-        //   default: 15,
-        // },
+        perPage: {
+            type: Number,
+            default: 15,
+        },
         pagerCount: { // 最多呈现多少个页码，包括第一个和最后一个
             type: Number,
             default: 5,
@@ -63,7 +63,7 @@ Vue.component('c-pagination', {
 
     created() {
         this.$options.template = this.$options.template.replace('concise', this.concise ? '' : '  <select class="el-input__inner limit" v-model.number="limit" @change="perPageChange">' +
-        '    <option value="15" selected="selected">15条/页</option>' +
+        '    <option value="15">15条/页</option>' +
         '    <option value="30">30条/页</option>' +
         '    <option value="50">50条/页</option>' +
         '    <option value="100">100条/页</option>' +
@@ -73,6 +73,9 @@ Vue.component('c-pagination', {
         '  </select>' +
         '  <input class="el-input__inner jump" v-model.number="jump" @keyup.enter="to" placeholder="输入页码并回车">' +
         '  <span style="color: #666;">共{{total}}条，每页{{limit}}条，共{{pageCount}}页</span>');
+        console.log(this.perPage)
+        this.limit = this.perPage;
+        $('.limit option[value=' + this.limit + ']').prop('checked', true);
     },
 
     computed: {

@@ -131,8 +131,7 @@
     </jc-contextmenu>
 </div>
 
-<c-pagination ref="pagination" :concise="false" :total="nodesAll.length" @per-page-change="perPage = $event" @current-change="currentPage = $event">
-</c-pagination>
+<c-pagination ref="pagination" :concise="false" :total="nodesAll.length" :per-page="perPage" @per-page-change="perPage = $event" @current-change="currentPage = $event"></c-pagination>
 
 @endsection
 
@@ -173,7 +172,7 @@
                 deleteUrl: "{{ short_url('nodes.destroy', '_ID_') }}",
                 translateUrl: "{{ short_url('nodes.choose_language', '_ID_') }}",
                 currentPage: 1,
-                perPage: 15
+                perPage: 50
             };
         },
 
