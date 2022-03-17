@@ -93,6 +93,16 @@
                 @endif
             </div>
         </div>
+        <el-form-item prop="lang.icon" size="small" class="{{ $items['lang.icon']['description']?'has-helptext':'' }}">
+            <el-tooltip slot="label" popper-class="jc-twig-output" effect="dark" content="{!! $items['lang.icon']['tips'] !!}" placement="right">
+                <span>{{ $items['lang.icon']['label'] }}</span>
+            </el-tooltip>
+            <el-switch v-model="settings['lang.icon']" active-text="启用" inactive-text="不启用">
+            </el-switch>
+            @if ($items['lang.icon']['description'])
+            <span class="jc-form-item-help"><i class="el-icon-info"></i> {{ $items['lang.icon']['description'] }}</span>
+            @endif
+        </el-form-item>
         <el-form-item size="small" class="{{ $items['lang.content']['description']?'has-helptext':'' }}" v-if="settings['lang.multiple']">
             <el-tooltip slot="label" popper-class="jc-twig-output" effect="dark" content="{!! $items['lang.content']['tips'] !!}" placement="right">
                 <span>{{ $items['lang.content']['label'] }}</span>
