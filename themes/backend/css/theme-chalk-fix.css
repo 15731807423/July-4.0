@@ -56,8 +56,8 @@
 }
 
 .el-input__inner {
-  padding: 0 12px;
   max-width: 100%;
+  padding: 0 12px!important;
 }
 
 .el-input--small .el-input__inner {
