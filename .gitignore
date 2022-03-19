@@ -6,7 +6,7 @@
 !/system/language/zh.php
 /system/storage/debugbar/*
 !/system/storage/debugbar/.gitignore
-/system/storage/framework/cache
+/system/storage/framework/cache/
 /system/storage/framework/sessions/*
 !/system/storage/framework/sessions/.gitignore
 /system/storage/framework/views/*

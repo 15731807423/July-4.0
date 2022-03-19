@@ -73,7 +73,6 @@ Vue.component('c-pagination', {
         '  </select>' +
         '  <input class="el-input__inner jump" v-model.number="jump" @keyup.enter="to" placeholder="输入页码并回车">' +
         '  <span style="color: #666;">共{{total}}条，每页{{limit}}条，共{{pageCount}}页</span>');
-        console.log(this.perPage)
         this.limit = this.perPage;
         $('.limit option[value=' + this.limit + ']').prop('checked', true);
     },
