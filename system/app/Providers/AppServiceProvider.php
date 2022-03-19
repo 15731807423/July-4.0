@@ -123,6 +123,7 @@ class AppServiceProvider extends ServiceProvider
             \App\EntityField\FieldTypes\Html::class,
             \App\EntityField\FieldTypes\Image::class,
             \App\EntityField\FieldTypes\Url::class,
+            \App\EntityField\FieldTypes\Timeout::class,
             \App\EntityField\FieldTypes\PathAlias::class,
             \App\EntityField\FieldTypes\Reference::class,
             \App\EntityField\FieldTypes\MultiReference::class,
