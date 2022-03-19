@@ -54,6 +54,8 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 
+    DirectoryIndex index.html
+
 </IfModule>
 
 <IfModule mod_expires.c>
