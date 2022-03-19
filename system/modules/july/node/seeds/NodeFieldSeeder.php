@@ -101,6 +101,12 @@ class NodeFieldSeeder extends SeederBase
                 'label' => '关联规格',
                 'description' => null,
             ],
+            [
+                'id' => 'timeout',
+                'field_type' => FieldTypes\Timeout::class,
+                'label' => '定时器',
+                'description' => '选择一个未来的时间点，页面将在这个时间点生成，选择过去的时间点或不选则立即生成',
+            ],
         ];
 
         $share = [
