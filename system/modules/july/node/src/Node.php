@@ -247,12 +247,40 @@ class Node extends TranslatableEntityBase
         // 生成 html
         $html = $twig->render($view, $data);
 
+        // 自动翻译内容
+        $html = $this->autoTranslation($html, $renderingLangcode ?: '');
+
         config()->set('lang.rendering', null);
         config()->set('lang.output', null);
 
         $html = html_compress($html);
 
         $this->cacheHtml($html, $data['url']);
+
+        return $html;
+    }
+
+    /**
+     * 自动翻译内容
+     * 
+     * @param  string $html
+     * @param  string $code
+     * 
+     * @return string
+     */
+    public function autoTranslation(string $html, string $code): string
+    {
+        // $path = base_path('../themes/frontend/lang/' . $code . '.json');
+
+        // if (!file_exists($path)) return $html;
+
+        // $json = json_decode(file_get_contents($path), true);
+
+        // foreach ($json as $key => $value) {
+        //     if (is_string($value)) {
+        //         $html = str_replace($key, $value, $html);
+        //     }
+        // }
 
         return $html;
     }
