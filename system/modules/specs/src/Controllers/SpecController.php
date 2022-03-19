@@ -19,6 +19,8 @@ class SpecController extends Controller
      */
     public function index()
     {
+        $a = config('app.main_menu');
+        var_dump(config('app.main_menu'));die;
         $specs = Spec::all()->map(function(Spec $spec) {
             return $spec->attributesToArray();
         })->all();

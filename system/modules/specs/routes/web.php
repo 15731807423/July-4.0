@@ -38,3 +38,9 @@ Route::get('specs/records', [Controllers\RecordController::class, 'search'])
 // 规格展示
 Route::get('specs/{spec}/records/{record_id}', [Controllers\RecordController::class, 'show'])
     ->name('specs.record.show');
+
+// 规格列表页
+Route::get('specs/list/{spec?}', [Controllers\RecordController::class, 'list'])->name('specs.list');
+
+// 规格列表页
+Route::post('specs/list/{spec?}', [Controllers\RecordController::class, 'listPost'])->name('specs.listPost');
