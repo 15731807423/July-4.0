@@ -112,6 +112,7 @@
         },
 
         created: function() {
+            this.model.timeout = this.model.timeout * 1000;
             this.original_model = _.cloneDeep(this.model);
         },
 
@@ -166,6 +167,10 @@
                         model.langcode = '{{ $langcode }}';
                         model._changed = changed;
 
+                        if ('timeout' in model && model.timeout) {
+                            model.timeout = parseInt(model.timeout / 1000);
+                        }
+
                         @if ($context['mode'] !== 'create')
                         var action = "{{ short_url('nodes.update', $model['id']) }}", node = parseInt("{{ $model['id'] }}");
                         @else
@@ -176,7 +181,7 @@
                             node = node || response.data.node_id;
 
                             axios.post("{{ short_url('nodes.render') }}", {nodes: [node]}).then((response) => {
-                                window.location.href = window.referrer === '' ? "{{ short_url('nodes.index') }}" : document.referrer;
+                                // window.location.href = window.referrer === '' ? "{{ short_url('nodes.index') }}" : document.referrer;
                             }).catch(err => {
                                 loading.close();
                                 this.$message.error('发生错误');
