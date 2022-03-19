@@ -16,6 +16,7 @@
 /system/storage/settings/*
 !/system/storage/settings/.gitignore
 /system/vendor/*
+/system/.env
 /system/composer.lock
 !/themes/
 !/vue/

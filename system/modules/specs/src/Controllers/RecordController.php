@@ -136,4 +136,38 @@ class RecordController extends Controller
             'exists' => !empty(Spec::find($id)),
         ]);
     }
+
+    /**
+     * 规格列表页
+     *
+     * @param  \Specs\Spec  $spec
+     * @param  \Illuminate\Http\Request  $request
+     * @return string
+     */
+    public function list(Spec $spec, Request $request)
+    {
+        $list = [];
+        foreach (Engine::make()->specs($spec->getKey())->search() as $key => $value) {
+            $list = array_merge($list, $value['records']);
+        }
+
+        return html_compress(app('twig')->render('specs/list.twig'));
+    }
+
+    /**
+     * 规格列表请求
+     *
+     * @param  \Specs\Spec  $spec
+     * @param  \Illuminate\Http\Request  $request
+     * @return string
+     */
+    public function listPost(Spec $spec, Request $request)
+    {
+        $list = [];
+        foreach (Engine::make()->specs($spec->getKey())->search() as $key => $value) {
+            $list = array_merge($list, $value['records']);
+        }
+
+        return html_compress(app('twig')->render('specs/list.twig'));
+    }
 }
