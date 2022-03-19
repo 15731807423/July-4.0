@@ -5,6 +5,7 @@ namespace July\Node\Controllers;
 use App\Http\Controllers\Controller;
 use App\Support\Lang;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Db;
 use Illuminate\Support\Facades\Log;
 use July\Node\Catalog;
 use July\Node\Node;
@@ -219,12 +220,24 @@ class NodeController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function render(Request $request)
+    public function render(Request $request, array $ids = [])
     {
-        if ($ids = $request->input('nodes')) {
+        if ($ids || (!$ids && $ids = $request->input('nodes'))) {
+            // 筛选掉还没有触发定时器的页面
+            $future = Db::table('nodes')
+            ->leftJoin('node__timeout', 'nodes.id', '=', 'node__timeout.entity_id')
+            ->where('node__timeout.timeout', '>', time())
+            ->where('node__timeout.langcode', config('lang.frontend'))
+            ->pluck('nodes.id')
+            ->toArray();
+
+            $ids = array_diff($ids, $future);
+
             $nodes = NodeSet::fetch($ids);
         } else {
-            $nodes = NodeSet::fetchAll();
+            // 不传参的时候不是更新全部而是报错
+            // $nodes = NodeSet::fetchAll();
+            abort(500);
         }
 
         $frontendLangcode = langcode('frontend');
@@ -303,5 +316,24 @@ class NodeController extends Controller
         return view('node::node.invalid_links', [
             'invalidLinks' => $invalidLinks,
         ]);
+    }
+
+    /**
+     * 定时任务
+     * 生成HTML、清缓存、谷歌地图、索引
+     * 执行这个函数把所有功能调用一遍，定时请求这个函数
+     *
+     * @return \Illuminate\View\View
+     */
+    public function timeout()
+    {
+        $request = new \Illuminate\Http\Request;
+        $ids = Db::table('nodes')->pluck('id')->toArray();
+        $this->render($request, $ids);
+
+        foreach (config('app.actions') as $key => $value) {
+            $data = new $value;
+            $data($request);
+        }
     }
 }

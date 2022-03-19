@@ -46,6 +46,9 @@ Route::group([
     Route::get('nodes/mold', [Controllers\NodeController::class, 'chooseMold'])
         ->name('nodes.choose_mold');
 
+    Route::get('nodes/timeout', [Controllers\NodeController::class, 'timeout'])
+        ->name('nodes.timeout');
+
     Route::get('nodes/{node}/translate', [Controllers\NodeController::class, 'chooseLanguage'])
         ->name('nodes.choose_language');
 
