@@ -56,6 +56,9 @@ class NodeQueryExtension extends AbstractExtension implements GlobalsInterface
             // 切换url的语言
             new TwigFunction('switch_lang_by_url', function ($url, $langname)
             {
+                if (!$url || !$langname) {
+                    return $url;
+                }
                 $code = array_keys(config('lang.available'));
                 $url = explode('/', $url);
                 if (in_array($url[1], $code)) unset($url[1]);
