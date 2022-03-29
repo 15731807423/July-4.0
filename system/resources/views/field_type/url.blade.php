@@ -5,7 +5,7 @@
   <el-tooltip slot="label" content="{{ $id }}" placement="right" effect="dark" popper-class="jc-twig-output">
     <span>{{ $label }}</span>
   </el-tooltip>
-  <el-input v-model="model.{{ $id }}" native-size="100"></el-input>
+  <el-input v-model="model.{{ $id }}" native-size="100" name="{{ $id }}"></el-input>
   @if ($helptext ?? false)
   <span class="jc-form-item-help"><i class="el-icon-info"></i> {{ $helptext }}</span>
   @endif

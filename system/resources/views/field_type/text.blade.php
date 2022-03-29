@@ -7,6 +7,7 @@
   <el-input
     v-model="model.{{ $id }}"
     type="textarea"
+    name="{{ $id }}"
     rows="2"></el-input>
   @if ($helptext ?? false)
   <span class="jc-form-item-help"><i class="el-icon-info"></i> {{ $helptext }}</span>

@@ -8,6 +8,7 @@
     ref="ckeditor_{{ $id }}"
     v-model="model.{{ $id }}"
     tag-name="textarea"
+    name="{{ $id }}"
     :config="{filebrowserImageBrowseUrl: '{{ short_url('media.select') }}'}"></ckeditor>
   @if ($helptext ?? false)
   <span class="jc-form-item-help"><i class="el-icon-info"></i> {{ $helptext }}</span>
