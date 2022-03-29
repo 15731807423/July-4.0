@@ -1,7 +1,7 @@
 /*
 !/front-vue/
 /front-vue/node_modules/
-!/js/
+/js/
 !/system/
 /system/database/database.db3
 /system/language/*
