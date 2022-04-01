@@ -171,8 +171,8 @@
             handleFieldEditingConfirm() {
                 this.$refs.field_editing_form.validate((valid) => {
                     if (valid) {
-                        // this.currentField = this.editingField;
-                        // this.field.dialogVisible = false;
+                        this.currentField = this.editingField;
+                        this.field.dialogVisible = false;
                     }
                 });
             },
