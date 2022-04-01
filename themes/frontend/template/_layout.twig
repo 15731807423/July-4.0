@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+{% block head %}{% endblock %}
+{% block headAssets %}{% endblock %}
+{% block insertHeadBottom %}{% endblock %}
+</head>
+
+<body>
+  {# {% block top_logo_nav %}{% endblock %} #}
+  {# {% block lang_multiple %}{% endblock %} #}
+  {% block main %}{% endblock %}
+  {% block js %}{% endblock %}
+  {% block footer %}{% endblock %}
+</body>
+
+</html>
