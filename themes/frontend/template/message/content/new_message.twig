@@ -1,0 +1,13 @@
+{{ fields.name.label }}: {{ fields.name.value }}
+{{ fields.phone.label }}: {{ fields.phone.value }}
+{{ fields.email.label }}: {{ fields.email.value }}
+{{ fields.message.label }}: {{ fields.message.value }}
+ 
+  
+IPLocation: {{ message.location }}
+IP: {{ message.ip }}
+User Agent: {{ message.user_agent }}
+Trails:
+{% for trail in message.trails %}
+    {{ trail }}
+{% endfor %}
