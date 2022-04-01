@@ -12,7 +12,7 @@
             <el-tooltip slot="label" content="title" placement="right" effect="dark" popper-class="jc-twig-output">
                 <span>标题</span>
             </el-tooltip>
-            <el-input v-model="model.title" native-size="100"></el-input>
+            <el-input v-model="model.title" native-size="100" name="title"></el-input>
             <span class="jc-form-item-help"><i class="el-icon-info"></i> 标题，可用作链接文字等。</span>
         </el-form-item>
 
