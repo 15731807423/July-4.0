@@ -93,7 +93,7 @@
                 @endif
             </div>
         </div>
-        <el-form-item prop="lang.icon" size="small" class="{{ $items['lang.icon']['description']?'has-helptext':'' }}">
+        <el-form-item prop="lang.icon" size="small" class="{{ $items['lang.icon']['description']?'has-helptext':'' }}" v-if="settings['lang.multiple']">
             <el-tooltip slot="label" popper-class="jc-twig-output" effect="dark" content="{!! $items['lang.icon']['tips'] !!}" placement="right">
                 <span>{{ $items['lang.icon']['label'] }}</span>
             </el-tooltip>
