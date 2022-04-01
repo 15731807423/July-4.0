@@ -306,3 +306,20 @@ if (! function_exists('html_compress')) {
         return preg_replace('/>\n\s+/', ">\n", trim($html));
     }
 }
+
+if (! function_exists('format_value')) {
+    /**
+     * 格式化数据
+     *
+     * @param  string $value
+     * @return data
+     */
+    function format_value($value)
+    {
+        try {
+            return eval('return ' . $value . ';');
+        } catch (\Throwable $e) {
+            return $value;
+        }
+    }
+}
