@@ -18,7 +18,6 @@
 !/system/storage/logs/.gitignore
 /system/storage/settings/*
 !/system/storage/settings/.gitignore
-!/system/storage/settings/specList.php
 /system/vendor/*
 /system/.env
 !/themes/
