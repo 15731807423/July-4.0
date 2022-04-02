@@ -937,7 +937,9 @@ const dataList = {
                 }
                 if (this.screenInside.list[i].type == 3) {
                     if (this.screenInside.list[i].config.range === true) {
-                        this.screenRegister(this.screenInside.list[i], [], this.screenInside.list[i].default !== null ? this.screenInside.list[i].default : [this.screenInside.list[i].config.min, this.screenInside.list[i].config.max], [this.screenInside.list[i].config.min, this.screenInside.list[i].config.max]);
+                        let max = this.screenInside.list[i].config.max === undefined ? 100 : this.screenInside.list[i].config.max,
+                            min = this.screenInside.list[i].config.min === undefined ? 0 : this.screenInside.list[i].config.min;
+                        this.screenRegister(this.screenInside.list[i], [], this.screenInside.list[i].default !== null ? this.screenInside.list[i].default : [min, max], [min, max]);
                     } else {
                         this.screenRegister(this.screenInside.list[i], [], this.screenInside.list[i].default !== null ? this.screenInside.list[i].default : 0, 0);
                     }
