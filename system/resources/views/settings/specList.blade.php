@@ -214,19 +214,18 @@
 
         methods: {
             submitMainForm() {
-                console.log(this.settings);
-                // return false;
                 let form = this.$refs.main_form;
 
-                // const loading = app.$loading({
-                //     lock: true,
-                //     text: '正在保存修改 ...',
-                //     background: 'rgba(255, 255, 255, 0.7)',
-                // });
+                const loading = app.$loading({
+                    lock: true,
+                    text: '正在保存修改 ...',
+                    background: 'rgba(255, 255, 255, 0.7)',
+                });
 
                 form.validate().then(() => {
                     axios.post("{{ short_url('settings.update', $name) }}", this.settings).then(function(response) {
                         // window.location.href = "{{ short_url('manage.specs.index') }}";
+                        loading.close();
                     }).catch(function(error) {
                         loading.close();
                         console.error(error);
