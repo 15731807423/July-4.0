@@ -43,7 +43,7 @@ class CreateSpecFieldsTable extends Migration
             // 唯一性
             $table->boolean('is_unique')->default(false);
 
-            // 可分组
+            // 可筛选
             $table->boolean('is_groupable')->default(false);
 
             // 可搜索
@@ -51,6 +51,18 @@ class CreateSpecFieldsTable extends Migration
 
             // 已删除
             $table->boolean('is_deleted')->default(false);
+
+            // 筛选类型
+            $table->boolean('screen_type')->default(1);
+
+            // 筛选的默认值
+            $table->boolean('screen_default')->default('');
+
+            // 组件配置
+            $table->boolean('screen_config')->default('');
+
+            // 组件配置
+            $table->boolean('screen_config_group')->default('');
 
             // 字段次序
             $table->unsignedMediumInteger('delta')->default(0);
