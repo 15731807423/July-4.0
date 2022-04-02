@@ -53,7 +53,7 @@ class CreateSpecFieldsTable extends Migration
             $table->boolean('is_deleted')->default(false);
 
             // 筛选类型
-            $table->int('screen_type')->default(1);
+            $table->tinyInteger('screen_type')->default(1);
 
             // 筛选的默认值
             $table->string('screen_default')->default('');
