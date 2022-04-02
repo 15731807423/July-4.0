@@ -53,16 +53,16 @@ class CreateSpecFieldsTable extends Migration
             $table->boolean('is_deleted')->default(false);
 
             // 筛选类型
-            $table->boolean('screen_type')->default(1);
+            $table->int('screen_type')->default(1);
 
             // 筛选的默认值
-            $table->boolean('screen_default')->default('');
+            $table->string('screen_default')->default('');
 
             // 组件配置
-            $table->boolean('screen_config')->default('');
+            $table->string('screen_config')->default('');
 
             // 组件配置
-            $table->boolean('screen_config_group')->default('');
+            $table->string('screen_config_group')->default('');
 
             // 字段次序
             $table->unsignedMediumInteger('delta')->default(0);
