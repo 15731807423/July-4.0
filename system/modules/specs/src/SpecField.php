@@ -33,6 +33,10 @@ class SpecField extends ModelBase
         'is_searchable',
         'is_deleted',
         'delta',
+        'screen_type',
+        'screen_default',
+        'screen_config',
+        'screen_config_group'
     ];
 
     /**
@@ -70,6 +74,10 @@ class SpecField extends ModelBase
             'is_searchable' => true,
             'is_deleted' => false,
             'delta' => 0,
+            'screen_type' => 1,
+            'screen_default' => null,
+            'screen_config' => null,
+            'screen_config_group' => null
         ];
     }
 
