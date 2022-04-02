@@ -30,7 +30,7 @@ return [
 			'selectedClass' => null,
 			'countStatus' => false,
 			'groupCountType' => [],
-			'type' => 1,
+			'type' => '1',
 			'nullHidden' => false,
 			'class' => null,
 			'allClass' => null
