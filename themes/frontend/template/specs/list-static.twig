@@ -1,23 +1,13 @@
-<!DOCTYPE html>
-<html>
-<head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title></title>
+{% extends "_layout.twig" %}
+{% use "_blocks.twig" %}
 
-	<link rel="stylesheet" href="/front-vue/node_modules/element-plus/dist/index.css">
+{% block headAssets -%}
+	<link rel="stylesheet" type="text/css" href="/front-vue/node_modules/element-plus/dist/index.css">
+{% endblock -%}
 
-	<script src="/js/lazyscript.jquery.min.js" id="lazyscript"></script>
-	<script src="/js/custom.js"></script>
-	<script src="/front-vue/js/c-pagination.js"></script>
-	<script src="/front-vue/js/validators.js"></script>
-	<script src="/front-vue/js/data-filter.js"></script>
-	<script src="/front-vue/js/list-static.js"></script>
-	<script src="/front-vue/node_modules/vue/dist/vue.global.prod.js"></script>
-	<script src="/front-vue/node_modules/axios/dist/axios.min.js"></script>
-	<script src="/front-vue/node_modules/element-plus/dist/index.full.js"></script>
-</head>
-<body>
+{% block lang_multiple -%}{% endblock -%}
+
+{% block main %}
 	<div class="region" id="data_panel">
 		<div class="stage">
 			<div class="data-panel-1">
@@ -72,6 +62,18 @@
 			</div>
 		</div>
 	</div>
+{% endblock %}
+
+{% block js %}
+	<script src="/js/lazyscript.jquery.min.js" id="lazyscript"></script>
+	<script src="/js/custom.js"></script>
+	{# <script src="/front-vue/js/c-pagination.js"></script> #}
+	{# <script src="/front-vue/js/validators.js"></script> #}
+	{# <script src="/front-vue/js/data-filter.js"></script> #}
+	<script src="/front-vue/js/list-static.js"></script>
+	<script src="/front-vue/node_modules/vue/dist/vue.global.prod.js"></script>
+	{# <script src="/front-vue/node_modules/axios/dist/axios.min.js"></script> #}
+	<script src="/front-vue/node_modules/element-plus/dist/index.full.js"></script>
 
 	<script type="text/javascript">
 		var dataPanel = Vue.createApp({
@@ -109,10 +111,9 @@
 		.use(ElementPlus.ElTable)
 		.use(ElementPlus.ElLoading)
 		.use(ElementPlus.ElPagination)
-		.component('c-pagination', cPagination)
-		.component('data-filter', dataFilter)
+		// .component('c-pagination', cPagination)
+		// .component('data-filter', dataFilter)
 		.component('data-list', dataList)
 		.mount('#data_panel');
 	</script>
-</body>
-</html>
+{% endblock %}
