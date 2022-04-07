@@ -40,6 +40,7 @@ class SpecList extends SettingGroupBase
             'key' => 'specList.dataEmptyText',
             'label' => '数据为空的提示',
             'description' => '页面没有数据时的提示信息',
+            'default' => 'No Data'
         ],
 
         'specList.static.search.status' => [
@@ -64,6 +65,7 @@ class SpecList extends SettingGroupBase
             'key' => 'specList.static.search.class',
             'label' => '搜索功能div的class',
             'description' => '搜索功能div的class',
+            'default' => 'data-search'
         ],
 
         'specList.static.search.inputConfig.onInput' => [
@@ -82,12 +84,13 @@ class SpecList extends SettingGroupBase
             'key' => 'specList.static.search.inputConfig.class',
             'label' => '搜索框的class',
             'description' => '搜索框的class',
+            'default' => 'data-search-input'
         ],
 
         'specList.static.search.inputConfig.componentConfig' => [
             'key' => 'specList.static.search.inputConfig.componentConfig',
             'label' => '搜索框组件的配置信息',
-            'description' => '搜索框组件的配置信息，具体内容参考官网，属性名用大驼峰命名法，属性名和属性值之间用‘:’拼接，多个配置信息用‘|’隔开，例：‘name:username|showPassword:true’',
+            'description' => '搜索框组件的配置信息',
         ],
 
         'specList.static.search.buttonConfig.status' => [
@@ -100,18 +103,20 @@ class SpecList extends SettingGroupBase
             'key' => 'specList.static.search.buttonConfig.text',
             'label' => '搜索按钮的文本',
             'description' => '搜索按钮的文本',
+            'default' => 'search'
         ],
 
         'specList.static.search.buttonConfig.class' => [
             'key' => 'specList.static.search.buttonConfig.class',
             'label' => '搜索按钮的class',
             'description' => '搜索按钮的class',
+            'default' => 'data-search-button'
         ],
 
         'specList.static.search.buttonConfig.componentConfig' => [
             'key' => 'specList.static.search.buttonConfig.componentConfig',
             'label' => '搜索按钮组件的配置信息',
-            'description' => '搜索按钮组件的配置信息，具体内容参考官网，属性名用大驼峰命名法，属性名和属性值之间用‘:’拼接，多个配置信息用‘|’隔开，例：‘name:username|showPassword:true’',
+            'description' => '搜索按钮组件的配置信息',
         ],
 
         'specList.static.screen.status' => [
@@ -130,12 +135,14 @@ class SpecList extends SettingGroupBase
             'key' => 'specList.static.screen.clearText',
             'label' => '清空已筛选的文本',
             'description' => '清空已筛选的文本',
+            'default' => 'reset'
         ],
 
         'specList.static.screen.selectedClass' => [
             'key' => 'specList.static.screen.selectedClass',
             'label' => '已筛选项div的class',
             'description' => '已筛选项div的class',
+            'default' => 'data-screen-selected'
         ],
 
         'specList.static.screen.countStatus' => [
@@ -166,60 +173,68 @@ class SpecList extends SettingGroupBase
             'key' => 'specList.static.screen.class',
             'label' => '筛选功能div的class',
             'description' => '筛选功能div的class',
+            'default' => 'data-screen'
         ],
 
         'specList.static.screen.allClass' => [
             'key' => 'specList.static.screen.allClass',
             'label' => '全部筛选项div的class',
             'description' => '全部筛选项div的class',
+            'default' => 'data-screen-all'
         ],
 
         'specList.static.selector.class' => [
             'key' => 'specList.static.selector.class',
             'label' => '模式选择器div的class',
             'description' => '模式选择器div的class',
+            'default' => 'data-selector'
         ],
 
         'specList.static.selector.list.table.text' => [
             'key' => 'specList.static.selector.list.table.text',
             'label' => '表格按钮文本',
             'description' => '表格按钮文本',
+            'default' => 'table'
         ],
 
         'specList.static.selector.list.list.text' => [
             'key' => 'specList.static.selector.list.list.text',
             'label' => '列表按钮文本',
             'description' => '列表按钮文本',
+            'default' => 'list'
         ],
 
         'specList.static.selector.config.componentConfig' => [
             'key' => 'specList.static.selector.config.componentConfig',
             'label' => '模式选择器组件的配置信息',
-            'description' => '模式选择器组件的配置信息，具体内容参考官网，属性名用大驼峰命名法，属性名和属性值之间用‘:’拼接，多个配置信息用‘|’隔开，例：‘name:username|showPassword:true’',
+            'description' => '模式选择器组件的配置信息',
         ],
 
         'specList.static.pagination.class' => [
             'key' => 'specList.static.pagination.class',
             'label' => '分页div的class',
             'description' => '分页div的class',
+            'default' => 'data-page'
         ],
 
         'specList.static.pagination.pageSize' => [
             'key' => 'specList.static.pagination.pageSize',
             'label' => '每页数量',
             'description' => '每页展示数据的数量',
+            'default' => '10'
         ],
 
         'specList.static.pagination.currentPage' => [
             'key' => 'specList.static.pagination.currentPage',
             'label' => '默认页',
             'description' => '页面加载时显示的页码',
+            'default' => '1'
         ],
 
         'specList.static.pagination.componentConfig' => [
             'key' => 'specList.static.pagination.componentConfig',
             'label' => '分页组件的配置信息',
-            'description' => '分页组件的配置信息，具体内容参考官网，属性名用大驼峰命名法，属性名和属性值之间用‘:’拼接，多个配置信息用‘|’隔开，例：‘name:username|showPassword:true’',
+            'description' => '分页组件的配置信息',
         ],
 
         'specList.static.loading.status' => [
@@ -231,7 +246,7 @@ class SpecList extends SettingGroupBase
         'specList.static.loading.config.componentConfig' => [
             'key' => 'specList.static.loading.config.componentConfig',
             'label' => '加载组件的配置信息',
-            'description' => '加载组件的配置信息，具体内容参考官网，属性名用大驼峰命名法，属性名和属性值之间用‘:’拼接，多个配置信息用‘|’隔开，例：‘name:username|showPassword:true’',
+            'description' => '加载组件的配置信息',
         ],
     ];
 }
