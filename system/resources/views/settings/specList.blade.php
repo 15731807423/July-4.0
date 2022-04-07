@@ -44,6 +44,11 @@
 
         <p class="split-line"></p>
 
+        <!-- 排序大小写敏感 -->
+        @include('spec_list.switch', ['data' => $items['specList.sortCaseSensitive'], 'index' => 'specList.sortCaseSensitive'])
+
+        <p class="split-line"></p>
+
         <!-- JS处理数据模式下 -->
         <template v-if="settings['specList.model'] == 'static'">
             <!-- 搜索功能的状态 -->

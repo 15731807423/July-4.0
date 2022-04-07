@@ -4,6 +4,7 @@ return [
 	'model' => 'static',
 	'cuttingSymbol' => ',',
 	'dataEmptyText' => null,
+	'sortCaseSensitive' => false,
 	'static' => [
 		'search' => [
 			'status' => false,
