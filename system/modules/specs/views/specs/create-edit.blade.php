@@ -10,6 +10,12 @@
         @include('widgets.id', ['_model' => 'spec', '_readOnly' => (bool) $spec['id']])
         @include('widgets.label', ['_model' => 'spec', '_label'=>'名称'])
         @include('widgets.description', ['_model' => 'spec'])
+        @include('widgets.table_status', ['_model' => 'spec'])
+        @include('widgets.default_sort_field', ['_model' => 'spec'])
+        @include('widgets.default_sort_mode', ['_model' => 'spec'])
+        @include('widgets.table_config', ['_model' => 'spec'])
+        @include('widgets.list_status', ['_model' => 'spec'])
+        @include('widgets.list_item', ['_model' => 'spec'])
         <div class="el-form-item el-form-item--small has-helptext jc-embeded-field">
             <div class="el-form-item__content">
                 <div class="jc-embeded-field__header">
@@ -40,6 +46,7 @@
                                 <th>描述</th>
                                 <th>可筛选</th>
                                 <th>可搜索</th>
+                                <th>可排序</th>
                                 <th>类型</th>
                                 <th>操作</th>
                             </tr>
@@ -52,6 +59,7 @@
                                 <td><span>@{{ field.description }}</span></td>
                                 <td><el-switch v-model="field['is_groupable']"></el-switch></td>
                                 <td><el-switch v-model="field['is_searchable']"></el-switch></td>
+                                <td><el-switch v-model="field['is_sortable']"></el-switch></td>
                                 <td><span>@{{ getFieldTypeLabel(field.field_type_id) }}</span></td>
                                 <td>
                                     <div class="jc-operators">
@@ -102,6 +110,10 @@
             <span class="jc-form-item-help"><i class="el-icon-info"></i> 默认值</span>
         </el-form-item>
 
+        <el-form-item label="可排序" size="small">
+            <el-switch v-model="currentField.is_sortable"></el-switch>
+        </el-form-item>
+
         <el-form-item label="可检索" size="small">
             <el-switch v-model="currentField.is_searchable"></el-switch>
         </el-form-item>
@@ -113,7 +125,7 @@
         <template v-if="currentField.is_groupable">
             <el-form-item label="筛选类型" size="small">
                 <el-radio-group v-model="currentField.screen_type">
-                    <el-radio :label="1" >单选</el-radio>
+                    <el-radio :label="1">单选</el-radio>
                     <el-radio :label="2">多选</el-radio>
                     <el-radio :label="3">滑块</el-radio>
                     <el-radio :label="4">时间</el-radio>
@@ -131,7 +143,7 @@
                 <span class="jc-form-item-help"><i class="el-icon-info"></i> 使用方法见文档</span>
             </el-form-item>
 
-            <el-form-item v-if="currentField.screen_type == 1 || currentField.screen_type == 2" label="组件配置" size="small">
+            <el-form-item v-if="currentField.screen_type == 1 || currentField.screen_type == 2" label="组件group配置" size="small">
                 <el-input v-model="currentField.screen_config_group" native-size="60"></el-input>
                 <span class="jc-form-item-help"><i class="el-icon-info"></i> 使用方法见文档</span>
             </el-form-item>
@@ -162,70 +174,70 @@
 
                 specRules: {
                     @if (!$spec['id'])
-                    "id": [
-                    { required: true, message: '『ID』不能为空', trigger: 'submit' },
-                    { max: 32, message: '最多 32 个字符', trigger: 'change' },
-                    { pattern: /^[a-z0-9_]+$/, message: '『ID』只能包含小写字母、数字和下划线', trigger: 'change' },
-                    {
-                        validator: (rule, value, callback) => {
-                            if (!value || !value.length) {
-                                callback();
-                            } else {
-                                const action = "{{ short_url('manage.specs.exists', '_ID_') }}".replace('_ID_', value);
-                                axios.get(action).then(function(response) {
-                                    if (response.data.exists) {
-                                        callback(new Error('类型 id 已存在'));
-                                    } else {
+                        "id": [
+                            { required: true, message: '『ID』不能为空', trigger: 'submit' },
+                            { max: 32, message: '最多 32 个字符', trigger: 'change' },
+                            { pattern: /^[a-z0-9_]+$/, message: '『ID』只能包含小写字母、数字和下划线', trigger: 'change' },
+                            {
+                                validator: (rule, value, callback) => {
+                                    if (!value || !value.length) {
                                         callback();
+                                    } else {
+                                        const action = "{{ short_url('manage.specs.exists', '_ID_') }}".replace('_ID_', value);
+                                        axios.get(action).then(function(response) {
+                                            if (response.data.exists) {
+                                                callback(new Error('类型 id 已存在'));
+                                            } else {
+                                                callback();
+                                            }
+                                        }).catch(function(error) {
+                                            console.error(error);
+                                        });
                                     }
-                                }).catch(function(error) {
-                                    console.error(error);
-                                });
+                                },
+                                trigger: 'blur',
                             }
-                        },
-                        trigger: 'blur',
-                    }
-                    ],
+                        ],
                     @endif
-                    "label": [
-                    { required: true, message: '『标题』不能为空', trigger: 'submit' },
-                    { max: 64, message: '最多 64 个字符', trigger: 'change' }
-                    ],
+                        "label": [
+                            { required: true, message: '『标题』不能为空', trigger: 'submit' },
+                            { max: 64, message: '最多 64 个字符', trigger: 'change' }
+                        ],
                     "description": [
-                    { max: 255, message: '最多 255 个字符', trigger: 'change' }
+                        { max: 255, message: '最多 255 个字符', trigger: 'change' }
                     ],
                 },
 
                 fieldRules: {
                     "field_type_id": [
-                    { required: true, message: '『字段类型』不能为空', trigger: 'submit' },
+                        { required: true, message: '『字段类型』不能为空', trigger: 'submit' },
                     ],
                     "field_id": [
-                    { required: true, message: '『ID』不能为空', trigger: 'submit' },
-                    { max: 32, message: '『ID』最多 32 个字符', trigger: 'change' },
-                    { pattern: /^[a-z_][a-z0-9_]*$/, message: '『ID』只能包含小写字母、数字和下划线，且必须以字母或下划线开头', trigger: 'change' },
-                    {
-                        validator: (rule, value, callback) => {
-                            if (value && value.length) {
-                                if (['id', 'updated_at', 'created_at'].indexOf(value) >= 0) {
-                                    callback(new Error('字段 id 已存在'));
-                                    return;
-                                }
-                                for (let i = 0, len = this.fields.length; i < len; i++) {
-                                    const field = this.fields[i];
-                                    if (field.field_id === value && field !== this.currentField) {
+                        { required: true, message: '『ID』不能为空', trigger: 'submit' },
+                        { max: 32, message: '『ID』最多 32 个字符', trigger: 'change' },
+                        { pattern: /^[a-z_][a-z0-9_]*$/, message: '『ID』只能包含小写字母、数字和下划线，且必须以字母或下划线开头', trigger: 'change' },
+                        {
+                            validator: (rule, value, callback) => {
+                                if (value && value.length) {
+                                    if (['id', 'updated_at', 'created_at'].indexOf(value) >= 0) {
                                         callback(new Error('字段 id 已存在'));
                                         return;
                                     }
+                                    for (let i = 0, len = this.fields.length; i < len; i++) {
+                                        const field = this.fields[i];
+                                        if (field.field_id === value && field !== this.currentField) {
+                                            callback(new Error('字段 id 已存在'));
+                                            return;
+                                        }
+                                    }
                                 }
-                            }
-                            callback();
+                                callback();
+                            },
+                            trigger: 'blur',
                         },
-                        trigger: 'blur',
-                    },
                     ],
                     "label": [
-                    { required: true, message: '『标签』不能为空', trigger: 'submit' },
+                        { required: true, message: '『标签』不能为空', trigger: 'submit' },
                     ],
                 },
 
@@ -304,11 +316,11 @@
             submitMainForm() {
                 let form = this.$refs.main_form;
 
-                const loading = app.$loading({
-                    lock: true,
-                    text: '{{ $spec['id'] ? "正在保存修改 ..." : "正在新建规格 ..." }}',
-                    background: 'rgba(255, 255, 255, 0.7)',
-                });
+                // const loading = app.$loading({
+                //     lock: true,
+                //     text: '{{ $spec['id'] ? "正在保存修改 ..." : "正在新建规格 ..." }}',
+                //     background: 'rgba(255, 255, 255, 0.7)',
+                // });
 
                 form.validate().then(function() {
 
@@ -330,6 +342,12 @@
                             .map(option => option.value)
                             .filter(option => option != null && option.length > 0);
                         }
+                        if (!field.is_groupable) {
+                            delete field.screen_type;
+                            delete field.screen_default;
+                            delete field.screen_config;
+                            delete field.screen_config_group;
+                        }
                         return field;
                     });
 
@@ -340,7 +358,7 @@
                     @endif
 
                     axios.{{ $spec['id'] ? 'put' : 'post' }}(action, spec).then(function(response) {
-                        window.location.href = "{{ short_url('manage.specs.index') }}";
+                        // window.location.href = "{{ short_url('manage.specs.index') }}";
                     }).catch(function(error) {
                         loading.close();
                         console.error(error);
