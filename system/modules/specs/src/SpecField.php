@@ -31,6 +31,7 @@ class SpecField extends ModelBase
         'is_unique',
         'is_groupable',
         'is_searchable',
+        'is_sortable',
         'is_deleted',
         'delta',
         'screen_type',
@@ -50,6 +51,7 @@ class SpecField extends ModelBase
         'is_unique' => 'bool',
         'is_groupable' => 'bool',
         'is_searchable' => 'bool',
+        'is_sortable' => 'bool',
         'is_deleted' => 'bool',
     ];
 
@@ -72,6 +74,7 @@ class SpecField extends ModelBase
             'is_unique' => false,
             'is_groupable' => false,
             'is_searchable' => true,
+            'is_sortable' => false,
             'is_deleted' => false,
             'delta' => 0,
             'screen_type' => 1,
