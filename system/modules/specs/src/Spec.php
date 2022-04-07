@@ -49,6 +49,12 @@ class Spec extends ModelBase
         'id',
         'label',
         'description',
+        'table_status',
+        'default_sort_field',
+        'default_sort_mode',
+        'table_config',
+        'list_status',
+        'list_item',
     ];
 
     /**
@@ -77,6 +83,12 @@ class Spec extends ModelBase
             'id' => null,
             'label' => null,
             'description' => null,
+            'table_status' => true,
+            'default_sort_field' => null,
+            'default_sort_mode' => 'asc',
+            'table_config' => null,
+            'list_status' => true,
+            'list_item' => null,
         ];
     }
 
