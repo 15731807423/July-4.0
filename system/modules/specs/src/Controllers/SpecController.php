@@ -97,6 +97,13 @@ class SpecController extends Controller
             'emptyField' => SpecField::defaultAttributes(),
         ];
 
+        foreach ($data['fields'] as $key => $value) {
+            $data['fields'][$key]['screen_type'] = intval($value['screen_type']);
+        }
+
+        $data['spec']['table_status'] = boolval($data['spec']['table_status']);
+        $data['spec']['list_status'] = boolval($data['spec']['list_status']);
+
         return view('specs::specs.create-edit', $data);
     }
 
