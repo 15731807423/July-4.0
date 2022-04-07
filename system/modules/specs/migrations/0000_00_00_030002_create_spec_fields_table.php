@@ -46,23 +46,26 @@ class CreateSpecFieldsTable extends Migration
             // 可筛选
             $table->boolean('is_groupable')->default(false);
 
-            // 可搜索
-            $table->boolean('is_searchable')->default(true);
-
-            // 已删除
-            $table->boolean('is_deleted')->default(false);
-
             // 筛选类型
             $table->tinyInteger('screen_type')->default(1);
 
             // 筛选的默认值
-            $table->string('screen_default')->default('');
+            $table->string('screen_default')->nullable();
 
             // 组件配置
-            $table->string('screen_config')->default('');
+            $table->string('screen_config')->nullable();
 
             // 组件配置
-            $table->string('screen_config_group')->default('');
+            $table->string('screen_config_group')->nullable();
+
+            // 可搜索
+            $table->boolean('is_searchable')->default(true);
+
+            // 可排序
+            $table->boolean('is_sortable')->default(false);
+
+            // 已删除
+            $table->boolean('is_deleted')->default(false);
 
             // 字段次序
             $table->unsignedMediumInteger('delta')->default(0);
