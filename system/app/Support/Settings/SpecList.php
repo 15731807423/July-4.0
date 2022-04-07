@@ -43,6 +43,12 @@ class SpecList extends SettingGroupBase
             'default' => 'No Data'
         ],
 
+        'specList.sortCaseSensitive' => [
+            'key' => 'specList.sortCaseSensitive',
+            'label' => '排序大小写敏感',
+            'description' => '排序时严格区分大小写',
+        ],
+
         'specList.static.search.status' => [
             'key' => 'specList.static.search.status',
             'label' => '搜索功能',
