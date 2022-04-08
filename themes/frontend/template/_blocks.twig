@@ -32,7 +32,7 @@
 
 {# 多语言 #}
 {% block lang_multiple -%}
-    <div class="lang-multiple">
+    {# <div class="lang-multiple">
         {% for key, item in config('lang.available') %}
             <a href="{{ switch_lang_by_url(_node.url, key) }}">
                 {% if config('lang.icon') %}
@@ -41,219 +41,15 @@
                 <span>{{ langname(key, key) }}</span>
             </a>
         {% endfor %}
-    </div>
+    </div> #}
 {% endblock -%}
 
 {# 导航 #}
-{% block top_logo_nav -%}
-    <div class="region region--nav">
-        <div class="region--nav-re">
-            <div class="region--nav-top">
-                <div class="stage">
-                    <div class="content">
-                        <div class="nav-top--main">
-                            <div class="nav-logo">
-                                <div class="nav-logo--img">
-                                    <a href="/index.html" rel="nofollow">
-                                        <picture>
-                                            <source srcset="/img/logo.svg" media="(max-width: 991px)">
-                                                <img class="hero-img" src="/img/logo-white.svg" alt="Hengshui Yinbeier Hydraulic Filter Co., Ltd. Logo">
-                                        </picture>
-                                    </a>
-                                </div>
-                                <div class="nav-logo--con">Manufacture You Need
-                                    <br>Custom & Design You Desire</div>
-                            </div>
-                            <div class="nav--search">
-                                <div class="input-search search-module-trigger">search</div>
-                                <div class="input-group">
-                                    <form action="/specs/records" method="get" name="topsearch" class="search-form">
-                                        <button type="submit"><i class="iconfont iconsearch"><span>submit</span></i>
-                                        </button>
-                                        <input type="hidden" name="modelid" value="1">
-                                        <input type="text" name="keywords" class="form-control" value="" placeholder="Search by Part No./Brand/Category...">
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="stage">
-                <div class="nav--main">
-                    <div class="nav--main-1">
-                        <div class="nav--logo-nav">
-                            <div class="nav--con">
-                                <div class="app-nav nav-module-trigger"><i class="app-nav1"></i>
-                                </div>
-                                <div class="nav navmodule-opened">
-                                    <div class="navtop1">
-                                        <a href="/index.html" rel="nofollow">
-                                            <img class="hero-img" src="/img/logo-white.svg" alt="Hengshui Yinbeier Hydraulic Filter Co., Ltd. Logo">
-                                        </a>
-                                    </div>
-                                    <ul data-active="nav">
-                                        {% for node in nodes(2) -%}
-                                        <li {{ _path.contains(node.id) or node.id==_node.id ? 'class="is-highlight"' }}><a href="{{ node.url }}"><span>{{ node.title }}</span></a></li>
-                                        {% endfor -%}
-                                        {% for node in nodes(8) -%}
-                                        <li class="dropdown {{ _path.contains(node.id) or node.id == _node.id ? 'is-highlight' }}"><a href="{{ node.url }}"><span>{{ node.title }}</span></a>
-                                        {% endfor -%}
-                                            <i class="nav-module-trigger1"></i>
-                                            <div class="menu--img-con">
-                                                <ul>
-                                                    <li> <a href="/products/index.html#by-category">By Category</a>
-                                                        <ul>
-                                                            {% for node in nodes(8).get_under() -%}
-                                                            <li {{ _path.contains(node.id) or node.id==_node.id ? 'class="is-highlight"' }}><a href="{{ node.url }}">{{ node.title }}</a></li>
-                                                            {% endfor -%}
-                                                        </ul>
-                                                    </li>
-                                                    <li> <a href="/products/index.html#by-brand">By Brand</a>
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                        </li>
-                                        {% for node in nodes(18) -%}
-                                        <li class="dropdown dropdown-a {{ _path.contains(node.id) or node.id == _node.id ? 'is-highlight' }}"><a href="{{ node.url }}"><span>{{ node.title }}</span></a>
-                                        {% endfor -%}<i class="nav-module-trigger1"></i>
-                                            <div class="menu--img-con">
-                                                <ul>
-                                                    <li>{% for node in nodes(18) -%}<a href="{{ node.url }}">{{ node.title }}</a>{% endfor -%}
-                                                        <ul>
-                                                            {% for node in nodes(18).get_under() -%}
-                                                            <li {{ _path.contains(node.id) or node.id==_node.id ? 'class="is-highlight"' }}><a href="{{ node.url }}">{{ node.title }}</a></li>
-                                                            {% endfor -%}
-                                                        </ul>
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                        </li>
-                                        {% for node in nodes(124) -%}
-                                        <li {{ _path.contains(node.id) or node.id==_node.id ? 'class="is-highlight"' }}><a href="{{ node.url }}"><span>{{ node.title }}</span></a></li>
-                                        {% endfor -%}
-                                        {% for node in nodes(3) -%}
-                                        <li class="dropdown dropdown-a {{ _path.contains(node.id) or node.id == _node.id ? 'is-highlight' }}"><a href="{{ node.url }}"><span>{{ node.title }}</span></a>
-                                        {% endfor -%}<i class="nav-module-trigger1"></i>
-                                            <div class="menu--img-con">
-                                                <ul>
-                                                    <li>{% for node in nodes(3) -%}<a href="{{ node.url }}">{{ node.title }}</a>{% endfor -%}
-                                                        <ul>
-                                                            {% for node in nodes(3).get_under() -%}
-                                                            <li {{ _path.contains(node.id) or node.id==_node.id ? 'class="is-highlight"' }}><a href="{{ node.url }}">{{ node.title }}</a></li>
-                                                            {% endfor -%}
-                                                        </ul>
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                        </li>
-                                        {% for node in nodes(25) -%}
-                                        <li class="dropdown dropdown-a {{ _path.contains(node.id) or node.id == _node.id ? 'is-highlight' }}"><a href="{{ node.url }}"><span>Contact Us</span></a>
-                                        {% endfor -%}<i class="nav-module-trigger1"></i>
-                                            <div class="menu--img-con">
-                                                <ul>
-                                                    <li>{% for node in nodes(25) -%}<a href="{{ node.url }}">Contact Us</a>{% endfor -%}
-                                                        <ul data-active="highlight">
-                                                            {% for node in nodes(27,26) -%}
-                                                            <li {{ _path.contains(node.id) or node.id==_node.id ? 'class="is-highlight"' }}><a href="{{ node.url }}">{{ node.title }}</a></li>
-                                                            {% endfor -%}
-                                                            {% for node in nodes(25) -%}
-                                                            <li><a href="{{ node.url }}">{{ node.title }}</a></li>
-                                                            {% endfor -%}
-                                                        </ul>
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                        </li>
-                                        {% for node in nodes(28) -%}
-                                        <li {{ _path.contains(node.id) or node.id==_node.id ? 'class="is-highlight"' }}><a href="{{ node.url }}"><span>{{ node.title }}</span></a></li>
-                                        {% endfor -%}
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="nav--quote"> {% for node in nodes(28) -%}<a href="{{ node.url }}">{{ node.title }}</a>{% endfor -%}
-                        </div>
-                        <div class="nav--search-1">
-                            <div class="input-search-1 search-module-trigger-1">search</div>
-                            <div class="input-group-1">
-                                <form action="/specs/records" method="get" name="topsearch" class="search-form-1">
-                                    <button type="submit"><i class="iconfont iconsearch"><span>submit</span></i>
-                                    </button>
-                                    <input type="hidden" name="modelid" value="1">
-                                    <input type="text" name="keywords" class="form-control" value="" placeholder="Search by Part No./Brand/Category...">
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-{% endblock -%}
+{% block top_logo_nav -%}{% endblock -%}
 
 
 {# footer #}
-{% block footer -%}
-  <div class="region region--footer gray">
-        <div class="stage">
-            <div class="content">
-                <div class="footer-main">
-                    <div class="form">
-                        {{ forms('new_message').render()|raw }}
-                    </div>
-                    <div class="footer-cell">
-                        <img src="/img/logo.svg" alt="Hengshui Yinbeier Hydraulic Filter Co., Ltd. logo">
-                        <p>We can not only manufacture industrial filter elements you need, but design and custom elements for your specific projects and equipment.</p>
-                    </div>
-                    <div class="footer-cell">
-                        <div class="footer-tit">PRODUCTS</div>
-                        <ul>
-                            <li><a href="/products/index.html#by-category">Products by Category</a></li>
-                            <li><a href="/products/index.html#by-brand">Products by Brand</a></li>
-                            {% for node in nodes(28,27,26) -%}
-                            <li><a href="{{ node.url }}">{{ node.title }}</a></li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                    <div class="footer-cell">
-                        <div class="footer-tit">COMPANY</div>
-                        <ul>
-                            {% for node in nodes(4,5,6,7,25,124) -%}
-                            <li><a href="{{ node.url }}">{{ node.title }}</a></li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                    <div class="footer-cell">
-                        <div class="footer-tit">SOCIAL</div>
-                         <div class="footer-social">
-                            <ul class="custom--social">
-                                    <li><a href="https://www.facebook.com/Yinbeier-Filter-114961473536072" rel="noopener noreferrer" target="_blank"><i class="iconfont iconFacebook"></i><span>Facebook</span></a></li>
-                                    <li><a href="https://www.linkedin.com/company/inbornfilter/" rel="noopener noreferrer" target="_blank"><i class="iconfont iconlinkedin"></i><span>LinkedIn</span></a></li>
-                                    <li><a href="https://twitter.com/YinbeierFilter" rel="noopener noreferrer" target="_blank"><i class="iconfont iconttww"></i><span>Twitter</span></a></li>
-                                    <li><a href="https://www.youtube.com/channel/UCMzILhNQ3wpZm-bfZVvHsHQ/featured" rel="noopener noreferrer" target="_blank"><i class="iconfont iconyoutobe"></i><span>YouTube</span></a></li>
-                                <li><a href="mailto:info@umfilter.com" rel="nofollow"><i class="iconfont iconf-mail"></i><span>E-mail</span></a>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="copyright">
-            <div class="stage">
-                <div class="content">
-                    <div class="copyright--main">
-                        <div class="copyright--left">Copyright © 2003-<span id="yearnow">2021</span> Hengshui Yinbeier Hydraulic Filter Co., Ltd.</div>
-                        <div class="copyright--right">
-                            <a href="/terms-conditions.html">Terms & Conditions</a> <a href="/privacy-policy.html">Privacy Policy</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-{% endblock -%}
+{% block footer -%}{% endblock -%}
 
 
 {# footer-popup #}
