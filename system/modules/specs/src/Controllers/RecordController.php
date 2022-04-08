@@ -187,374 +187,176 @@ class RecordController extends Controller
     }
 
     // 查看一个规格的列表
-    public function staticSpec(Spec $spec, Request $request)
+    private function staticSpec($spec, $request)
     {
-        $specName = $spec->getKey();
-
-        // 获取当前规格的可检索字段
-        $search = Engine::make()->specs($specName)->resolveSpecFields()[$spec->getKey()]['searchable'];
-
-        // 对可分组的字段配置筛选信息
-        $screen = [];
-
-        // 定义一个字段的筛选组 manufacturer是字段 ‘$data[] = 1’表示向数组$data里添加一个下标
-        $screen[] = [
-            // 筛选项前面的名字 必填
-            'name'          => 'manufacturer',
-
-            // 筛选的字段 必填
-            'field'         => 'manufacturer',
-
-            // 筛选的类型 见文档 必填
-            'type'          => 1,
-
-            // 默认值 见文档 选填
-            // 'default'       => '',
-
-            // 组件的配置 见文档 选填
-            // 'config'        => [],
-
-            // 组件的配置 见文档 选填
-            // 'configGroup'    => [],
-        ];
-
-        // 定义第二个字段的筛选组
-        $screen[] = [
-            'name'          => 'field1',
-            'field'         => 'field1',
-            'type'          => 5,
-            'config'        => ['multiple' => false]
-        ];
-
-        $screen[] = [
-            'name'          => 'field2',
-            'field'         => 'field2',
-            'type'          => 3,
-            'default'       => [10, 50],
-            'config'        => [
-                'range'     => true,
-                'max'       => 100,
-                'min' => 20
-            ]
-        ];
-        $screen[] = [
-            'name'          => 'time',
-            'field'         => 'time',
-            'type'          => 4
-        ];
-
-        // 定义表格的配置 下面分别是使用表格和不使用表格的配置 二选一
-
-        // 这是不用表格的配置 把状态设置为false 不需要其他值
-        $table = [
-            'status'    => false
-        ];
-
-        // 这时用表格的配置 状态默认true 所以可以不传 传其他配置即可
-        $table = [
-            // 表格每一列的信息的集合 二维数组
-            'column'    => [
-                // 第一列的信息
-                [
-                    // 第一列用的字段
-                    'field'     => 'id',
-
-                    // 表头名字 默认用字段名字
-                    'title'     => 'id',
-
-                    // 排序 需要这一列排序传true 不需要不传或传false 默认不排序
-                    'sortable'  => true,
-
-                    // 列表是有默认排序的 传true表示用这个字段排序
-                    'sortableDefaultField'  => true,
-
-                    // 默认排序的排序方式 asc正序 desc倒序 其他非法值会被当做正序
-                    'sortableDefaultMode'   => 'asc'
-                ],
-
-                // 第二列的信息
-                [
-                    'field'     => 'manufacturer',
-                    'title'     => 'Manufacturer',
-                    'sortable'  => true
-                ],
-                [
-                    'field'     => 'manufacture_oe',
-                    'title'     => 'Manufacture #',
-                    'sortable'  => true
-                ],
-                [
-                    'field'     => 'inborn_filter_oe',
-                    'title'     => 'Inborn Filter #',
-                    'sortable'  => true
-                ],
-                [
-                    'field'     => 'field1'
-                ],
-                [
-                    'field'     => 'field2'
-                ],
-                [
-                    'field'     => 'time'
-                ]
-            ],
-
-            // 表格组件的配置信息
-            'config'    => [
-
-            ]
-        ];
-
-        // 定义列表的html 下面分别是使用列表和不使用列表的情况 二选一
-
-        // 这时不用列表的情况 把变量定义为null
-        $listItem = '';
-
-        // 这是用列表的情况
-        $listItem = '
-            <p>id: { id }</p>
-            <p>manufacturer: { manufacturer }</p>
-            <p>Manufacture #: { manufacture_oe }</p>
-            <p>Inborn Filter #: { inborn_filter_oe }</p>
-            <p>field1: { field1 }</p>
-            <p>field2: { field2 }</p>
-            <p>time: { time }</p>
-            <p>Category: { spec }</p>
-            <p>id: { id }</p>
-        ';
-
-        // 获取当前规格的数据
         $data = Engine::make()->specs($spec->getKey())->search()[$spec->getKey()]['records'];
 
-        // 遍历当前规格的数据 数据的id是字符串 转int
         foreach ($data as $key => $value) $data[$key]['id'] = intval($value['id']);
 
-        // 把所有需要渲染视图的数据放在一起
-        $data = [
-            // 数据列表
-            'list'          => $data,
+        $data = $this->staticData($spec, $data);
 
-            // 表格的配置信息
-            'table'         => $table,
+        // exit(htmlentities(json_encode($data)));
 
-            // 列表的html
-            'listItem'      => $listItem,
-
-            // 后台对表格的配置
-            'config'        => $this->getListConfig('static')
-        ];
-
-        // 把允许搜索的字段放进来渲染视图
-        $data['config']['search']['field'] = $search;
-
-        // 把上面定义的筛选项信息放进来渲染视图
-        $data['config']['screen']['list'] = $screen;
-
-        // 把$data渲染视图并获取渲染后的html代码 返回给框架 框架会将代码输出到浏览器
         return html_compress(app('twig')->render('specs/list-static.twig', $data));
     }
 
     // 查看全部规格的列表
-    public function staticSpecs(Spec $spec, Request $request)
+    private function staticSpecs($spec, $request)
     {
-        // 获取第一个规格的可检索字段 查看全部规格的列表时字段用第一个规格的字段 务必保证所有规格的字段相同
-        $search = array_reverse(array_values(Engine::make()->specs()->resolveSpecFields()))[0]['searchable'];
+        $spec = Spec::all()->map(function(Spec $spec) {
+            return $spec;
+        })->all()[0];
 
-        // 对可分组的字段配置筛选信息
-        $screen = [];
-
-        // 定义一个字段的筛选组 manufacturer是字段 ‘$data[] = 1’表示向数组$data里添加一个下标
-        $screen[] = [
-            // 筛选项前面的名字 必填
-            'name'          => 'manufacturer',
-
-            // 筛选的字段 必填
-            'field'         => 'manufacturer',
-
-            // 筛选的类型 见文档 必填
-            'type'          => 1,
-
-            // 默认值 见文档 选填
-            // 'default'       => '',
-
-            // 组件的配置 见文档 选填
-            // 'config'        => [],
-
-            // 组件的配置 见文档 选填
-            // 'configGroup'    => [],
-        ];
-
-        // 定义第二个字段的筛选组
-        $screen[] = [
-            'name'          => 'field1',
-            'field'         => 'field1',
-            'type'          => 5,
-            'config'        => ['multiple' => false]
-        ];
-
-        $screen[] = [
-            'name'          => 'field2',
-            'field'         => 'field2',
-            'type'          => 3,
-            // 'default'       => [10, 50],
-            'config'        => [
-                'range'     => true,
-                'max'       => 100,
-                'min'       => 20
-            ]
-        ];
-        $screen[] = [
-            'name'          => 'time',
-            'field'         => 'time',
-            'type'          => 4,
-            'default'       => '1650124811',
-            'config'        => [
-                'type'      => 'week'
-            ]
-        ];
-
-        // 向数组的开头添加一个下标 因为是多个规格 所以添加了对规格的筛选 并且放在了最前面 不需要可以注释
-        array_unshift($screen, [
-            'name'          => 'spec',
-            'field'         => 'spec',
-            'type'          => 2,
-            'default'       => ['develop'],
-            'config'        => ['border' => true],
-            'configGroup'   => ['fill' => 'yellow']
-        ]);
-
-        // 定义表格的配置 下面分别是使用表格和不使用表格的配置 二选一
-
-        // 这是不用表格的配置 把状态设置为false 不需要其他值
-        $table = [
-            'status'    => false
-        ];
-
-        // 这是用表格的配置 状态默认true 所以可以不传 传其他配置即可
-        $table = [
-            // 表格每一列的信息的集合 二维数组
-            'column'    => [
-                // 第一列的信息
-                [
-                    // 第一列用的字段
-                    'field'     => 'id',
-
-                    // 表头名字 默认用字段名字
-                    'title'     => 'id',
-
-                    // 排序 需要这一列排序传true 不需要不传或传false 默认不排序
-                    'sortable'  => true,
-
-                    // 列表是有默认排序的 传true表示用这个字段排序
-                    'sortableDefaultField'  => true,
-
-                    // 默认排序的排序方式 asc正序 desc倒序 其他非法值会被当做正序
-                    'sortableDefaultMode'   => 'asc'
-                ],
-
-                // 第二列的信息
-                [
-                    'field'     => 'manufacturer',
-                    'title'     => 'Manufacturer',
-                    'sortable'  => true
-                ],
-                [
-                    'field'     => 'manufacture_oe',
-                    'title'     => 'Manufacture #',
-                    'sortable'  => true
-                ],
-                [
-                    'field'     => 'inborn_filter_oe',
-                    'title'     => 'Inborn Filter #',
-                    'sortable'  => true
-                ],
-                [
-                    'field'     => 'field1'
-                ],
-                [
-                    'field'     => 'field2'
-                ],
-                [
-                    'field'     => 'time'
-                ],
-                [
-                    'field'     => 'spec',
-                    'title'     => 'Category'
-                ]
-            ],
-
-            // 表格组件的配置信息
-            'config'    => [
-
-            ]
-        ];
-
-        // 定义列表的html 下面分别是使用列表和不使用列表的情况 二选一
-
-        // 这时不用列表的情况 把变量定义为''
-        $listItem = '';
-
-        // 这是用列表的情况
-        $listItem = '
-            <p>id: { id }</p>
-            <p>manufacturer: { manufacturer }</p>
-            <p>Manufacture #: { manufacture_oe }</p>
-            <p>Inborn Filter #: { inborn_filter_oe }</p>
-            <p>field1: { field1 }</p>
-            <p>field2: { field2 }</p>
-            <p>time: { time }</p>
-            <p>Category: { spec }</p>
-            <p>id: { id }</p>
-        ';
-
-        // 获取全部规格的信息和数据
         $data = Engine::make($request)->search();
 
-        // 定义一个空数组 用来存放全部规格的数据
         $list = [];
 
-        // 遍历全部规格
         foreach ($data as $key => $value) {
-
-            // 遍历每个规格的数据
             foreach ($value['records'] as $k => $val) {
-                // 给每条数据添加一个下标 表示这条数据的规格名字 下标为spec
                 $value['records'][$k]['spec'] = $value['attributes']['id'];
 
-                // 数据的id是字符串 转int
                 $value['records'][$k]['id'] = intval($val['id']);
             }
 
-            // 把处理好的数据放进list里
             $list = array_merge($list, $value['records']);
         }
 
-        // 把所有需要渲染视图的数据放在一起
-        $data = [
-            // 数据列表
-            'list'          => $list,
+        $data = $this->staticData($spec, $list);
 
-            // 表格的配置信息
-            'table'         => $table,
+        // exit(htmlentities(json_encode($data)));
 
-            // 列表的html
-            'listItem'      => $listItem,
-
-            // 后台对表格的配置
-            'config'        => $this->getListConfig('static')
-        ];
-
-        // 把允许搜索的字段放进来渲染视图
-        $data['config']['search']['field'] = $search;
-
-        // 把上面定义的筛选项信息放进来渲染视图
-        $data['config']['screen']['list'] = $screen;
-
-        // 把$data渲染视图并获取渲染后的html代码 返回给框架 框架会将代码输出到浏览器
         return html_compress(app('twig')->render('specs/list-static.twig', $data));
     }
 
-    public function dynamicSpec(Spec $spec, Request $request)
+    private function staticData($spec, $list)
+    {
+        $specName = $spec->getKey();
+
+        $fields = $spec->getFields()->values()->all();
+
+        $data = $spec->attributesToArray();
+
+        $hidden = [];
+        foreach ($fields as $key => $value) {
+            if ($value['is_hiddenable']) $hidden[] = $value['field_id'];
+        }
+
+        ['searchable' => $search, 'groupable' => $screen] = Engine::make()->specs($specName)->resolveSpecFields()[$specName];
+
+        $search = array_values(array_diff($search, $hidden));
+        $screen = array_values(array_diff($screen, $hidden));
+
+        foreach ($screen as $key => $value) {
+            foreach ($fields as $k => $val) {
+                if ($val['is_hiddenable']) continue;
+
+                if ($value == $val['field_id']) {
+                    $screen[$key] = $val;
+                }
+            }
+        }
+
+        foreach ($screen as $key => $value) {
+            $item = [
+                'name'          => $value['label'],
+                'field'         => $value['field_id'],
+                'type'          => intval($value['screen_type'])
+            ];
+
+            if (!is_null($value['screen_default'])) $item['default'] = format_value($value['screen_default']);
+            if (!is_null($value['screen_config'])) $item['config'] = $this->formatConfigValue($value['screen_config']);
+            if (!is_null($value['screen_config_group'])) $item['configGroup'] = $this->formatConfigValue($value['screen_config_group']);
+
+            if ($item['type'] == 2 || ($item['type'] == 3 && $item['config']['range'])) {
+                if (isset($item['default'])) {
+                    $item['default'] = format_value($item['default']);
+                }
+            }
+
+            $screen[$key] = $item;
+        }
+
+        if ($data['table_status']) {
+            $table = ['column' => [], 'config' => []];
+
+            foreach ($fields as $key => $value) {
+                if ($value['is_hiddenable']) continue;
+
+                $item = [
+                    'field'     => $value['field_id'],
+                    'title'     => $value['label'],
+                    'sortable'  => $value['is_sortable']
+                ];
+
+                if ($data['default_sort_field'] == $value['field_id']) {
+                    $item['sortableDefaultField'] = true;
+                    $item['sortableDefaultMode'] = $data['default_sort_mode'] ?: 'asc';
+                }
+
+                $config = $this->formatConfigValue(is_null($value['config']) ? '' : $value['config']);
+
+                $table['column'][] = array_merge($item, $config);
+            }
+
+            $table['config'] = $this->formatConfigValue(is_null($data['table_config']) ? '' : $data['table_config']);
+        } else {
+            $table = ['status' => false];
+        }
+
+        if ($data['list_status']) {
+            $listItem = $data['list_item'] ?: '';
+            foreach ($hidden as $key => $value) {
+                $listItem = str_replace('{ ' . $value . ' }', '', $listItem);
+            }
+        } else {
+            $listItem = '';
+        }
+
+        $data = [
+            'list'          => $list,
+            'table'         => $table,
+            'listItem'      => $listItem,
+            'config'        => $this->getListConfig('static')
+        ];
+
+        if (isset($list[0]) && isset($list[0]['spec']) && $data['config']['specAll']['status']) {
+            $spec = $data['config']['specAll'];
+
+            $item = [ 'field' => 'spec', 'title' => $spec['title'] ];
+
+            if ($spec['sortable']) $item['sortable'] = true;
+
+            $data['table']['column'][] = $item;
+
+            if ($spec['searchable']) $search[] = 'spec';
+
+            if ($spec['screenable']) {
+                $item = [
+                    'name'      => $spec['title'],
+                    'field'     => 'spec',
+                    'type'      => intval($spec['screenType'])
+                ];
+
+                if ($spec['screenDefault']) $item['default'] = $spec['screenDefault'];
+                if ($spec['screenConfig']) $item['config'] = $spec['screenConfig'];
+                if ($spec['screenGroupConfig']) $item['configGroup'] = $spec['screenGroupConfig'];
+
+                $screen[] = $item;
+            }
+        } else {
+            $data['listItem'] = str_replace('{ spec }', '', $listItem);
+        }
+
+        unset($data['config']['specAll']);
+
+        $data['config']['search']['field'] = $search;
+
+        $data['config']['screen']['list'] = $screen;
+
+        return $data;
+    }
+
+    private function dynamicSpec(Spec $spec, Request $request)
     {
         $fields = Engine::make()->specs($spec->getKey())->resolveSpecFields()[$spec->getKey()];
         foreach ($fields['groupable'] as $key => $value) {
@@ -574,7 +376,7 @@ class RecordController extends Controller
         return html_compress(app('twig')->render('specs/list-dynamic.twig', $data));
     }
 
-    public function dynamicSpecs(Spec $spec, Request $request)
+    private function dynamicSpecs(Spec $spec, Request $request)
     {
         $fields = array_reverse(array_values(Engine::make()->specs()->resolveSpecFields()))[0];
         foreach ($fields['groupable'] as $key => $value) {
@@ -607,17 +409,17 @@ class RecordController extends Controller
     {
         $data = config('specList', []);
         if ($data['model'] != $model) return [];
-        $data = array_merge($data[$model], ['cuttingSymbol' => $data['cuttingSymbol']], ['dataEmptyText' => $data['dataEmptyText']]);
+        $data = array_merge(
+            $data[$model],
+            ['cuttingSymbol' => $data['cuttingSymbol']],
+            ['dataEmptyText' => $data['dataEmptyText']],
+            ['sortCaseSensitive' => $data['sortCaseSensitive']],
+        );
 
         if (is_null($data['search']['inputConfig']['componentConfig'])) {
             unset($data['search']['inputConfig']['componentConfig']);
         } else {
-            $config = explode('|', $data['search']['inputConfig']['componentConfig']);
-            $config2 = [];
-            foreach ($config as $key => $value) {
-                $value = explode(':', $value);
-                $config2[$value[0]] = format_value($value[1]);
-            }
+            $config = $this->formatConfigValue($data['search']['inputConfig']['componentConfig']);
 
             unset($data['search']['inputConfig']['componentConfig']);
             $data['search']['inputConfig'] = array_merge($data['search']['inputConfig'], $config2);            
@@ -626,12 +428,7 @@ class RecordController extends Controller
         if (is_null($data['search']['buttonConfig']['componentConfig'])) {
             unset($data['search']['buttonConfig']['componentConfig']);
         } else {
-            $config = explode('|', $data['search']['buttonConfig']['componentConfig']);
-            $config2 = [];
-            foreach ($config as $key => $value) {
-                $value = explode(':', $value);
-                $config2[$value[0]] = format_value($value[1]);
-            }
+            $config = $this->formatConfigValue($data['search']['buttonConfig']['componentConfig']);
 
             unset($data['search']['buttonConfig']['componentConfig']);
             $data['search']['buttonConfig'] = array_merge($data['search']['buttonConfig'], $config2);            
@@ -645,31 +442,46 @@ class RecordController extends Controller
         if (is_null($data['pagination']['componentConfig'])) {
             unset($data['pagination']['componentConfig']);
         } else {
-            $config = explode('|', $data['pagination']['componentConfig']);
-            $config2 = [];
-            foreach ($config as $key => $value) {
-                $value = explode(':', $value);
-                $config2[$value[0]] = format_value($value[1]);
-            }
+            $config = $this->formatConfigValue($data['pagination']['componentConfig']);
 
             unset($data['pagination']['componentConfig']);
-            $data['pagination'] = array_merge($data['pagination'], $config2);            
+            $data['pagination'] = array_merge($data['pagination'], $config2); 
         }
+
+        $data['pagination']['pageSize'] = is_null($data['pagination']['pageSize']) ? null : intval($data['pagination']['pageSize']);
+        $data['pagination']['currentPage'] = is_null($data['pagination']['currentPage']) ? null : intval($data['pagination']['currentPage']);
 
         if (is_null($data['loading']['config']['componentConfig'])) {
             unset($data['loading']['config']['componentConfig']);
         } else {
-            $config = explode('|', $data['loading']['config']['componentConfig']);
-            $config2 = [];
-            foreach ($config as $key => $value) {
-                $value = explode(':', $value);
-                $config2[$value[0]] = format_value($value[1]);
-            }
+            $config = $this->formatConfigValue($data['loading']['config']['componentConfig']);
 
             unset($data['loading']['config']['componentConfig']);
             $data['loading']['config'] = array_merge($data['loading']['config'], $config2);            
         }
 
+        $data['specAll']['screenDefault'] = format_value($data['specAll']['screenDefault']);
+        if (!is_null($data['specAll']['screenConfig'])) {
+            $data['specAll']['screenConfig'] = $this->formatConfigValue($data['specAll']['screenConfig']);
+        }
+        if (!is_null($data['specAll']['screenGroupConfig'])) {
+            $data['specAll']['screenGroupConfig'] = $this->formatConfigValue($data['specAll']['screenGroupConfig']);
+        }
+
         return $data;
+    }
+
+    private function formatConfigValue(string $data)
+    {
+        $data = explode('|', $data);
+
+        if (count($data) == 1 && strlen($data[0]) == 0) return [];
+
+        $data2 = [];
+        foreach ($data as $key => $value) {
+            $value = explode(':', $value);
+            $data2[$value[0]] = format_value($value[1]);
+        }
+        return $data2;
     }
 }
