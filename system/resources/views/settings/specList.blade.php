@@ -275,8 +275,9 @@
 
                 form.validate().then(() => {
                     axios.post("{{ short_url('settings.update', $name) }}", this.settings).then(function(response) {
-                        window.location.href = "{{ short_url('manage.specs.index') }}";
                         loading.close();
+                        this.original_settings = _.cloneDeep(this.settings);
+                        app.$message.success('设置已更新');
                     }).catch(function(error) {
                         loading.close();
                         console.error(error);
