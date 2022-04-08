@@ -64,6 +64,12 @@ class CreateSpecFieldsTable extends Migration
             // 可排序
             $table->boolean('is_sortable')->default(false);
 
+            // 隐藏
+            $table->boolean('is_hiddenable')->default(false);
+
+            // 配置信息
+            $table->string('config', 255)->nullable();
+
             // 已删除
             $table->boolean('is_deleted')->default(false);
 
