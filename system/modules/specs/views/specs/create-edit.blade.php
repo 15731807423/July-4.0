@@ -4,6 +4,15 @@
 {{ $spec['id'] ? '编辑规格类型' : '新建规格类型' }}
 @endsection
 
+@section('inline-style')
+<style type="text/css">
+    #field_editor>div {
+        max-height: 800px;
+        overflow-y: scroll;
+    }
+</style>
+@endsection
+
 @section('main_content')
 <el-form id="main_form" ref="main_form" :model="spec" :rules="specRules" label-position="top">
     <div id="main_form_left">
@@ -47,6 +56,7 @@
                                 <th>可筛选</th>
                                 <th>可搜索</th>
                                 <th>可排序</th>
+                                <th>隐藏</th>
                                 <th>类型</th>
                                 <th>操作</th>
                             </tr>
@@ -60,6 +70,7 @@
                                 <td><el-switch v-model="field['is_groupable']"></el-switch></td>
                                 <td><el-switch v-model="field['is_searchable']"></el-switch></td>
                                 <td><el-switch v-model="field['is_sortable']"></el-switch></td>
+                                <td><el-switch v-model="field['is_hiddenable']"></el-switch></td>
                                 <td><span>@{{ getFieldTypeLabel(field.field_type_id) }}</span></td>
                                 <td>
                                     <div class="jc-operators">
@@ -108,6 +119,14 @@
         <el-form-item label="默认值" size="small" class="has-helptext">
             <el-input v-model="currentField.default" :maxlength="255" native-size="100" show-word-limit></el-input>
             <span class="jc-form-item-help"><i class="el-icon-info"></i> 默认值</span>
+        </el-form-item>
+
+        <el-form-item label="配置信息" prop="id" size="small" class="has-helptext">
+            <el-input name="config" v-model="currentField.config" type="textarea" rows="3" maxlength="255" show-word-limit></el-input>
+        </el-form-item>
+
+        <el-form-item label="隐藏" size="small">
+            <el-switch v-model="currentField.is_hiddenable"></el-switch>
         </el-form-item>
 
         <el-form-item label="可排序" size="small">
