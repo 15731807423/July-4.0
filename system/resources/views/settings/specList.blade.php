@@ -275,7 +275,7 @@
 
                 form.validate().then(() => {
                     axios.post("{{ short_url('settings.update', $name) }}", this.settings).then(function(response) {
-                        // window.location.href = "{{ short_url('manage.specs.index') }}";
+                        window.location.href = "{{ short_url('manage.specs.index') }}";
                         loading.close();
                     }).catch(function(error) {
                         loading.close();
