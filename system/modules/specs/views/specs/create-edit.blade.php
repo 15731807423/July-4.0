@@ -335,11 +335,11 @@
             submitMainForm() {
                 let form = this.$refs.main_form;
 
-                // const loading = app.$loading({
-                //     lock: true,
-                //     text: '{{ $spec['id'] ? "正在保存修改 ..." : "正在新建规格 ..." }}',
-                //     background: 'rgba(255, 255, 255, 0.7)',
-                // });
+                const loading = app.$loading({
+                    lock: true,
+                    text: '{{ $spec['id'] ? "正在保存修改 ..." : "正在新建规格 ..." }}',
+                    background: 'rgba(255, 255, 255, 0.7)',
+                });
 
                 form.validate().then(function() {
 
@@ -377,7 +377,7 @@
                     @endif
 
                     axios.{{ $spec['id'] ? 'put' : 'post' }}(action, spec).then(function(response) {
-                        // window.location.href = "{{ short_url('manage.specs.index') }}";
+                        window.location.href = "{{ short_url('manage.specs.index') }}";
                     }).catch(function(error) {
                         loading.close();
                         console.error(error);
