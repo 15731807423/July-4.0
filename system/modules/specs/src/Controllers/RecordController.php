@@ -413,7 +413,7 @@ class RecordController extends Controller
             $data[$model],
             ['cuttingSymbol' => $data['cuttingSymbol']],
             ['dataEmptyText' => $data['dataEmptyText']],
-            ['sortCaseSensitive' => $data['sortCaseSensitive']],
+            ['sortCaseSensitive' => $data['sortCaseSensitive']]
         );
 
         if (is_null($data['search']['inputConfig']['componentConfig'])) {
