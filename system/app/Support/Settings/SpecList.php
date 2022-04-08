@@ -254,5 +254,60 @@ class SpecList extends SettingGroupBase
             'label' => '加载组件的配置信息',
             'description' => '加载组件的配置信息',
         ],
+
+        'specList.static.specAll.status' => [
+            'key' => 'specList.specAll.status',
+            'label' => '查看全部规格时显示‘规格’信息',
+            'description' => '查看全部规格时显示‘规格’信息',
+        ],
+
+        'specList.static.specAll.title' => [
+            'key' => 'specList.specAll.title',
+            'label' => '标题',
+            'description' => '‘规格’字段的标题',
+            'default' => 'Category'
+        ],
+
+        'specList.static.specAll.sortable' => [
+            'key' => 'specList.specAll.sortable',
+            'label' => '可排序',
+            'description' => '表格里的‘规格’列允许排序',
+        ],
+
+        'specList.static.specAll.searchable' => [
+            'key' => 'specList.specAll.searchable',
+            'label' => '可搜索',
+            'description' => '列表里的‘规格’列允许搜索，前提是开启了搜索功能',
+        ],
+
+        'specList.static.specAll.screenable' => [
+            'key' => 'specList.specAll.screenable',
+            'label' => '可筛选',
+            'description' => '列表里的‘规格’列允许筛选，前提是开启了筛选功能',
+        ],
+
+        'specList.static.specAll.screenType' => [
+            'key' => 'specList.specAll.screenType',
+            'label' => '筛选类型',
+            'description' => '列表里的‘规格’的筛选类型',
+        ],
+
+        'specList.static.specAll.screenDefault' => [
+            'key' => 'specList.specAll.screenDefault',
+            'label' => '筛选默认值',
+            'description' => '列表里的‘规格’的筛选默认值',
+        ],
+
+        'specList.static.specAll.screenConfig' => [
+            'key' => 'specList.specAll.screenConfig',
+            'label' => '组件配置',
+            'description' => '列表里的‘规格’的筛选组件的配置',
+        ],
+
+        'specList.static.specAll.screenGroupConfig' => [
+            'key' => 'specList.specAll.screenGroupConfig',
+            'label' => '组件group配置',
+            'description' => '列表里的‘规格’的筛选组件group的配置',
+        ],
     ];
 }

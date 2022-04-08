@@ -2,7 +2,7 @@
 
 return [
 	'model' => 'static',
-	'cuttingSymbol' => ',',
+	'cuttingSymbol' => '',
 	'dataEmptyText' => null,
 	'sortCaseSensitive' => false,
 	'static' => [
@@ -61,6 +61,17 @@ return [
 			'config' => [
 				'componentConfig' => null
 			]
+		],
+		'specAll' => [
+			'status' => false,
+			'title' => 'Category',
+			'sortable' => false,
+			'searchable' => false,
+			'screenable' => false,
+			'screenType' => '1',
+			'screenDefault' => null,
+			'screenConfig' => null,
+			'screenGroupConfig' => null,
 		]
-	],
+	]
 ];

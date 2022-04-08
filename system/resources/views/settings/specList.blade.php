@@ -187,6 +187,52 @@
                 <!-- 加载组件的配置信息 -->
                 @include('spec_list.textarea', ['data' => $items['specList.static.loading.config.componentConfig'], 'index' => 'specList.static.loading.config.componentConfig', 'class' => 'indent-1'])
             </template>
+
+            <p class="split-line"></p>
+
+            <!-- 展示全部规格时‘规格’信息的配置 -->
+            @include('spec_list.switch', ['data' => $items['specList.static.specAll.status'], 'index' => 'specList.static.specAll.status'])
+
+            <template v-if="settings['specList.static.specAll.status']">
+                <!-- 标题 -->
+                @include('spec_list.input', ['data' => $items['specList.static.specAll.title'], 'index' => 'specList.static.specAll.title', 'class' => 'indent-1'])
+
+                <!-- 可排序 -->
+                @include('spec_list.switch', ['data' => $items['specList.static.specAll.sortable'], 'index' => 'specList.static.specAll.sortable', 'class' => 'indent-1'])
+
+                <!-- 可搜索 -->
+                @include('spec_list.switch', ['data' => $items['specList.static.specAll.searchable'], 'index' => 'specList.static.specAll.searchable', 'class' => 'indent-1'])
+
+                <!-- 可筛选 -->
+                @include('spec_list.switch', ['data' => $items['specList.static.specAll.screenable'], 'index' => 'specList.static.specAll.screenable', 'class' => 'indent-1'])
+
+                <template v-if="settings['specList.static.specAll.screenable']">
+                    <!-- 筛选类型 -->
+                    @include('spec_list.radio', [
+                        'data' => $items['specList.static.specAll.screenType'],
+                        'index' => 'specList.static.specAll.screenType',
+                        'class' => 'indent-2',
+                        'list' => [
+                            ['text' => '单选', 'label' => 1],
+                            ['text' => '多选', 'label' => 2],
+                            ['text' => '滑块', 'label' => 3],
+                            ['text' => '时间', 'label' => 4],
+                            ['text' => '下拉菜单', 'label' => 5],
+                        ]
+                    ])
+
+                    <!-- 筛选默认值 -->
+                    @include('spec_list.textarea', ['data' => $items['specList.static.specAll.screenDefault'], 'index' => 'specList.static.specAll.screenDefault', 'class' => 'indent-2'])
+
+                    <!-- 组件配置 -->
+                    @include('spec_list.textarea', ['data' => $items['specList.static.specAll.screenConfig'], 'index' => 'specList.static.specAll.screenConfig', 'class' => 'indent-2'])
+
+                    <!-- 组件group配置 -->
+                    <template v-if="settings['specList.static.specAll.screenType'] == 1 || settings['specList.static.specAll.screenType'] == 2">
+                        @include('spec_list.textarea', ['data' => $items['specList.static.specAll.screenGroupConfig'], 'index' => 'specList.static.specAll.screenGroupConfig', 'class' => 'indent-2'])
+                    </template>
+                </template>
+            </template>
         </template>
 
         <div id="main_form_bottom" class="is-button-item">
