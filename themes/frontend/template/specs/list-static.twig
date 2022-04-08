@@ -11,6 +11,7 @@
 	<div class="region" id="data_panel">
 		<div class="stage">
 			<div class="data-panel-1">
+				{# 列表组件 #}
 				<data-list
 					{# 属性前面的冒号的作用
 					不加冒号，属性值被当做文本处理，数据类型为String。
@@ -47,10 +48,13 @@
 					:loading="config.loading"
 
 					{# 数据里多个数据放在一个属性里时的切割符号 空字符串表示不存在多个数据 #}
-					:cutting-symbol="config.cuttingSymbol"
+					:cutting-symbol="config.cuttingSymbol || undefined"
 
 					{# 数据为空时的提示 #}
 					:data-empty-text="config.dataEmptyText || undefined"
+
+					{# 排序大小写敏感 #}
+					:sort-case-sensitive="config.sortCaseSensitive"
 
 					{# 一些class #}
 					{# class-name="" #}
@@ -67,12 +71,8 @@
 {% block js %}
 	<script src="/js/lazyscript.jquery.min.js" id="lazyscript"></script>
 	<script src="/js/custom.js"></script>
-	{# <script src="/front-vue/js/c-pagination.js"></script> #}
-	{# <script src="/front-vue/js/validators.js"></script> #}
-	{# <script src="/front-vue/js/data-filter.js"></script> #}
 	<script src="/front-vue/js/list-static.js"></script>
 	<script src="/front-vue/node_modules/vue/dist/vue.global.prod.js"></script>
-	{# <script src="/front-vue/node_modules/axios/dist/axios.min.js"></script> #}
 	<script src="/front-vue/node_modules/element-plus/dist/index.full.js"></script>
 
 	<script type="text/javascript">
@@ -111,8 +111,6 @@
 		.use(ElementPlus.ElTable)
 		.use(ElementPlus.ElLoading)
 		.use(ElementPlus.ElPagination)
-		// .component('c-pagination', cPagination)
-		// .component('data-filter', dataFilter)
 		.component('data-list', dataList)
 		.mount('#data_panel');
 	</script>

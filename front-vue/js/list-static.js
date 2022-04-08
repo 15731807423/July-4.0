@@ -1,37 +1,3 @@
-// 函数调用流程
-
-// 页面加载
-// sortChange(执行默认排序)
-// group(获取可分组的字段的选项)->screenRegister(注册筛选项)
-// handleData(处理数据)->search(搜索)->screen(筛选)->screenStatistics(计算数量)->sortChange(排序)
-
-// 搜索
-// handleData(处理数据)->search(搜索)->screen(筛选)->screenStatistics(计算数量)->sortChange(排序)
-
-// 取消已选择的筛选项
-// screenClear()->handleData(处理数据)->search(搜索)->screen(筛选)->screenStatistics(计算数量)->sortChange(排序)
-
-// 清空已选择的筛选项
-// screenClear()->handleData(处理数据)->search(搜索)->screen(筛选)->screenStatistics(计算数量)->sortChange(排序)
-
-// 点击筛选
-// screenChange()->handleData(处理数据)->search(搜索)->screen(筛选)->screenStatistics(计算数量)->sortChange(排序)
-
-// 排序
-// sortChange()
-
-// 分页
-
-// 默认排序和当前排序
-// 如果tableHeader里某一列设置了sortableDefaultField为true 则用这个字段做默认排序字段
-// 如果同时设置了sortableDefaultMode为asc或desc 则用设置的这个值做默认排序方式 如果没设置或设置了非法值则为asc
-// 如果没有设置字段则用第一个能排序的字段正序做默认排序
-
-// 函数的详细调用
-// screen(筛选)->screenEffect(判断筛选项有没有生效，没有返回全部数据)->check(对每条数据进行判断符合不符合筛选项)
-// screenStatistics(计算数量)->screenGroupCount(根据集合计算筛选组里每个筛选项对应的数据数量)->checkList(获取列表里某个属性符合某个值的集合)
-// screenClear()->screenReset(重置筛选项，如果清空全部重置，如果删除一项则重置一项，不包括多选)
-
 // 计算数量的详细过程 待优化
 // 循环单选组和多选组 循环每个组里的选项 循环全部数据判断是否符合 符合的放到一个集合里计算总量
 
@@ -178,39 +144,14 @@ const dataList = {
 
             <div :class="contentClass">
                 <div v-if="screenInside.status" :class="screenInside.class">
-                    <div v-if="screenInside.userStatus" :class="screenInside.selectedClass">
-                        <div>
-                            <template v-for="(item, key) in screenAllSelected">
-                                <span v-if="item.type == 1 && screenEffect(key, item.value)" @click="screenClear(key, item.value)">{{ item.value }}</span>
-
-                                <span v-if="item.type == 2 && screenEffect(key, item.value)" v-for="(it, k) in item.value" @click="screenClear(key, it)">{{ it }}</span>
-
-                                <template v-if="item.type == 3 && screenEffect(key, item.value)">
-                                    <span v-if="item.value instanceof Array" @click="screenClear(key, it)">{{ item.value[0] }} - {{ item.value[1] }}</span>
-                                    <span v-if="typeof item.value == 'string'" @click="screenClear(key, it)">{{ item.value }}</span>
-                                </template>
-
-                                <span v-if="item.type == 4 && screenEffect(key, item.value)">
-                                    <template v-if="item.config.type == 'date' || item.config.type == 'datetime'">{{ date(item.value, true) }}</template>
-
-                                    <template v-else-if="item.config.type == 'datetimerange'">{{ date(dateRange(item.value, item.config.type)[0], true) }} - {{ date(dateRange(item.value, item.config.type)[1], true) }}</template>
-
-                                    <template v-else>{{ date(dateRange(item.value, item.config.type)[0], false) }} - {{ date(dateRange(item.value, item.config.type)[1], false) }}</template>
-
-                                </span>
-
-                                <template v-if="item.type == 5 && screenEffect(key, item.value)">
-                                    <span v-if="item.value instanceof Array" v-for="it in item.value" @click="screenClear(key, it)">{{ it }}</span>
-                                    <span v-if="typeof item.value == 'string'" @click="screenClear(key, item.value)">{{ item.value }}</span>
-                                </template>
-                            </template>
-                            <span v-if="screenSelectedStatus" @click="screenClear()">{{ screenInside.clearText }}</span>
-                        </div>
+                    <div v-if="screenInside.userStatus && userSelectedList.length > 0" :class="screenInside.selectedClass">
+                        <span v-for="item in userSelectedList" @click="screenClear(item.field, item.value)">{{ item.value }}</span>
+                        <span @click="screenClear()">{{ screenInside.clearText }}</span>
                     </div>
 
                     <div :class="screenInside.allClass">
                         <div v-for="(item, key) in screenAll">
-                            <span>{{ item.label }}</span>
+                            <span>{{ item.name }}</span>
 
                             <el-radio-group
                                 v-if="item.type == 1"
@@ -368,7 +309,7 @@ const dataList = {
                 </div>
 
                 <div :class="dataClass">
-                    <div :class="selectorInside.class">
+                    <div v-if="tableInside.status && listItem.length > 0" :class="selectorInside.class">
                         <el-radio-group
                             v-if="selectorInside"
                             v-model="selectorInside.value"
@@ -508,7 +449,7 @@ const dataList = {
         // 表格的配置信息
         table: { type: Object, default: {} },
 
-        // 如果列表是列表 传一项的html
+        // 列表的布局html
         listItem: { type: String, default: '' },
 
         // 分页的配置信息
@@ -523,6 +464,9 @@ const dataList = {
         // 数据为空时的提示
         dataEmptyText: { type: String, default: 'No Data' },
 
+        // 排序大小写敏感
+        sortCaseSensitive: { type: Boolean, default: false },
+
         // 一些元素的class
         className: { type: String, default: 'data' },
         contentClass: { type: String, default: 'data-content' },
@@ -534,7 +478,7 @@ const dataList = {
     data: function() {
         return {
             // 搜索和筛选后的数据的集合
-            screenList: this.list,
+            screenList: [],
 
             // 搜索的关键词
             keywords: this.search.default ? this.search.default : '',
@@ -584,6 +528,7 @@ const dataList = {
 
                     // ... 组件配置
                 },
+
                 // 搜索按钮的默认配置信息
                 buttonConfig: {
                     // 搜索按钮的状态
@@ -660,7 +605,7 @@ const dataList = {
                 // 全部筛选项的class
                 allClass: 'data-screen-all',
 
-                // 全部筛选项
+                // 全部筛选组
                 list: []
             },
 
@@ -676,11 +621,15 @@ const dataList = {
                     table: {
                         // 按钮文本
                         text: 'table'
+
+                        // config
                     },
                     // 列表模式配置
                     list: {
                         // 按钮文本
                         text: 'list'
+
+                        // config
                     }
                 },
 
@@ -720,6 +669,8 @@ const dataList = {
 
                 // 默认的排序方式 默认为正序 asc为正序 desc为倒序 其他非法值为正序
                 sortableDefaultMode: 'asc',
+
+                // config
             },
 
             // 分页的默认配置信息
@@ -742,7 +693,7 @@ const dataList = {
         };
     },
 
-    created: function() {
+    mounted: function() {
         this.init();
     },
 
@@ -752,12 +703,63 @@ const dataList = {
             return this.assign(this.screenList.slice((this.paginationInside.currentPage - 1) * this.paginationInside.pageSize, this.paginationInside.currentPage * this.paginationInside.pageSize));
         },
 
-        // 判断当前是否进行了筛选
-        screenSelectedStatus() {
+        // 全部已筛选项
+        userSelectedList() {
+            var list = [];
+
             for (let key in this.screenAllSelected) {
-                if (this.screenEffect(key, this.screenAllSelected[key].value)) return true;
+                let item = this.screenAllSelected[key];
+
+                if (item.type == 1 && this.screenEffect(key, item.value)) {
+                    list.push({ field: key, value: item.value });
+                }
+
+                if (item.type == 2 && this.screenEffect(key, item.value)) {
+                    for (var i = 0; i < item.value.length; i++) {
+                        list.push({ field: key, value: item.value[i] });
+                    }
+                }
+
+                if (item.type == 3 && this.screenEffect(key, item.value)) {
+                    if (item.value instanceof Array) {
+                        list.push({ field: key, value: item.value[0] + ' - ' + item.value[1] });
+                    }
+
+                    if (typeof item.value == 'string') {
+                        list.push({ field: key, value: item.value });
+                    }
+                }
+
+                if (item.type == 4 && this.screenEffect(key, item.value)) {
+                    if (item.config.type == 'date' || item.config.type == 'datetime') {
+                        list.push({ field: key, value: this.date(item.value, true) });
+                    } else if (item.config.type == 'datetimerange') {
+                        let range = this.dateRange(item.value, item.config.type);
+                        list.push({ field: key, value: this.date(range[0], true) + ' - ' + this.date(range[1], true) });
+                    } else if (item.config.type == 'dates') {
+                        for (var i = 0; i < item.value.length; i++) {
+                            list.push({ field: key, value: this.date(item.value[i], false) });
+                        }
+                    } else {
+                        let range = this.dateRange(item.value, item.config.type);
+                        list.push({ field: key, value: this.date(range[0], false) + ' - ' + this.date(range[1], false) });
+                    }
+                }
+
+                if (item.type == 5 && this.screenEffect(key, item.value)) {
+                    if (item.value instanceof Array) {
+                        for (var i = 0; i < item.value.length; i++) {
+                            list.push({ field: key, value: item.value[i] });
+                        }
+                    }
+
+                    if (typeof item.value == 'string') {
+                        list.push({ field: key, value: item.value });
+                    }
+                }
             }
-            return false;
+
+            return list;
         }
     },
 
@@ -768,7 +770,7 @@ const dataList = {
             this.handleComponentConfig();
 
             // 处理传进来的默认排序
-            this.handleCurrentSort();
+            this.handleDefaultSort();
 
             // 默认排序
             this.sortChange(this.currentSort);
@@ -790,8 +792,24 @@ const dataList = {
             this.screenInside = this.configTemplateRecursion(this.screen, this.screenInside);
             this.screenInside.groupCountType = this.screen.groupCountType.length > 0 ? this.screen.groupCountType : this.screenInside.groupCountType;
             for (var i = 0; i < this.screen.list.length; i++) {
-                this.screenInside.list.push(this.configTemplateRecursion(this.screen.list[i], this.assign(this.screenItem)));
+                let data = this.configTemplateRecursion(this.screen.list[i], this.assign(this.screenItem));
+                if (data.type == 4 && data.config.defaultTime) {
+                    data.config.defaultTime[0] = new Date(data.config.defaultTime[0] * 1000);
+                    data.config.defaultTime[1] = new Date(data.config.defaultTime[1] * 1000);
+                }
+                this.screenInside.list.push(data);
             }
+
+            // 处理表格配置
+            this.tableInside = this.configTemplateRecursion(this.table, this.tableInside);
+
+            if (this.table.column instanceof Array) {
+                for (var i = 0; i < this.table.column.length; i++) {
+                    this.tableInside.column.push(this.configTemplate(this.table.column[i], this.assign(this.tableColumn), true));
+                }
+            }
+
+            this.tableInside.config = this.configTemplate(this.table.config, this.tableInside.config, true);
 
             // 处理选择器配置
             if (!this.tableInside.status || this.listItem.length == 0) {
@@ -817,15 +835,6 @@ const dataList = {
                 }
             }
 
-            // 处理表格配置
-            this.tableInside = this.configTemplateRecursion(this.table, this.tableInside);
-
-            for (var i = 0; i < this.table.column.length; i++) {
-                this.tableInside.column.push(this.configTemplate(this.table.column[i], this.assign(this.tableColumn), true));
-            }
-
-            this.tableInside.config = this.configTemplate(this.table.config, this.tableInside.config, true);
-
             // 处理分页组件配置
             this.paginationInside = this.configTemplate(this.pagination, this.paginationInside, true);
 
@@ -834,35 +843,110 @@ const dataList = {
             this.loadingInside.config = this.configTemplate(this.loading.config, this.loadingInside.config, true);
         },
 
-        // 将一个二维数组的参数放在该参数的默认参数上
-        configTemplateRecursion(config, configInside) {
-            configInside = this.configTemplate(config, configInside, false);
+        // 处理默认排序
+        handleDefaultSort() {
+            if (!this.tableInside.status) return false;
 
-            for (let key in configInside) {
-                if (!(configInside[key] instanceof Object) || configInside[key] instanceof Array) continue;
+            for (var i = 0; i < this.tableInside.column.length; i++) {
+                // 默认排序的列必须开启排序
+                // if (this.tableInside.column[i].sortable === true && this.tableInside.column[i].sortableDefaultField === true) {}
 
-                configInside[key] = this.configTemplate(config[key], configInside[key], true);
+                // 默认排序的列可以不开启排序
+                if (this.tableInside.column[i].sortableDefaultField === true) {
+                    this.currentSort.prop = this.tableInside.column[i].field;
+                    this.currentSort.order = this.tableInside.column[i].sortableDefaultMode === 'desc' ? 'descending' : 'ascending';
+                    break;
+                }
             }
 
-            return configInside;
+            if (!this.currentSort.prop || !this.currentSort.order) {
+                for (var i = 0; i < this.tableInside.column.length; i++) {
+                    if (this.tableInside.column[i].sortable === true) {
+                        this.currentSort.prop = this.tableInside.column[i].field;
+                        this.currentSort.order = 'ascending';
+                        break;
+                    }
+                }
+            }
+
+            if (!this.currentSort.prop || !this.currentSort.order) {
+                this.currentSort.prop = this.tableInside.column[0].field;
+                this.currentSort.order = 'ascending';
+            }
+
+            this.defaultSort = this.currentSort;
         },
 
-        // 将一个一维数组的参数放在该参数的默认参数上
-        configTemplate(data, tpl, extra) {
-            tpl = tpl || {};
-            data = data || {};
-            if (extra) {
-                for (let key in data) {
-                    if (tpl[key] instanceof Array || tpl[key] instanceof Object) continue;
-                    tpl[key] = data[key] === undefined || data[key] === null ? tpl[key] : data[key];
+        // 获取可分组的字段的选项
+        group() {
+            for (var i = 0; i < this.screenInside.list.length; i++) {
+                if (this.screenInside.list[i].type == 1) {
+                    this.screenRegister(this.screenInside.list[i], this.valueListByAttr(this.screenInside.list[i].field), this.screenInside.list[i].default !== null ? this.screenInside.list[i].default : 'All', 'All');
                 }
-            } else {
-                for (let key in tpl) {
-                    if (tpl[key] instanceof Array || tpl[key] instanceof Object) continue;
-                    tpl[key] = data[key] === undefined || data[key] === null ? tpl[key] : data[key];
+                if (this.screenInside.list[i].type == 2) {
+                    this.screenRegister(this.screenInside.list[i], this.valueListByAttr(this.screenInside.list[i].field), this.screenInside.list[i].default !== null ? this.screenInside.list[i].default : this.assign([]), []);
+                }
+                if (this.screenInside.list[i].type == 3) {
+                    if (this.screenInside.list[i].config.range === true) {
+                        let max = this.screenInside.list[i].config.max === undefined ? 100 : this.screenInside.list[i].config.max,
+                            min = this.screenInside.list[i].config.min === undefined ? 0 : this.screenInside.list[i].config.min;
+                        this.screenRegister(this.screenInside.list[i], [], this.screenInside.list[i].default !== null ? this.screenInside.list[i].default : [min, max], [min, max]);
+                    } else {
+                        this.screenRegister(this.screenInside.list[i], [], this.screenInside.list[i].default !== null ? this.screenInside.list[i].default : 0, 0);
+                    }
+                }
+                if (this.screenInside.list[i].type == 4) {
+                    this.screenRegister(this.screenInside.list[i], [], this.screenInside.list[i].default, null);
+                }
+                if (this.screenInside.list[i].type == 5) {
+                    this.screenRegister(this.screenInside.list[i], this.valueListByAttr(this.screenInside.list[i].field), this.screenInside.list[i].default !== null ? this.screenInside.list[i].default : '', '');
                 }
             }
-            return tpl;
+
+            if (this.screenInside.type == 3) {
+                for (let key in this.screenAll) {
+                    if (this.screenEffect(key, this.screenAllSelected[key].value)) this.screenChange(key);
+                }
+            }
+        },
+
+        // 注册筛选项
+        screenRegister(data, list, defaultValue, all) {
+            for (var i = 0; i < list.length; i++) list[i] = { name: list[i], count: 0 };
+
+            list = this.sort(list, 'name', 'asc', 2);
+
+            if (data.type == 1) list.unshift({ name: 'All', count: 0 });
+
+            var config = data.config, configGroup = data.configGroup;
+
+            if (data.type == 1 || data.type == 2) {
+                this.screenAllSelected[data.field] = { type: data.type, value: defaultValue, config: config };
+                this.screenAll[data.field] = { name: data.name, label: data.field, list: list, type: data.type, default: defaultValue, config: config, configGroup: configGroup, all: all };
+                return false;
+            }
+
+            if (data.type == 4) {
+                config.type = config.type || 'datetimerange';
+                if (config.type == 'dates' || config.type == 'datetimerange' || config.type == 'daterange') {
+                    all = [];
+                }
+            }
+
+            if (data.type == 5) {
+                if (config.multiple === true) {
+                    all = [];
+                } else if (config.clearable === true) {
+                    all = '';
+                } else {
+                    all = 'All';
+                    defaultValue = defaultValue.length == 0 ? 'All' : defaultValue;
+                    list.unshift({ name: 'All', count: 0 });
+                }
+            }
+
+            this.screenAllSelected[data.field] = { type: data.type, value: defaultValue, config: config };
+            this.screenAll[data.field] = { name: data.name, label: data.field, list: list, type: data.type, default: defaultValue, config: config, all: all };
         },
 
         // 处理数据 先搜索 再筛选 再排序
@@ -906,95 +990,39 @@ const dataList = {
                 return false;
             }
 
-            if (!this.searchInside.status) {
+            if (!this.searchInside.status || this.keywords.length == 0) {
                 this.screenList = list;
                 return false;
             }
 
             var screenList = [], keywords = this.searchInside.caseSensitive ? this.keywords : this.keywords.toLowerCase();
             for (var i = 0; i < list.length; i++) {
+                let searchValue = [];
+
                 for (var j = 0; j < this.searchInside.field.length; j++) {
+                    if (list[i][this.searchInside.field[j]] === undefined) continue;
+
                     let value = this.searchInside.caseSensitive
                     ? list[i][this.searchInside.field[j]].toString()
                     : list[i][this.searchInside.field[j]].toString().toLowerCase();
-                    if (value.indexOf(keywords) !== -1) {
+
+                    if (this.cuttingSymbol.length == 0) {
+                        searchValue.push(value);
+                    } else {
+                        value = value.split(this.cuttingSymbol);
+                        searchValue = this.merge(searchValue, value);
+                    }
+                }
+
+                for (var j = 0; j < searchValue.length; j++) {
+                    if (searchValue[j].indexOf(keywords) !== -1) {
                         screenList.push(list[i]);
                         break;
                     }
                 }
             }
+
             this.screenList = screenList;
-        },
-
-        // 获取可分组的字段的选项
-        group() {
-            for (var i = 0; i < this.screenInside.list.length; i++) {
-                if (this.screenInside.list[i].type == 1) {
-                    this.screenRegister(this.screenInside.list[i], this.valueListByAttr(this.screenInside.list[i].field), this.screenInside.list[i].default !== null ? this.screenInside.list[i].default : 'All', 'All');
-                }
-                if (this.screenInside.list[i].type == 2) {
-                    this.screenRegister(this.screenInside.list[i], this.valueListByAttr(this.screenInside.list[i].field), this.screenInside.list[i].default !== null ? this.screenInside.list[i].default : this.assign([]), []);
-                }
-                if (this.screenInside.list[i].type == 3) {
-                    if (this.screenInside.list[i].config.range === true) {
-                        let max = this.screenInside.list[i].config.max === undefined ? 100 : this.screenInside.list[i].config.max,
-                            min = this.screenInside.list[i].config.min === undefined ? 0 : this.screenInside.list[i].config.min;
-                        this.screenRegister(this.screenInside.list[i], [], this.screenInside.list[i].default !== null ? this.screenInside.list[i].default : [min, max], [min, max]);
-                    } else {
-                        this.screenRegister(this.screenInside.list[i], [], this.screenInside.list[i].default !== null ? this.screenInside.list[i].default : 0, 0);
-                    }
-                }
-                if (this.screenInside.list[i].type == 4) {
-                    this.screenRegister(this.screenInside.list[i], [], this.screenInside.list[i].default, null);
-                }
-                if (this.screenInside.list[i].type == 5) {
-                    this.screenRegister(this.screenInside.list[i], this.valueListByAttr(this.screenInside.list[i].field), this.screenInside.list[i].default !== null ? this.screenInside.list[i].default : '', '');
-                }
-            }
-
-            if (this.screenInside.type == 3) {
-                for (let key in this.screenAll) {
-                    if (this.screenEffect(key, this.screenAllSelected[key].value)) this.screenChange(key);
-                }
-            }
-        },
-
-        // 注册筛选项
-        screenRegister(data, list, defaultValue, all) {
-            for (var i = 0; i < list.length; i++) list[i] = { name: list[i], count: 0 };
-
-            if (data.type == 1) list.unshift({ name: 'All', count: 0 });
-
-            var config = data.config, configGroup = data.configGroup;
-
-            if (data.type == 1 || data.type == 2) {
-                this.screenAllSelected[data.name] = { type: data.type, value: defaultValue, config: config };
-                this.screenAll[data.name] = { label: data.field, list: list, type: data.type, default: defaultValue, config: config, configGroup: configGroup, all: all };
-                return false;
-            }
-
-            if (data.type == 4) {
-                config.type = config.type || 'datetimerange';
-                if (config.type == 'datetimerange' || config.type == 'daterange') {
-                    all = [];
-                }
-            }
-
-            if (data.type == 5) {
-                if (config.multiple === true) {
-                    all = [];
-                } else if (config.clearable === true) {
-                    all = '';
-                } else {
-                    all = 'All';
-                    defaultValue = defaultValue.length == 0 ? 'All' : defaultValue;
-                    list.unshift({ name: 'All', count: 0 });
-                }
-            }
-
-            this.screenAllSelected[data.name] = { type: data.type, value: defaultValue, config: config };
-
-            this.screenAll[data.name] = { label: data.field, list: list, type: data.type, default: defaultValue, config: config, all: all };
         },
 
         // 用户点击进行筛选
@@ -1050,6 +1078,7 @@ const dataList = {
 
         // 根据screenInside.type计算出每个筛选选项的数量
         screenStatistics(index) {
+            // 显示数值或隐藏空都需要计算 否则不计算
             if (!this.screenInside.countStatus && !this.screenInside.nullHidden) return false;
 
             var list = this.assign(this.list);
@@ -1133,6 +1162,8 @@ const dataList = {
         valueListByAttr(attr) {
             let list = [];
             for (var j = 0; j < this.list.length; j++) {
+                if (this.list[j][attr] === undefined) continue;
+
                 if (this.cuttingSymbol.length == 0 || this.list[j][attr].indexOf(this.cuttingSymbol) === -1) {
                     if (list.indexOf(this.list[j][attr]) == -1) {
                         list.push(this.list[j][attr]);
@@ -1152,12 +1183,14 @@ const dataList = {
         // 判断一条数据符合不符合条件
         check(data, condition) {
             for (let key in condition) {
+                if (data[key] === undefined) continue;
+
                 if (condition[key].type == 1) {
-                    let value = this.cuttingSymbol.length == 0 ? data[key] : data[key].split(this.cuttingSymbol);
+                    let value = this.cuttingSymbol.length == 0 ? [data[key]] : data[key].split(this.cuttingSymbol);
                     if (condition[key].value !== 'All' && value.indexOf(condition[key].value) === -1) return false;
                 }
                 if (condition[key].type == 2) {
-                    let value = this.cuttingSymbol.length == 0 ? data[key] : data[key].split(this.cuttingSymbol);
+                    let value = this.cuttingSymbol.length == 0 ? [data[key]] : data[key].split(this.cuttingSymbol);
                     if (condition[key].value.length > 0 && this.intersect(value, condition[key].value).length == 0) return false;
                 }
                 if (condition[key].type == 3) {
@@ -1171,7 +1204,15 @@ const dataList = {
                 if (condition[key].type == 4) {
                     let value = typeof data[key] == 'number' ? data[key] : Date.parse(data[key]) / 1000;
                     let date = this.dateRange(condition[key].value, condition[key].config.type);
-                    if (value < date[0] || value > date[1]) return false;
+                    if (condition[key].config.type == 'dates') {
+                        var status = false;
+                        for (var i = 0; i < date.length; i++) {
+                            if (value >= date[i][0] && value <= date[i][1]) status = true;
+                        }
+                        return status;
+                    } else {
+                        if (value < date[0] || value > date[1]) return false;
+                    }
                 }
                 if (condition[key].type == 5) {
                     let value = this.cuttingSymbol.length == 0 ? data[key] : data[key].split(this.cuttingSymbol);
@@ -1194,7 +1235,7 @@ const dataList = {
 
                 this.screenSort = [];
             } else {
-                if (this.screenAllSelected[name].type == 2 || (this.screenAllSelected[name].type == 5 && this.screenAllSelected[name].value instanceof Array)) {
+                if (this.screenAllSelected[name].type == 2 || (this.screenAllSelected[name].type == 4 && this.screenAllSelected[name].config.type == 'dates') || (this.screenAllSelected[name].type == 5 && this.screenAllSelected[name].value instanceof Array)) {
                     this.screenAllSelected[name].value.splice(this.screenAllSelected[name].value.indexOf(value), 1);
                 } else {
                     this.screenAllSelected[name] = this.screenReset(name);
@@ -1210,35 +1251,7 @@ const dataList = {
 
         // 根据筛选结果的类型返回重置结果
         screenReset(name) {
-            return { type: this.screenAll[name].type, value: this.screenAll[name].all };
-        },
-
-        // 处理默认排序
-        handleCurrentSort() {
-            if (this.tableInside.status) {
-                for (var i = 0; i < this.tableInside.column.length; i++) {
-                    // 默认排序的列必须开启排序
-                    // if (this.tableInside.column[i].sortable === true && this.tableInside.column[i].sortableDefaultField === true) {}
-
-                    // 默认排序的列可以不开启排序
-                    if (this.tableInside.column[i].sortableDefaultField === true) {
-                        this.currentSort.prop = this.tableInside.column[i].field;
-                        this.currentSort.order = this.tableInside.column[i].sortableDefaultMode === 'desc' ? 'descending' : 'ascending';
-                        break;
-                    }
-                }
-
-                if (!this.currentSort.prop || !this.currentSort.order) {
-                    for (var i = 0; i < this.tableInside.column.length; i++) {
-                        if (this.tableInside.column[i].sortable === true) {
-                            this.currentSort.prop = this.tableInside.column[i].field;
-                            this.currentSort.order = 'ascending';
-                            break;
-                        }
-                    }
-                }
-                this.defaultSort = this.currentSort;
-            }
+            return { type: this.screenAll[name].type, value: this.screenAll[name].all, config: this.screenAll[name].config };
         },
 
         // 排序时对整个筛选后的数组排序，默认某个字段正序
@@ -1274,29 +1287,77 @@ const dataList = {
             }
             if (type == 2 && order == 'asc') {
                 var func = function (a, b) {
+                    if (a[field] === undefined && b[field] === undefined) {
+                        return 0;
+                    } else if (a[field] === undefined) {
+                        return 1;
+                    } else if (b[field] === undefined) {
+                        return -1;
+                    }
+
                     a = _this.sortCaseSensitive ? a[field] : a[field].toLowerCase();
                     b = _this.sortCaseSensitive ? b[field] : b[field].toLowerCase();
+
+                    // 如果两个字段都是数字就比大小
+                    if (!isNaN(Number(a)) && !isNaN(Number(b))) return _this.sortFunc(a, b, 1);
+
                     return _this.sortFunc(a, b, 2);
                 }
             }
             if (type == 2 && order == 'desc') {
                 var func = function (a, b) {
+                    if (a[field] === undefined && b[field] === undefined) {
+                        return 0;
+                    } else if (a[field] === undefined) {
+                        return -1;
+                    } else if (b[field] === undefined) {
+                        return 1;
+                    }
+
                     a = _this.sortCaseSensitive ? a[field] : a[field].toLowerCase();
                     b = _this.sortCaseSensitive ? b[field] : b[field].toLowerCase();
+
+                    // 如果两个字段都是数字就比大小
+                    if (!isNaN(Number(a)) && !isNaN(Number(b))) return _this.sortFunc(b, a, 1);
+
                     return _this.sortFunc(b, a, 2);
                 }
             }
             if (type == 3 && order == 'asc') {
                 var func = function (a, b) {
+                    if (a[field] === undefined && b[field] === undefined) {
+                        return 0;
+                    } else if (a[field] === undefined) {
+                        return 1;
+                    } else if (b[field] === undefined) {
+                        return -1;
+                    }
+
                     a = _this.sortCaseSensitive ? a[field] : a[field].toLowerCase();
                     b = _this.sortCaseSensitive ? b[field] : b[field].toLowerCase();
+
+                    // 如果两个字段都是数字就比大小
+                    if (!isNaN(Number(a)) && !isNaN(Number(b))) return _this.sortFunc(a, b, 1);
+
                     return a.localeCompare(b, 'zh');
                 }
             }
             if (type == 3 && order == 'desc') {
                 var func = function (a, b) {
+                    if (a[field] === undefined && b[field] === undefined) {
+                        return 0;
+                    } else if (a[field] === undefined) {
+                        return -1;
+                    } else if (b[field] === undefined) {
+                        return 1;
+                    }
+
                     a = _this.sortCaseSensitive ? a[field] : a[field].toLowerCase();
                     b = _this.sortCaseSensitive ? b[field] : b[field].toLowerCase();
+
+                    // 如果两个字段都是数字就比大小
+                    if (!isNaN(Number(a)) && !isNaN(Number(b))) return _this.sortFunc(b, a, 1);
+
                     return b.localeCompare(a, 'zh');
                 }
             }
@@ -1313,10 +1374,43 @@ const dataList = {
             }
         },
 
+        // 获取时间戳对应时间类型的时间戳范围
         dateRange(data, type) {
-            if (data instanceof Array) {
+            if (data instanceof Array && type != 'dates' && type != 'monthrange') {
                 data[0] = parseInt(data[0]);
                 data[1] = parseInt(data[1]);
+                return data;
+            }
+
+            if (type == 'dates') {
+                for (var i = 0; i < data.length; i++) {
+                    data[i] = parseInt(data[i]) * 1000;
+                    let date    = new Date(data[i]),
+                        year    = date.getFullYear(),
+                        month   = date.getMonth(),
+                        day     = date.getDate(),
+                        start   = new Date(year, month, day).getTime() / 1000,
+                        end     = new Date(year, month, day + 1).getTime() / 1000 - 1;
+                    data[i] = [start, end];
+                }
+                return data;
+            }
+
+            if (type == 'monthrange') {
+                data[0] = parseInt(data[0]) * 1000;
+                data[1] = parseInt(data[1]) * 1000;
+
+                var date    = new Date(data[0]),
+                    year    = date.getFullYear(),
+                    month   = date.getMonth();
+
+                data[0] = new Date(year, month, 1).getTime() / 1000;
+
+                var date    = new Date(data[1]),
+                    year    = date.getFullYear(),
+                    month   = date.getMonth();
+
+                data[1] = new Date(year, month + 1, 1).getTime() / 1000 - 1;
                 return data;
             }
 
@@ -1357,11 +1451,46 @@ const dataList = {
             }
         },
 
+        // 将一个二维数组的参数放在该参数的默认参数上
+        configTemplateRecursion(config, configInside) {
+            configInside = this.configTemplate(config, configInside, false);
+
+            for (let key in configInside) {
+                if (!(configInside[key] instanceof Object) || configInside[key] instanceof Array) continue;
+
+                configInside[key] = this.configTemplate(config[key], configInside[key], true);
+            }
+
+            return configInside;
+        },
+
+        // 将一个一维数组的参数放在该参数的默认参数上
+        configTemplate(data, tpl, extra) {
+            tpl = tpl || {};
+            data = data || {};
+            if (extra) {
+                for (let key in data) {
+                    if (tpl[key] instanceof Array || tpl[key] instanceof Object) continue;
+                    tpl[key] = data[key] === undefined || data[key] === null ? tpl[key] : data[key];
+                }
+            } else {
+                for (let key in tpl) {
+                    if (tpl[key] instanceof Array || tpl[key] instanceof Object) continue;
+                    tpl[key] = data[key] === undefined || data[key] === null ? tpl[key] : data[key];
+                }
+            }
+            return tpl;
+        },
+
         // 筛选函数
         sortFunc(a, b, n, i = 0) {
             if (n == 1) return a - b;
 
             if (n == 2) {
+                if (isNaN(a.charCodeAt(i)) && isNaN(b.charCodeAt(i))) return 0;
+                if (isNaN(a.charCodeAt(i))) return -1;
+                if (isNaN(b.charCodeAt(i))) return 1;
+
                 if (a.charCodeAt(i) == b.charCodeAt(i)) {
                     return this.sortFunc(a, b, n, i + 1);
                 } else {
@@ -1380,9 +1509,15 @@ const dataList = {
             return a.filter(item => new Set(b).has(item))
         },
 
+        // 合并数组
+        merge(a, b) {
+            a.push.apply(a, b);
+            return a;
+        },
+
         // 数组去重
         unique(a) {
             return [...new Set(a)];
         }
-    },
+    }
 };
