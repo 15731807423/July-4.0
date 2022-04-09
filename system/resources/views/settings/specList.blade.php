@@ -190,7 +190,10 @@
 
             <p class="split-line"></p>
 
-            <!-- 展示全部规格时‘规格’信息的配置 -->
+            <!-- 查看全部规格时使用的配置信息 -->
+            @include('spec_list.select', ['data' => $items['specList.static.specAll.specConfig'], 'index' => 'specList.static.specAll.specConfig', 'list' => specs_name()])
+
+            <!-- 查看全部规格时‘规格’信息的配置 -->
             @include('spec_list.switch', ['data' => $items['specList.static.specAll.status'], 'index' => 'specList.static.specAll.status'])
 
             <template v-if="settings['specList.static.specAll.status']">

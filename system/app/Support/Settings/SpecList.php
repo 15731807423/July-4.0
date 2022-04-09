@@ -255,6 +255,12 @@ class SpecList extends SettingGroupBase
             'description' => '加载组件的配置信息',
         ],
 
+        'specList.static.specAll.specConfig' => [
+            'key' => 'specList.specAll.specConfig',
+            'label' => '查看全部规格时使用的配置信息',
+            'description' => '查看全部规格时使用哪个规格的配置信息',
+        ],
+
         'specList.static.specAll.status' => [
             'key' => 'specList.specAll.status',
             'label' => '查看全部规格时显示‘规格’信息',

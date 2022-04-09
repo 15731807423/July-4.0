@@ -63,6 +63,7 @@ return [
 			]
 		],
 		'specAll' => [
+			'specConfig' => null,
 			'status' => false,
 			'title' => 'Category',
 			'sortable' => false,
