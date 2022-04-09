@@ -92,6 +92,7 @@ const dataList = {
         <div :class="className">
             <div v-if="searchInside.status" :class="searchInside.class">
                 <el-input
+                    v-if="searchInside.status"
                     v-model="keywords"
                     :class="searchInside.inputConfig.class"
                     :type="searchInside.inputConfig.type"
@@ -124,7 +125,7 @@ const dataList = {
                     @change="handleData(-1, 'searchChange')"
                 ></el-input>
                 <el-button
-                    v-if="searchInside.buttonConfig.status"
+                    v-if="searchInside.status && searchInside.buttonConfig.status"
                     :class="searchInside.buttonConfig.class"
                     :size="searchInside.buttonConfig.size"
                     :type="searchInside.buttonConfig.type"
@@ -144,12 +145,12 @@ const dataList = {
 
             <div :class="contentClass">
                 <div v-if="screenInside.status" :class="screenInside.class">
-                    <div v-if="screenInside.userStatus && userSelectedList.length > 0" :class="screenInside.selectedClass">
+                    <div v-if="screenInside.status && screenInside.userStatus && userSelectedList.length > 0" :class="screenInside.selectedClass">
                         <span v-for="item in userSelectedList" @click="screenClear(item.field, item.value)">{{ item.value }}</span>
                         <span @click="screenClear()">{{ screenInside.clearText }}</span>
                     </div>
 
-                    <div :class="screenInside.allClass">
+                    <div v-if="screenInside.status" :class="screenInside.allClass">
                         <div v-for="(item, key) in screenAll">
                             <span>{{ item.name }}</span>
 
@@ -1254,13 +1255,19 @@ const dataList = {
             return { type: this.screenAll[name].type, value: this.screenAll[name].all, config: this.screenAll[name].config };
         },
 
-        // 排序时对整个筛选后的数组排序，默认某个字段正序
+        // 排序时对整个筛选后的数组排序
         sortChange(data) {
             if (data.order === null) data = this.defaultSort;
 
             this.currentSort = data;
 
-            var number = typeof this.list[0][data.prop] === 'number';
+            var number = true;
+            for (var i = 0; i < this.list.length; i++) {
+                if (isNaN(Number(this.list[i][data.prop]))) {
+                    number = false;
+                    break;
+                }
+            }
 
             if (data.order === 'ascending') {
                 this.screenList = this.sort(this.screenList, data.prop, 'asc', number ? 1 : 2);
@@ -1298,9 +1305,6 @@ const dataList = {
                     a = _this.sortCaseSensitive ? a[field] : a[field].toLowerCase();
                     b = _this.sortCaseSensitive ? b[field] : b[field].toLowerCase();
 
-                    // 如果两个字段都是数字就比大小
-                    if (!isNaN(Number(a)) && !isNaN(Number(b))) return _this.sortFunc(a, b, 1);
-
                     return _this.sortFunc(a, b, 2);
                 }
             }
@@ -1316,9 +1320,6 @@ const dataList = {
 
                     a = _this.sortCaseSensitive ? a[field] : a[field].toLowerCase();
                     b = _this.sortCaseSensitive ? b[field] : b[field].toLowerCase();
-
-                    // 如果两个字段都是数字就比大小
-                    if (!isNaN(Number(a)) && !isNaN(Number(b))) return _this.sortFunc(b, a, 1);
 
                     return _this.sortFunc(b, a, 2);
                 }
@@ -1336,9 +1337,6 @@ const dataList = {
                     a = _this.sortCaseSensitive ? a[field] : a[field].toLowerCase();
                     b = _this.sortCaseSensitive ? b[field] : b[field].toLowerCase();
 
-                    // 如果两个字段都是数字就比大小
-                    if (!isNaN(Number(a)) && !isNaN(Number(b))) return _this.sortFunc(a, b, 1);
-
                     return a.localeCompare(b, 'zh');
                 }
             }
@@ -1354,9 +1352,6 @@ const dataList = {
 
                     a = _this.sortCaseSensitive ? a[field] : a[field].toLowerCase();
                     b = _this.sortCaseSensitive ? b[field] : b[field].toLowerCase();
-
-                    // 如果两个字段都是数字就比大小
-                    if (!isNaN(Number(a)) && !isNaN(Number(b))) return _this.sortFunc(b, a, 1);
 
                     return b.localeCompare(a, 'zh');
                 }
