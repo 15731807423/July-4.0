@@ -293,7 +293,7 @@ class RecordController extends Controller
             if (!is_null($value['screen_config'])) $item['config'] = $this->formatConfigValue($value['screen_config']);
             if (!is_null($value['screen_config_group'])) $item['configGroup'] = $this->formatConfigValue($value['screen_config_group']);
 
-            if ($item['type'] == 2 || ($item['type'] == 3 && $item['config']['range'])) {
+            if ($item['type'] == 2 || ($item['type'] == 3 && isset($item['config']['range']) && $item['config']['range'])) {
                 if (isset($item['default'])) {
                     $item['default'] = format_value($item['default']);
                 }
