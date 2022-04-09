@@ -7,6 +7,7 @@ use App\Support\Types;
 use Illuminate\Contracts\View\Factory as ViewFactory;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use Specs\spec;
 
 if (! function_exists('backend_path')) {
     /**
@@ -321,5 +322,19 @@ if (! function_exists('format_value')) {
         } catch (\Throwable $e) {
             return $value;
         }
+    }
+}
+
+if (! function_exists('specs_name')) {
+    /**
+     * 全部规格名称
+     *
+     * @return array
+     */
+    function specs_name()
+    {
+        return Spec::all()->map(function(Spec $spec) {
+            return $spec->attributesToArray()['id'];
+        })->all();
     }
 }
