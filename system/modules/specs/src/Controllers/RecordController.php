@@ -146,6 +146,8 @@ class RecordController extends Controller
      */
     public function list(Spec $spec, Request $request)
     {
+        // return html_compress(app('twig')->render('specs/a.twig', []));
+
         $type = config('specList.model', 'static');
 
         // 用JS处理数据
@@ -195,17 +197,35 @@ class RecordController extends Controller
 
         $data = $this->staticData($spec, $data);
 
+        if ($keywords = $request->input('keywords')) {
+            $data['config']['search']['default'] = $keywords;
+        }
+
         // exit(htmlentities(json_encode($data)));
 
+        // 用js组件 页面路径 themes/frontend/template/specs/list-static.twig 组件路径 front-vue/js/list-static.js
         return html_compress(app('twig')->render('specs/list-static.twig', $data));
+
+        // 直接写在页面里 页面路径 themes/frontend/template/specs/list-static2.twig
+        // return html_compress(app('twig')->render('specs/list-static2.twig', $data));
     }
 
     // 查看全部规格的列表
     private function staticSpecs($spec, $request)
     {
-        $spec = Spec::all()->map(function(Spec $spec) {
+        $specs = Spec::all()->map(function(Spec $spec) {
             return $spec;
-        })->all()[0];
+        })->all();
+
+        if ($spec = config('specList.static.specAll.specConfig')) {
+            foreach ($specs as $key => $value) {
+                if ($spec == $value->attributesToArray()['id']) {
+                    $spec = $value;
+                }
+            }
+        } else {
+            $spec = $specs[0];
+        }
 
         $data = Engine::make($request)->search();
 
@@ -214,18 +234,24 @@ class RecordController extends Controller
         foreach ($data as $key => $value) {
             foreach ($value['records'] as $k => $val) {
                 $value['records'][$k]['spec'] = $value['attributes']['id'];
-
                 $value['records'][$k]['id'] = intval($val['id']);
             }
-
             $list = array_merge($list, $value['records']);
         }
 
         $data = $this->staticData($spec, $list);
 
+        if ($keywords = $request->input('keywords')) {
+            $data['config']['search']['default'] = $keywords;
+        }
+
         // exit(htmlentities(json_encode($data)));
 
+        // 用js组件 页面路径 themes/frontend/template/specs/list-static.twig 组件路径 front-vue/js/list-static.js
         return html_compress(app('twig')->render('specs/list-static.twig', $data));
+
+        // 直接写在页面里 页面路径 themes/frontend/template/specs/list-static2.twig
+        // return html_compress(app('twig')->render('specs/list-static2.twig', $data));
     }
 
     private function staticData($spec, $list)
