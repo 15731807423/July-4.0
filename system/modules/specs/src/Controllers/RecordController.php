@@ -150,30 +150,14 @@ class RecordController extends Controller
 
         $type = config('specList.model', 'static');
 
-        // 用JS处理数据
-        if ($type === 'static') {
-            if ($spec->getKey()) {
-                // 查看一个规格的列表
-                return $this->staticSpec($spec, $request);
-            } else {
-                // 查看全部规格的列表
-                return $this->staticSpecs($spec, $request);
-            }
-        }
-
-        // 用PHP处理数据
-        if ($type === 'dynamic') {
-            if ($spec->getKey()) {
-                // 查看一个规格的列表
-                return $this->dynamicSpec($spec, $request);
-            } else {
-                // 查看全部规格的列表
-                return $this->dynamicSpecs($spec, $request);
-            }
+        if ($spec->getKey()) {
+            return $this->{$type . 'Spec'}($spec, $request);
+        } else {
+            return $this->staticSpecs($spec, $request);
         }
     }
 
-    // PHP处理数据时获取数据的接口 暂时不用
+    // PHP处理数据时获取数据的接口
     public function getlist(Request $request)
     {
         $data = $request->all();
@@ -434,13 +418,6 @@ class RecordController extends Controller
     private function getListConfig($model)
     {
         $data = config('specList', []);
-        if ($data['model'] != $model) return [];
-        $data = array_merge(
-            $data[$model],
-            ['cuttingSymbol' => $data['cuttingSymbol']],
-            ['dataEmptyText' => $data['dataEmptyText']],
-            ['sortCaseSensitive' => $data['sortCaseSensitive']]
-        );
 
         if (is_null($data['search']['inputConfig']['componentConfig'])) {
             unset($data['search']['inputConfig']['componentConfig']);
