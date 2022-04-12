@@ -72,6 +72,8 @@ class ListController extends Controller
             return $spec;
         })->all();
 
+        if (count($specs) == 0) abort(404);
+
         if ($spec = config('specList.static.specAll.specConfig')) {
             foreach ($specs as $key => $value) {
                 if ($spec == $value->attributesToArray()['id']) {
