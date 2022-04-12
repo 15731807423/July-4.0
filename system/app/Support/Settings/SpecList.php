@@ -274,6 +274,13 @@ class SpecList extends SettingGroupBase
             'default' => 'Category'
         ],
 
+        'specList.specAll.order' => [
+            'key' => 'specList.specAll.order',
+            'label' => '位置',
+            'description' => '表格里‘规格’列所在的位置',
+            'default' => '1'
+        ],
+
         'specList.specAll.sortable' => [
             'key' => 'specList.specAll.sortable',
             'label' => '可排序',
@@ -296,6 +303,13 @@ class SpecList extends SettingGroupBase
             'key' => 'specList.specAll.screenType',
             'label' => '筛选类型',
             'description' => '列表里的‘规格’的筛选类型',
+        ],
+
+        'specList.specAll.screenOrder' => [
+            'key' => 'specList.specAll.screenOrder',
+            'label' => '筛选组位置',
+            'description' => '全部筛选组里的位置',
+            'default' => '1'
         ],
 
         'specList.specAll.screenDefault' => [
