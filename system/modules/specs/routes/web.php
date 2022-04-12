@@ -40,10 +40,7 @@ Route::get('specs/{spec}/records/{record_id}', [Controllers\RecordController::cl
     ->name('specs.record.show');
 
 // 规格列表页
-Route::get('specs/list/{spec?}', [Controllers\RecordController::class, 'list'])->name('specs.list.get');
+Route::get('specs/list/{spec?}', [Controllers\ListController::class, 'list'])->name('specs.list.get');
 
 // 规格列表页
-Route::post('specs/getlist/{spec?}', [Controllers\RecordController::class, 'getlist'])->name('specs.getlist.post');
-
-// 规格筛选项
-Route::post('specs/getscreen/{spec?}', [Controllers\RecordController::class, 'getscreen'])->name('specs.getscreen.post');
+Route::post('specs/getlist/{spec?}', [Controllers\ListController::class, 'getlist'])->name('specs.getlist.post');
