@@ -121,8 +121,8 @@ const dataList = {
                     :tabindex="searchInside.inputConfig.tabindex"
                     :validate-event="searchInside.inputConfig.validateEvent"
                     :input-style="searchInside.inputConfig.inputStyle"
-                    @input="handleData(-1, 'searchInput')"
-                    @change="handleData(-1, 'searchChange')"
+                    @input="handleData('searchInput')"
+                    @change="handleData('searchChange')"
                 ></el-input>
                 <el-button
                     v-if="searchInside.status && searchInside.buttonConfig.status"
@@ -952,7 +952,7 @@ const dataList = {
 
         // 处理数据 先搜索 再筛选 再排序
         // 每次搜索或筛选执行这里 排序直接执行sortChange
-        handleData(index = -1, source = '') {
+        handleData(source = '') {
             if (source === 'searchInput' && this.searchInside.inputConfig.onInput !== true) return false;
             if (source === 'searchChange' && this.searchInside.inputConfig.onChange !== true) return false;
 
@@ -961,7 +961,7 @@ const dataList = {
             setTimeout(() => {
                 setTimeout(() => {
                     // 计算出每个筛选选项的数量
-                    if (this.screenInside.status) this.screenStatistics(index);
+                    if (this.screenInside.status) this.screenStatistics();
                 }, 500);
 
                 // 先处理搜索 把结果赋值给screenList
@@ -985,13 +985,15 @@ const dataList = {
         },
 
         // 根据关键词对可搜索的字段筛选查询
-        searchFunc(list) {
+        searchFunc(list, value = false) {
             if (this.keywords.length > 0 && this.searchInside.field.length == 0) {
+                if (value) return [];
                 this.screenList = [];
                 return false;
             }
 
             if (!this.searchInside.status || this.keywords.length == 0) {
+                if (value) return list;
                 this.screenList = list;
                 return false;
             }
@@ -1023,6 +1025,8 @@ const dataList = {
                 }
             }
 
+            if (value) return screenList;
+
             this.screenList = screenList;
         },
 
@@ -1050,7 +1054,7 @@ const dataList = {
                 }
             }
 
-            this.handleData(index);
+            this.handleData();
         },
 
         // 筛选
@@ -1078,11 +1082,11 @@ const dataList = {
         },
 
         // 根据screenInside.type计算出每个筛选选项的数量
-        screenStatistics(index) {
+        screenStatistics() {
             // 显示数值或隐藏空都需要计算 否则不计算
             if (!this.screenInside.countStatus && !this.screenInside.nullHidden) return false;
 
-            var list = this.assign(this.list);
+            var list = this.searchFunc(this.assign(this.list), true);
 
             if (this.screenInside.type == 1 || this.screenInside.type == 2) {
                 // 耗时0.5 - 0.6
@@ -1117,7 +1121,7 @@ const dataList = {
 
             if (this.screenInside.type == 4) {
                 for (let key in this.screenAll) {
-                    var list = this.assign(this.list);
+                    var list = this.searchFunc(this.assign(this.list), true);
 
                     for (let key2 in this.screenAll) {
                         if (key == key2) continue;
@@ -1477,7 +1481,7 @@ const dataList = {
             return tpl;
         },
 
-        // 筛选函数
+        // 排序函数
         sortFunc(a, b, n, i = 0) {
             if (n == 1) return a - b;
 
