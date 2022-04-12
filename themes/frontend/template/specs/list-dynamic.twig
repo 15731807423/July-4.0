@@ -1,190 +1,99 @@
-<!DOCTYPE html>
-<html>
-<head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title></title>
+{% extends "_layout.twig" %}
+{% use "_blocks.twig" %}
 
-	<link rel="stylesheet" href="/front-vue/node_modules/element-plus/dist/index.css">
+{% block headAssets -%}
+	<link rel="stylesheet" type="text/css" href="/front-vue/node_modules/element-plus/dist/index.css">
+{% endblock -%}
 
-	<script src="/js/lazyscript.jquery.min.js" id="lazyscript"></script>
-	<script src="/js/custom.js"></script>
-	<script src="/front-vue/js/c-pagination.js"></script>
-	<script src="/front-vue/js/validators.js"></script>
-	<script src="/front-vue/js/data-filter.js"></script>
-	<script src="/front-vue/js/list-dynamic.js"></script>
-	<script src="/front-vue/node_modules/vue/dist/vue.global.prod.js"></script>
-	<script src="/front-vue/node_modules/axios/dist/axios.min.js"></script>
-	<script src="/front-vue/node_modules/element-plus/dist/index.full.js"></script>
-</head>
-<body>
+{% block lang_multiple -%}{% endblock -%}
+
+{% block main %}
 	<div class="region" id="data_panel">
 		<div class="stage">
 			<div class="data-panel-1">
+				{# 列表组件 #}
 				<data-list
 					{# 属性前面的冒号的作用
 					不加冒号，属性值被当做文本处理，数据类型为String。
 					加了冒号，属性值被当做js表达式处理，可以传数字、字符串、布尔、变量、函数、js语法等。 #}
 
-					{# 允许筛选的字段 对象数组 筛选组的名字（name）、字段（field）和筛选类型（type） #}
-					{# 筛选类型 1.单选 2.多选 3.滑块 4.日期范围 5.下拉菜单 #}
-					{# [{ name: 'by name', field: 'name', type: 1 }] #}
-					:groupable="groupable"
+					{# 规格的名称 #}
+					:name="name"
 
-					{# 如果列表是表格 传表头 #}
-					:table-header="tableHeader"
+					{# 搜索的配置信息 #}
+					:search="config.search"
+
+					{# 筛选的配置信息 #}
+					:screen="config.screen"
+
+					{# 模式选择器的配置信息 #}
+					:selector="config.selector"
+
+					{# 表格的配置信息 #}
+					:table="table"
 
 					{# 如果列表是列表 传一项的html 目前 html不会被vue解析 需要手动替换标签的值 不支持任何js事件 #}
 					:list-item="listItem"
 
-					{# 模式选择器配置 #}
-					:selector="selector"
+					{# 分页的配置信息 #}
+					:pagination="config.pagination"
 
-					list-api="{{ short_url('specs.getlist.post') }}"
-
-					screen-api="{{ short_url('specs.getscreen.post') }}"
-
-					{# 表格配置 #}
-					{# :table="{ showSummary: true, summaryMethod: a }" #}
-
-					{# 搜索框配置 #}
-					{# :search-input="{ placeholder: 'aaaaaaaaaaaaaaaaaaaaaaa', onInput: false }" #}
-
-					{# 搜索按钮配置 #}
-					{# :search-button="{ status: true }" #}
-
-					{# 分页组件配置 #}
-					:pagination="{ pageSizes: [1, 2, 3, 10000], background: false, hideOnSinglePage: false, layout: 'total, sizes, prev, pager, next, jumper' }"
-
-					{# 是否启用搜索功能 #}
-					{# :search-status="false" #}
-
-					{# 默认关键词 #}
-					{# keywords-default="1111" #}
+					{# 加载的配置信息 #}
+					:loading="config.loading"
 
 					{# 数据里多个数据放在一个属性里时的切割符号 空字符串表示不存在多个数据 #}
-					{# cutting-symbol="|" #}
+					:cutting-symbol="config.cuttingSymbol || undefined"
 
-					{# 是否启用筛选功能 #}
-					{# :screen-status="false" #}
+					{# 数据为空时的提示 #}
+					:data-empty-text="config.dataEmptyText || undefined"
 
-					{# 是否启用显示已筛选项 #}
-					{# :screen-user-status="false" #}
+					{# 排序大小写敏感 #}
+					:sort-case-sensitive="config.sortCaseSensitive"
 
-					{# 是否启用显示筛选项后面的数值 #}
-					:screen-count-status="true"
-
-					{# 清空全部筛选的文本 #}
-					{# screen-clear-text="清空全部选项" #}
-
-					{# 筛选组之间的关联方式 #}
-					{# 1 根据screenAll的内容排序 逐级计算数量 0.5 #}
-					{# 2 根据screenAll的内容排序 逐级计算数量 且点击高级的筛选组时会重置低级的筛选组 0.5 #}
-					{# 3 根据点击筛选组的顺序排序 逐级计算数量 0.4 #}
-					{# 4 根据其他筛选组筛选的结果计算当前筛选组每个筛选项的数量 1 #}
-					:screen-type="4"
-
-					{# 隐藏对应数据数量为0的选项 #}
-					{# :screen-null-hidden="true" #}
-
-					{# 排序时大小写敏感 #}
-					{# :sort-case-sensitive="false" #}
-
-					{# 允许加载内容时出现加载的动态效果 #}
-					:loading-status="true"
-				/>
+					{# 一些class #}
+					{# class-name="" #}
+					{# content-class="" #}
+					{# data-class="" #}
+					{# list-class="" #}
+					{# listItem-class="" #}
+				/></data-list>
 			</div>
 		</div>
 	</div>
+{% endblock %}
+
+{% block js %}
+	<script src="/js/lazyscript.jquery.min.js" id="lazyscript"></script>
+	<script src="/js/custom.js"></script>
+	<script src="/front-vue/js/list-dynamic.js"></script>
+	<script src="/front-vue/node_modules/vue/dist/vue.global.prod.js"></script>
+	<script src="/front-vue/node_modules/axios/dist/axios.min.js"></script>
+	<script src="/front-vue/node_modules/element-plus/dist/index.full.js"></script>
 
 	<script type="text/javascript">
 		var dataPanel = Vue.createApp({
 			data() {
 				return {
-		            // 允许筛选的字段
-		            groupable: {{ groupable|json_encode(constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_UNESCAPED_UNICODE'))|raw }},
+					// 规格的名称
+					name: {{ name|json_encode(constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_UNESCAPED_UNICODE'))|raw }},
 
-		            // 是否是多个规格
-		            multipleSpec: {{ multiple_spec|json_encode(constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_UNESCAPED_UNICODE'))|raw }},
+					// 组件的配置信息
+					config: {{ config|json_encode(constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_UNESCAPED_UNICODE'))|raw }},
 
-		            // 多个规格时为全部规格的名字 单个规格时为空数组
-		            spec: {{ spec|json_encode(constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_UNESCAPED_UNICODE'))|raw }},
+					// 表格的配置信息
+					table: {{ table|json_encode(constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_UNESCAPED_UNICODE'))|raw }},
 
-		            // 如果列表是表格 传表头 对象数组
-		            tableHeader: [
-						{
-							field: 'id',
-							title: 'Id',
-							sortable: true,
-							// width: 800
-						},
-						{
-							field: 'manufacturer',
-							title: 'Manufacturer',
-							sortable: true,
-							// sortableDefaultField: true
-						},
-						{
-							field: 'manufacture_oe',
-							title: 'Manufacture #',
-							sortable: true
-						},
-						{
-							field: 'inborn_filter_oe',
-							title: 'Inborn Filter #',
-							sortable: true
-						},
-						{
-							field: 'field1',
-						},
-						{
-							field: 'field2',
-						},
-						{
-							field: 'time',
-							// formatter: this.a
-						},
-						// {
-						// 	field: 'spec',
-						// 	title: 'Category'
-						// },
-		            ],
-
-		            // 如果列表是列表 传一项的html
-		            listItem: `
-		            	<p>id: { id }</p>
-		            	<p>manufacturer: { manufacturer }</p>
-		            	<p>Manufacture #: { manufacture_oe }</p>
-		            	<p>Inborn Filter #: { inborn_filter_oe }</p>
-		            	<p>field1: { field1 }</p>
-		            	<p>field2: { field2 }</p>
-		            	<p>time: { time }</p>
-		            	<p>Category: { spec }</p>
-		            	<p>id: { id }</p>
-		            `,
-
-		            selector: {
-		            	size: undefined,
-		            	disabled: undefined,
-		            	textColor: undefined,
-		            	fill: undefined,
-		            	list: {
-		            		table: {
-		                        text: 'table1'
-		                    },
-		                    list: {
-		                        text: 'list1',
-		                        default: true
-		                    }
-		            	}
-		            }
+					// 列表的html
+					listItem: {{ listItem|json_encode(constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_UNESCAPED_UNICODE'))|raw }},
 				};
 			},
 
+			mounted() {
+				console.log(this.list, this.config)
+			},
+
 			methods: {
-				a(row, column, cellValue, index) {
-					return new Date(parseInt(cellValue) * 1000).toLocaleString().replaceAll('/', '-');
-				}
+
 			}
 		})
 		.use(ElementPlus.ElInput)
@@ -197,10 +106,7 @@
 		.use(ElementPlus.ElTable)
 		.use(ElementPlus.ElLoading)
 		.use(ElementPlus.ElPagination)
-		.component('c-pagination', cPagination)
-		.component('data-filter', dataFilter)
 		.component('data-list', dataList)
 		.mount('#data_panel');
 	</script>
-</body>
-</html>
+{% endblock %}
