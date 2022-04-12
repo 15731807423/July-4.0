@@ -910,7 +910,6 @@ const dataList = {
                 }
                 if (loading) loading.close();
             }).catch((data) => {
-                console.log(data)
                 if (loading) loading.close();
             });
         },
