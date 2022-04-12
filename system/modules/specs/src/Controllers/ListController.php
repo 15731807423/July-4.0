@@ -611,6 +611,7 @@ class ListController extends Controller
                 break;
 
             case 4:
+                $data['value'] = [date('Y-m-d H:i:s', $data['value'][0]), date('Y-m-d H:i:s', $data['value'][1])];
                 $data = $this->dynamicHandleWhere($data['field'], $data['value'], 3);
                 break;
 
