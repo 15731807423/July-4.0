@@ -198,6 +198,9 @@
             <!-- 标题 -->
             @include('spec_list.input', ['data' => $items['specList.specAll.title'], 'index' => 'specList.specAll.title', 'class' => 'indent-1'])
 
+            <!-- 位置 -->
+            @include('spec_list.input', ['data' => $items['specList.specAll.order'], 'index' => 'specList.specAll.order', 'class' => 'indent-1'])
+
             <!-- 可排序 -->
             @include('spec_list.switch', ['data' => $items['specList.specAll.sortable'], 'index' => 'specList.specAll.sortable', 'class' => 'indent-1'])
 
@@ -221,6 +224,9 @@
                         ['text' => '下拉菜单', 'label' => 5],
                     ]
                 ])
+
+                <!-- 筛选组位置 -->
+                @include('spec_list.input', ['data' => $items['specList.specAll.screenOrder'], 'index' => 'specList.specAll.screenOrder', 'class' => 'indent-2'])
 
                 <!-- 筛选默认值 -->
                 @include('spec_list.textarea', ['data' => $items['specList.specAll.screenDefault'], 'index' => 'specList.specAll.screenDefault', 'class' => 'indent-2'])

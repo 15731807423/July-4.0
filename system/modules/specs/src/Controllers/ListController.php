@@ -206,11 +206,13 @@ class ListController extends Controller
         if (isset($list[0]) && isset($list[0]['spec']) && $data['config']['specAll']['status']) {
             $spec = $data['config']['specAll'];
 
-            $item = [ 'field' => 'spec', 'title' => $spec['title'] ];
+            $item = ['field' => 'spec', 'title' => $spec['title']];
 
             if ($spec['sortable']) $item['sortable'] = true;
 
-            $data['table']['column'][] = $item;
+            $order = intval($spec['order']) ?: 1;
+
+            array_splice($data['table']['column'], $order - 1, 0, [$item]);
 
             if ($spec['searchable']) $search[] = 'spec';
 
@@ -225,7 +227,9 @@ class ListController extends Controller
                 if ($spec['screenConfig']) $item['config'] = $spec['screenConfig'];
                 if ($spec['screenGroupConfig']) $item['configGroup'] = $spec['screenGroupConfig'];
 
-                $screen[] = $item;
+                $order = intval($spec['screenOrder']) ?: 1;
+
+                array_splice($screen, $order - 1, 0, [$item]);
             }
         } else {
             $data['listItem'] = str_replace('{ spec }', '', $listItem);
