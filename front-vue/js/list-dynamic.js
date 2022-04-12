@@ -854,6 +854,7 @@ const dataList = {
             if (data.type == 5) {
                 if (config.multiple === true) {
                     all = [];
+                    if (defaultValue === '') defaultValue = [];
                 } else if (config.clearable === true) {
                     all = '';
                 } else {

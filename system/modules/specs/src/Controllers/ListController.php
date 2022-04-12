@@ -2,14 +2,11 @@
 
 namespace Specs\Controllers;
 
-use App\Http\Controllers\Controller;
+use Specs\Spec;
+use Specs\Engine;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use July\Node\Node;
-use July\Node\NodeField;
-use Specs\Engine;
-use Specs\Spec;
+use App\Http\Controllers\Controller;
 
 /**
  * 前台规格列表页面
@@ -27,10 +24,8 @@ class ListController extends Controller
      */
     public function list(Spec $spec, Request $request): string
     {
-        $type = config('specList.model', 'static');
-
         if ($spec->getKey()) {
-            return $this->{$type . 'Spec'}($spec, $request);
+            return $this->{config('specList.model', 'static') . 'Spec'}($spec, $request);
         } else {
             return $this->staticSpecs($spec, $request);
         }
@@ -160,12 +155,6 @@ class ListController extends Controller
             if (!is_null($value['screen_config'])) $item['config'] = $this->formatConfigValue($value['screen_config']);
             if (!is_null($value['screen_config_group'])) $item['configGroup'] = $this->formatConfigValue($value['screen_config_group']);
 
-            if ($item['type'] == 2 || ($item['type'] == 3 && isset($item['config']['range']) && $item['config']['range'])) {
-                if (isset($item['default'])) {
-                    $item['default'] = format_value($item['default']);
-                }
-            }
-
             $screen[$key] = $item;
         }
 
@@ -243,7 +232,6 @@ class ListController extends Controller
         unset($data['config']['specAll']);
 
         $data['config']['search']['field'] = $search;
-
         $data['config']['screen']['list'] = $screen;
 
         return $data;
@@ -408,10 +396,6 @@ class ListController extends Controller
         $page = $request->input('page', [1, 10]);
         $screenSort = $request->input('screenSort', []);
 
-        // $screen = json_decode($screen, true);
-        // $sort = json_decode($sort, true);
-        // $page = json_decode($page, true);
-
         // 配置信息
         $data = $this->dynamicData($spec)['config'];
 
@@ -442,8 +426,6 @@ class ListController extends Controller
                     'config'    => isset($value['config']) ? $value['config'] : []
                 ];
 
-                if ($screenValue['type'] == 4 && is_null($screenValue['value'])) $screenValue['value'] = [];
-
                 $list = $this->dynamicAddWhere($screenValue, $list);
             }
         }
@@ -455,10 +437,9 @@ class ListController extends Controller
         foreach ($data['screen']['list'] as $key => $value) {
             if (!in_array($value['type'], [1, 2, 5])) continue;
 
-            // 获取全部值去重
+            // 获取字段出现过的全部值
             $screenItem = [];
-            $list2 = Db::table($spec->getRecordsTable())->pluck($value['field'])->toArray();
-            $list2 = array_unique($list2);
+            $list2 = Db::table($spec->getRecordsTable())->groupBy($value['field'])->pluck($value['field'])->toArray();
 
             // 根据切割符号切割后放进数组再次去重并排序
             foreach ($list2 as $k => $val) {
@@ -471,14 +452,14 @@ class ListController extends Controller
             $screenItem = array_unique($screenItem);
             sort($screenItem);
 
-            // 单选前面加‘全部’选项并存进数组
-            if ($value['type'] == 1 || ($value['type'] == 5 && (!isset($value['config']['multiple']) || !$value['config']['multiple']))) {
+            // 单选前面加‘全部’选项并存进数组 单选 或 下拉菜单单选没有清除按钮
+            if ($value['type'] == 1 || ($value['type'] == 5 && (!isset($value['config']['multiple']) || !$value['config']['multiple']) && (!isset($value['config']['clearable']) || !$value['config']['clearable']))) {
                 array_unshift($screenItem, 'All');
             }
             $screenList[$value['field']] = $screenItem;
         }
 
-        // 如果需要显示数量或隐藏0 计算每项的数量 使用包含了搜索条件的sql
+        // 如果需要显示数量或隐藏0 计算每项的数量 使用包含了搜索条件的sql 否则不计算数值 全部设置为0
         if ($data['screen']['countStatus'] || $data['screen']['nullHidden']) {
             if ($data['screen']['type'] == 1 || $data['screen']['type'] == 2) {
                 foreach ($screenList as $key => $value) {
@@ -562,6 +543,13 @@ class ListController extends Controller
                     $screenList[$key] = $value;
                 }
             }
+        } else {
+            foreach ($screenList as $key => $value) {
+                foreach ($value as $k => $val) {
+                    $value[$k] = ['name' => $val, 'count' => 0];
+                }
+                $screenList[$key] = $value;
+            }
         }
 
         // 排序
@@ -611,12 +599,13 @@ class ListController extends Controller
                 break;
 
             case 4:
+                if (!is_array($data['value']) || count($data['value']) != 2) return $db;
                 $data['value'] = [date('Y-m-d H:i:s', $data['value'][0]), date('Y-m-d H:i:s', $data['value'][1])];
                 $data = $this->dynamicHandleWhere($data['field'], $data['value'], 3);
                 break;
 
             case 5:
-                if (isset($value['config']['multiple']) && $value['config']['multiple']) {
+                if (isset($data['config']['multiple']) && $data['config']['multiple']) {
                     $data = $this->dynamicHandleWhere($data['field'], $data['value'], 2);
                 } else {
                     $data = $this->dynamicHandleWhere($data['field'], $data['value'], 1);
@@ -643,9 +632,9 @@ class ListController extends Controller
     {
         switch ($type) {
             case 1:
-                if ($value === 'All') return '';
+                if (!is_string($value) || strlen($value) == 0 || $value === 'All') return '';
 
-                return '(' . $this->cuttingSymbolWhere($field, $value) . ')';
+                return $this->cuttingSymbolWhere($field, $value);
                 break;
 
             case 2:
@@ -653,13 +642,13 @@ class ListController extends Controller
 
                 $where = [];
                 foreach ($value as $key => $val) {
-                    $where[] = $this->cuttingSymbolWhere($field, $val);
+                    $where[] = $this->cuttingSymbolWhere($field, strval($val));
                 }
                 return '(' . implode(' or ', $where) . ')';
                 break;
 
             case 3:
-                if (count($value) != 2) return '';
+                if (!is_array($value) || count($value) != 2) return '';
 
                 if (is_int($value[0]) && is_int($value[1])) {
                     $field .= '+0';
@@ -764,13 +753,13 @@ class ListController extends Controller
      */
     private function formatConfigValue(string $data): array
     {
-        $data = explode('|', $data);
+        if (strlen($data) == 0) return [];
 
-        if (count($data) == 1 && strlen($data[0]) == 0) return [];
+        $data = explode('|', $data);
 
         $data2 = [];
         foreach ($data as $key => $value) {
-            $value = explode(':', $value);
+            $value = explode(':', $value, 2);
             $data2[$value[0]] = format_value($value[1]);
         }
         return $data2;
