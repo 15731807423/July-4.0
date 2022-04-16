@@ -36,6 +36,8 @@ class NodeType extends EntityMoldBase implements GetNodesInterface
 
     public function get_nodes()
     {
-        return NodeSet::make($this->nodes->keyBy('id')->all());
+        /** @var array */
+        $nodeIds = Node::query()->where('mold_id', $this->attributes['id'])->pluck('id')->all();
+        return NodeSet::make($nodeIds);
     }
 }
