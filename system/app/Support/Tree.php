@@ -365,9 +365,9 @@ class Tree
     public function descendants($id)
     {
         $descendants = [];
-        foreach ($this->nodes as $id => $node) {
+        foreach ($this->nodes as $key => $node) {
             if (in_array($id, $node['path'])) {
-                $descendants[] = $id;
+                $descendants[] = $key;
             }
         }
 
