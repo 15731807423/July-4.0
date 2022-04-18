@@ -1,1 +1,1 @@
-cd system && rename .env.production .env && composer install && cd ../front-vue && npm install && rm ../run.bat
+cd system && rename .env.production .env && composer install && cd ../front-vue && npm install && cd ../vue && npm install && rm ../run.bat
