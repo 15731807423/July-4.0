@@ -51,7 +51,7 @@ Route::group([
     Route::post('/media/upload', [Controllers\MediaController::class, 'upload'])
         ->name('media.upload');
 
-    Route::post('/media/mkdir', [Controllers\MediaController::class, 'mkdir'])
+    Route::post('/media/mkdir', [Controllers\MediaController::class, 'makeDir'])
         ->name('media.mkdir');
 
     Route::post('/media/rename/{type}', [Controllers\MediaController::class, 'rename'])
