@@ -181,7 +181,7 @@
                             node = node || response.data.node_id;
 
                             axios.post("{{ short_url('nodes.render') }}", {nodes: [node]}).then((response) => {
-                                // window.location.href = window.referrer === '' ? "{{ short_url('nodes.index') }}" : document.referrer;
+                                window.location.href = window.referrer === '' ? "{{ short_url('nodes.index') }}" : document.referrer;
                             }).catch(err => {
                                 loading.close();
                                 this.$message.error('发生错误');
