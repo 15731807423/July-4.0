@@ -21,7 +21,6 @@
 /system/vendor/*
 /system/.env
 !/themes/
-!/vue/
 !/.editorconfig
 !/.gitignore
 !/.htaccess
