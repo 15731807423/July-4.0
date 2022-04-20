@@ -352,7 +352,7 @@ class NodeIndex extends ModelBase
      * @param string $str2
      * @return float
      */
-    protected function similar($str1, $str2)
+    protected function similar(string $str1, string $str2)
     {
         if ($str1 === $str2) {
 			return 1;
