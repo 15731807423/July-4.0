@@ -224,14 +224,14 @@ class NodeController extends Controller
     {
         if ($ids || (!$ids && $ids = $request->input('nodes'))) {
             // 筛选掉还没有触发定时器的页面
-            $future = Db::table('nodes')
-            ->leftJoin('node__timeout', 'nodes.id', '=', 'node__timeout.entity_id')
-            ->where('node__timeout.timeout', '>', time())
-            ->where('node__timeout.langcode', config('lang.frontend'))
-            ->pluck('nodes.id')
-            ->toArray();
+            // $future = Db::table('nodes')
+            // ->leftJoin('node__timeout', 'nodes.id', '=', 'node__timeout.entity_id')
+            // ->where('node__timeout.timeout', '>', time())
+            // ->where('node__timeout.langcode', config('lang.frontend'))
+            // ->pluck('nodes.id')
+            // ->toArray();
 
-            $ids = array_diff($ids, $future);
+            // $ids = array_diff($ids, $future);
 
             $nodes = NodeSet::fetch($ids);
         } else {
@@ -244,6 +244,14 @@ class NodeController extends Controller
 
         // 多语言生成
         $langs = config('lang.multiple') ? Lang::getAccessibleLangcodes() : [];
+
+        // 过滤掉默认语言
+        // $index = array_search(config('lang.frontend'), $langs);
+
+        // if ($index !== false) {
+        //     unset($langs[$index]);
+        //     $langs = array_values($langs);
+        // }
 
         /** @var \Twig\Environment */
         $twig = app('twig');
