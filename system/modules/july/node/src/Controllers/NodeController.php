@@ -5,7 +5,7 @@ namespace July\Node\Controllers;
 use App\Http\Controllers\Controller;
 use App\Support\Lang;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Db;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use July\Node\Catalog;
 use July\Node\Node;
@@ -224,14 +224,14 @@ class NodeController extends Controller
     {
         if ($ids || (!$ids && $ids = $request->input('nodes'))) {
             // 筛选掉还没有触发定时器的页面
-            // $future = Db::table('nodes')
-            // ->leftJoin('node__timeout', 'nodes.id', '=', 'node__timeout.entity_id')
-            // ->where('node__timeout.timeout', '>', time())
-            // ->where('node__timeout.langcode', config('lang.frontend'))
-            // ->pluck('nodes.id')
-            // ->toArray();
+            $future = DB::table('nodes')
+            ->leftJoin('node__timeout', 'nodes.id', '=', 'node__timeout.entity_id')
+            ->where('node__timeout.timeout', '>', time())
+            ->where('node__timeout.langcode', config('lang.frontend'))
+            ->pluck('nodes.id')
+            ->toArray();
 
-            // $ids = array_diff($ids, $future);
+            $ids = array_diff($ids, $future);
 
             $nodes = NodeSet::fetch($ids);
         } else {
