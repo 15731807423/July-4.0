@@ -43,6 +43,9 @@ class MessageController extends Controller
      */
     public function send(Request $request, MessageForm $form)
     {
+        // 是否接口请求
+        $api = $request->boolean('api', false);
+
         // 获取验证规则
         [$rules, $messages, $fields] = $form->resolveFieldRules();
 
@@ -53,6 +56,10 @@ class MessageController extends Controller
 
         // 执行验证，如果未通过，则返回验证错误页
         if ($validator->fails()) {
+            if ($api) {
+                return ['status' => 0, 'errors' => $validator->errors()->messages(), 'fields' => $fields];
+            }
+
             return view('message::failed', [
                         'errors' => $validator->errors()->messages(),
                         'fields' => $fields,
@@ -75,6 +82,10 @@ class MessageController extends Controller
         // 以邮件方式发送消息
         if (! $message->sendMail()) {
             Log::info($attributes);
+        }
+
+        if ($api) {
+            return ['status' => 1];
         }
 
         // 获取返回网址
