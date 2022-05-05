@@ -178,6 +178,7 @@ return [
         July\Node\NodeServiceProvider::class,
         July\Message\MessageServiceProvider::class,
         Specs\SpecsServiceProvider::class,
+        Translate\TranslateServiceProvider::class
     ],
 
     /*
