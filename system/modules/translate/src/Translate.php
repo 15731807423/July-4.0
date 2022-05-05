@@ -59,8 +59,8 @@ class Translate
 	private static function createClient()
 	{
 		$config = new Config([
-			'accessKeyId'		=> 'LTAI5tLfbYcHLVCnJQKiofeV',
-			'accessKeySecret'	=> 'aNQyyvoJ5IqAen6n3Q299G668Fqr6p'
+			'accessKeyId'		=> config('translate.accessKeyId'),
+			'accessKeySecret'	=> config('translate.accessKeySecret')
 		]);
 		$config->endpoint = 'mt.cn-hangzhou.aliyuncs.com';
 		return new Alimt($config);
