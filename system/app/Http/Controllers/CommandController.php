@@ -25,7 +25,7 @@ class CommandController extends Controller
             return response('');
         }
 
-        $user = Auth::guard('admin')->user();
+        $user = Auth::user();
 
         $valid = Hash::check($request->input('current_password'), $user->getAuthPassword());
         if (! $valid) {
@@ -34,7 +34,7 @@ class CommandController extends Controller
 
         $user->password = Hash::make($request->input('password'));
         $user->save();
-        Auth::guard('admin')->login($user);
+        Auth::guard('web')->login($user);
 
         return response('');
     }
