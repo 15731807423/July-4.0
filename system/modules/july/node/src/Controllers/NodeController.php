@@ -330,8 +330,6 @@ class NodeController extends Controller
      * 定时任务
      * 生成HTML、清缓存、谷歌地图、索引
      * 执行这个函数把所有功能调用一遍，定时请求这个函数
-     *
-     * @return \Illuminate\View\View
      */
     public function timeout()
     {
