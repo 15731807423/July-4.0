@@ -23,6 +23,14 @@ class BuildGoogleSitemap extends ActionBase
         $urls = [];
         // 节点网址
         $aliases = NodeField::find('url')->getValueModel()->values();
+
+        $lang = config('lang.available');
+        foreach ($lang as $key => $value) {
+            if (!$value['accessible']) unset($lang[$key]);
+            if ($key == config('lang.frontend')) unset($lang[$key]);
+        }
+        $lang = array_keys($lang);
+
         foreach ($aliases as $key => $value) {
             unset($aliases[$key]);
             $aliases[substr($key,0,strrpos($key,"/"))] = $value;
@@ -34,6 +42,9 @@ class BuildGoogleSitemap extends ActionBase
             }
 
             $urls[$url] = $node->fetchHtml();
+            // foreach ($lang as $code) {
+                // $urls['/' . $code . $url] = $node->translateTo($code)->fetchHtml();
+            // }
         }
 
         // 规格网址
@@ -57,6 +68,16 @@ class BuildGoogleSitemap extends ActionBase
      */
     protected function render(array $urls)
     {
+        if (config('lang.multiple')) {
+            $lang = config('lang.available');
+            foreach ($lang as $key => $value) {
+                if (!$value['accessible']) unset($lang[$key]);
+            }
+            $lang = array_keys($lang);
+        } else {
+            $lang = false;
+        }
+
         // 首页地址
         $home = rtrim(config('app.url'), '\\/');
         $data = [
@@ -91,13 +112,30 @@ class BuildGoogleSitemap extends ActionBase
                 $video[$videoNum] = $content->extractMpTitle($value,$home);
                 $videoNum++;
             }
-           
 
+            if ($lang === false) {
+                $data['urls'][$home . '/' . $url] = [
+                    'images' => $images,
+                    'videoTitle' => $video
+                ];
+            } else {
+                $langurl = [];
+                foreach ($lang as $code) {
+                    if ($code == config('lang.frontend')) {
+                        $langurl[$code] = $home . '/' . $url;
+                    } else {
+                        $langurl[$code] = $home . '/' . $code . '/' . $url;
+                    }
+                }
 
-            $data['urls'][$home.'/'.$url] = [
-                'images' => $images,
-                'videoTitle' => $video
-            ];
+                foreach ($langurl as $key => $value) {
+                    $data['urls'][$value] = [
+                        'images' => $images,
+                        'videoTitle' => $video,
+                        'lang' => $langurl
+                    ];
+                }
+            }
             
             // 提取 PDF
             foreach ($content->extractPdfLinks() as $pdf) {
