@@ -14,6 +14,11 @@
         <button type="button" class="md-button md-dense md-raised md-primary md-theme-default" @click.stop="render('all')">
             <div class="md-ripple"><div class="md-button-content">全部生成 HTML</div></div>
         </button>
+        @if (config('lang.multiple'))
+            <button type="button" class="md-button md-dense md-raised md-primary md-theme-default" @click.stop="translate">
+                <div class="md-ripple"><div class="md-button-content">一键翻译</div></div>
+            </button>
+        @endif
     </div>
     <div class="jc-options">
         <div class="jc-option" id="contents_filter">
@@ -364,6 +369,28 @@
                 return nodes;
             },
 
+            translate() {
+                const loading = this.$loading({
+                    lock: true,
+                    text: '正在一键翻译 ...',
+                    background: 'rgba(255, 255, 255, 0.7)',
+                });
+
+                axios.post("{{ short_url('manage.translate.all2') }}", {}).then((response) => {
+                    loading.close();
+
+                    if (typeof response.data == 'string') {
+                        this.$message.error(response.data);
+                        return false;
+                    }
+
+                    this.$message.success('翻译完成');
+                }).catch(err => {
+                    loading.close();
+                    this.$message.error('发生错误');
+                });
+            },
+
             render(node) {
                 const nodes = [];
                 if (node === 'all') {
@@ -385,7 +412,7 @@
 
                 const loading = this.$loading({
                     lock: true,
-                    text: '正在生成 ...',
+                    text: '正在生成HTML ...',
                     background: 'rgba(255, 255, 255, 0.7)',
                 });
 
