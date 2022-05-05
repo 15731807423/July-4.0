@@ -244,6 +244,11 @@ class Node extends TranslatableEntityBase
             config()->set('lang.rendering', $renderingLangcode ?? $this->getLangcode());
         }
 
+        // 非默认语言 修改模板路径
+        if ($data['langcode'] != config('lang.frontend')) {
+            $view = $data['langcode'] . '/' . $view;
+        }
+
         // 生成 html
         $html = $twig->render($view, $data);
 
