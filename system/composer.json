@@ -15,6 +15,7 @@
     ],
     "require": {
         "php": "<=7.3.33",
+        "alibabacloud/alimt-20181012": "^1.0",
         "doctrine/dbal": "^2.10",
         "fideloper/proxy": "^4.2",
         "fruitcake/laravel-cors": "^1.0",
@@ -45,7 +46,8 @@
                 "Installer\\InstallerServiceProvider",
                 "July\\Node\\NodeServiceProvider",
                 "July\\Message\\MessageServiceProvider",
-                "Specs\\SpecsServiceProvider"
+                "Specs\\SpecsServiceProvider",
+                "Translate\\TranslateServiceProvider"
             ]
         }
     },
@@ -57,6 +59,7 @@
             "App\\": "app/",
             "Database\\Seeds\\": "database/seeds/",
             "Installer\\": "modules/installer/src/",
+            "Translate\\": "modules/translate/src/",
             "Specs\\": "modules/specs/src/",
             "July\\Node\\": "modules/july/node/src/",
             "July\\Node\\Seeds\\": "modules/july/node/seeds/",

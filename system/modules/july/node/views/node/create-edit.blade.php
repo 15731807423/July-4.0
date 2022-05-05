@@ -52,6 +52,9 @@
             <button type="button" class="md-button md-raised md-dense md-primary md-theme-default" @click.stop="submit">
                 <div class="md-button-content">保存</div>
             </button>
+            <button type="button" class="md-button md-raised md-dense md-primary md-theme-default" @click.stop="translate">
+                <div class="md-button-content">翻译</div>
+            </button>
         </div>
     </div>
     <div id="main_form_right">
@@ -136,6 +139,44 @@
                 if (this.recieveMediaUrlFor) {
                     this.model[this.recieveMediaUrlFor] = url;
                 }
+            },
+
+            translate() {
+                const loading = this.$loading({
+                    lock: true,
+                    text: '正在翻译内容 ...',
+                    background: 'rgba(255, 255, 255, 0.7)',
+                });
+
+                var data = {};
+                for (let key in this.model) {
+                    if (typeof this.model[key] == 'string' && this.model[key].length > 0) data[key] = this.model[key];
+                }
+                delete data.created_at;
+                delete data.langcode;
+                delete data.mold_id;
+                delete data.updated_at;
+                delete data.url;
+                delete data.view;
+
+                axios.post("{{ short_url('manage.translate.batch') }}", {
+                    text: JSON.stringify(data),
+                    to: '{{ $langcode }}'
+                }).then((response) => {
+                    loading.close();
+
+                    if (typeof response.data == 'string') {
+                        this.$message.error(response.data);
+                        return false;
+                    }
+
+                    for (let key in response.data) {
+                        this.model[key] = response.data[key];
+                    }
+                }).catch((error) => {
+                    loading.close();
+                    this.$message.error(error);
+                });
             },
 
             submit() {
