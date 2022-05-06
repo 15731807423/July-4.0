@@ -294,9 +294,11 @@ class NodeController extends Controller
      */
     public function search(Request $request)
     {
+        $multiple = config('lang.multiple');
         $nodes = NodeSet::fetchAll()->keyBy('id');
+        $lang = $multiple ? $request->input('lang', langcode('frontend')) : langcode('frontend');
 
-        $results = NodeIndex::search($request->input('keywords'));
+        $results = NodeIndex::search($request->input('keywords'), $lang);
         $results['title'] = 'Search';
         $results['meta_title'] = 'Search Result';
         $results['meta_keywords'] = 'Search';
@@ -306,7 +308,16 @@ class NodeController extends Controller
             $result['node'] = $nodes->get($result['node_id']);
         }
 
-        return app('twig')->render('search.twig', $results);
+        $tpl = $lang == langcode('frontend') ? 'search.twig' : $lang . '/search.twig';
+
+        if ($multiple) {
+            if ($lang) {
+                config()->set('lang.output', $lang);
+            }
+            config()->set('lang.rendering', $lang ?? $this->getLangcode());
+        }
+
+        return app('twig')->render($tpl, $results);
     }
 
     /**
