@@ -3,6 +3,14 @@
   <url><loc>{{ home }}/</loc></url>
   {% for url,content in urls %}
     <url><loc>{{ url }}</loc>
+    {% if content.lang is empty %}
+
+    {% else %}
+        {% for code,langurl in content.lang %}
+        <xhtml:link rel="alternate" hreflang="{{ code }}" href="{{ langurl }}"/>
+        {% endfor %}
+
+    {% endif %}
     {% if content.images is empty %}
     {% else %}
         {% for image in content.images|keys %}
