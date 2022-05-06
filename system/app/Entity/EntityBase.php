@@ -134,6 +134,10 @@ abstract class EntityBase extends ModelBase
     public function getUrlAttribute($url)
     {
         if ($langcode = langcode('output')) {
+            // 如果是null 表示没有路径 直接返回结果/
+            if (is_null($url)) return '/';
+            if ($langcode == langcode('frontend')) return $url;
+
             return '/'.strtolower($langcode).$url;
         }
 
@@ -556,6 +560,11 @@ abstract class EntityBase extends ModelBase
     public function getUrl($forceLangcode = false)
     {
         $url = '/'.ltrim($this->url, '/');
+
+        // 如果是/ 表示没有路径 直接返回结果
+        if ($url == '/') {
+            return $url;
+        }
 
         if ($forceLangcode) {
             return '/'.strtolower(langcode('rendering') ?? $this->getLangcode()).$url;
