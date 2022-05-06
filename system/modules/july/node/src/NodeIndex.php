@@ -102,9 +102,10 @@ class NodeIndex extends ModelBase
      * 在索引中检索指定的关键词
      *
      * @param  string $keywords 待检索的关键词
+     * @param  string $lang 语言代码
      * @return array
      */
-    public static function search($keywords)
+    public static function search($keywords, $lang)
     {
         $key = $keywords;
 
@@ -123,7 +124,7 @@ class NodeIndex extends ModelBase
 
         // 获取搜索结果
         $results = [];
-        foreach (static::searchIndex($keywords) as $result) {
+        foreach (static::searchIndex($keywords, $lang) as $result) {
 
             $node_id = $result->entity_id;
             $field_id = $result->field_id;
@@ -173,18 +174,21 @@ class NodeIndex extends ModelBase
      * 在索引中检索指定的关键词
      *
      * @param  array $keywords 关键词
-     * @param  string|null $langcode
+     * @param  string|null $lang
      * @return \Illuminate\Database\Eloquent\Collection|static[]
      */
-    protected static function searchIndex(array $keywords)
+    protected static function searchIndex(array $keywords, $lang)
     {
         $conditions = [];
         foreach ($keywords as $keyword => $weight) {
             $conditions[] = ['content', 'like', '%'.$keyword.'%', 'or'];
         }
 
+        $not = static::query()->where('field_id', 'title')->where('content', '404')->value('entity_id');
+
         $values = static::query()
-        ->where('langcode', langcode('frontend'))
+        ->where('entity_id', '<>', $not)
+        ->where('langcode', $lang)
         ->where(function ($query) use ($conditions) {
             $query->where($conditions);
         })
