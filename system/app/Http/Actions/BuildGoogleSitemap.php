@@ -100,8 +100,10 @@ class BuildGoogleSitemap extends ActionBase
 
             // 提取图片
             $images = [];
-            foreach ($content->extractImageLinks() as $img) {
-                $images[$home.'/'.ltrim($img, '\\/')] = null;
+            if ($lang === false) {
+                foreach ($content->extractImageLinks() as $img) {
+                    $images[$home.'/'.ltrim($img, '\\/')] = null;
+                }
             }
 
             $videos =  $content->extractMpLinks();
