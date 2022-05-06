@@ -246,12 +246,12 @@ class NodeController extends Controller
         $langs = config('lang.multiple') ? Lang::getAccessibleLangcodes() : [];
 
         // 过滤掉默认语言
-        // $index = array_search(config('lang.frontend'), $langs);
+        $index = array_search(config('lang.frontend'), $langs);
 
-        // if ($index !== false) {
-        //     unset($langs[$index]);
-        //     $langs = array_values($langs);
-        // }
+        if ($index !== false) {
+            unset($langs[$index]);
+            $langs = array_values($langs);
+        }
 
         /** @var \Twig\Environment */
         $twig = app('twig');
