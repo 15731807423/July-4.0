@@ -5,6 +5,7 @@
 !/system/
 /system/database/database.db3
 /system/language/*
+!/system/language/code.php
 !/system/language/en.php
 !/system/language/zh.php
 /system/storage/debugbar/*
