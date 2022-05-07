@@ -115,6 +115,8 @@ class BuildGoogleSitemap extends ActionBase
                 $videoNum++;
             }
 
+            $codeList = require base_path('language/code.php');
+
             if ($lang === false) {
                 $data['urls'][$home . '/' . $url] = [
                     'images' => $images,
@@ -123,10 +125,11 @@ class BuildGoogleSitemap extends ActionBase
             } else {
                 $langurl = [];
                 foreach ($lang as $code) {
+                    $code2 = $codeList[$code] ?? $code; var_dump($code, $code2);
                     if ($code == config('lang.frontend')) {
-                        $langurl[$code] = $home . '/' . $url;
+                        $langurl[$code2] = $home . '/' . $url;
                     } else {
-                        $langurl[$code] = $home . '/' . $code . '/' . $url;
+                        $langurl[$code2] = $home . '/' . $code . '/' . $url;
                     }
                 }
 
