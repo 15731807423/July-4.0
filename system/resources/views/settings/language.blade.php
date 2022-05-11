@@ -48,6 +48,7 @@
                                 <th>可翻译</th>
                                 <th>可访问</th>
                                 <th>图标</th>
+                                <th>生成模板</th>
                                 <th>删除</th>
                             </tr>
                         </thead>
@@ -76,6 +77,11 @@
                                         </div>
 
                                     </el-upload>
+                                </td>
+                                <td>
+                                    <div class="jc-operators">
+                                        <el-button type="primary" :disabled="langcode == 'en' || !info.translatable || !info.accessible" @click.stop="generateTemplate(langcode)">生成模板</el-button>
+                                    </div>
                                 </td>
                                 <td>
                                     <div class="jc-operators">
@@ -275,6 +281,28 @@ const app = new Vue({
             });
             this.settings['lang.available'][this.uploadCode].icon = path;
             this.$forceUpdate();
+        },
+
+        // 生成模板
+        generateTemplate(code) {
+            const loading = this.$loading({
+                lock: true,
+                text: '正在生成模板 ...',
+                background: 'rgba(255, 255, 255, 0.7)',
+            });
+
+            axios.post("{{ short_url('manage.translate.tpl', 'code') }}".replace('code', code), {}).then(response => {
+                loading.close();
+                if (typeof response.data == 'string') {
+                    this.$message.error(response.data);
+                } else {
+                    this.$message.success('生成模板成功');
+                }
+            }).catch(err => {
+                loading.close();
+                console.error(err);
+                this.$message.error('发生错误，可查看控制台');
+            });
         },
 
         // 提交
