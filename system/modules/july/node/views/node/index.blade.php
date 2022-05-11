@@ -370,13 +370,30 @@
             },
 
             translate() {
+                var nodes = [];
+
+                this.original_models.forEach(element => {
+                    nodes.push(element.id);
+                });
+
+                this.translateRequest(nodes, 0);
+            },
+
+            translateRequest(nodes, i) {
+                const count = 50, current = nodes.slice(i, i + count);
+
+                if (current.length == 0) {
+                    this.$message.success('翻译完成');
+                    return false;
+                }
+
                 const loading = this.$loading({
                     lock: true,
-                    text: '正在一键翻译 ...',
+                    text: '正在一键翻译' + current[0] + ' - ' + current[current.length - 1] + ' ...',
                     background: 'rgba(255, 255, 255, 0.7)',
                 });
 
-                axios.post("{{ short_url('manage.translate.all2') }}", {}).then((response) => {
+                axios.post("{{ short_url('manage.translate.all') }}", { id: current.join(',') }).then((response) => {
                     loading.close();
 
                     if (typeof response.data == 'string') {
@@ -384,7 +401,7 @@
                         return false;
                     }
 
-                    this.$message.success('翻译完成');
+                    this.translateRequest(nodes, i + count);
                 }).catch(err => {
                     loading.close();
                     this.$message.error('发生错误');
@@ -410,21 +427,32 @@
                     return;
                 }
 
+                this.renderRequest(nodes, 0);
+            },
+
+            renderRequest(nodes, i) {
+                const count = 50, current = nodes.slice(i, i + count);
+
+                if (current.length == 0) {
+                    this.$message.success('生成完成');
+                    return false;
+                }
+
                 const loading = this.$loading({
                     lock: true,
-                    text: '正在生成HTML ...',
+                    text: '正在生成HTML ' + current[0] + ' - ' + current[current.length - 1] + ' ...',
                     background: 'rgba(255, 255, 255, 0.7)',
                 });
 
-                axios.post("{{ short_url('nodes.render') }}", {nodes: nodes}).then((response) => {
+                axios.post("{{ short_url('nodes.render') }}", { nodes: current }).then((response) => {
                     loading.close();
-                    this.$message.success('生成完成');
+                    this.renderRequest(nodes, i + count);
                 }).catch(err => {
                     loading.close();
                     console.error(err);
                     this.$message.error('发生错误');
                 });
-            },
+            }
         },
     });
 </script>
