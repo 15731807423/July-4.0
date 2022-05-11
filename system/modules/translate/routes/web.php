@@ -10,9 +10,9 @@ Route::prefix(config('app.management_prefix', 'admin'))
     // 一键翻译
     Route::post('translate/all', [Controllers\TranslateController::class, 'all'])->name('translate.all');
 
-    // 一键翻译2.0
-    Route::get('translate/all2', [Controllers\TranslateController::class, 'all2'])->name('translate.all2');
-
     // 批量翻译
     Route::post('translate/batch', [Controllers\TranslateController::class, 'batch'])->name('translate.batch');
+
+    // 创建模板并翻译
+    Route::post('translate/tpl/{code}', [Controllers\TranslateController::class, 'tpl'])->name('translate.tpl');
 });
