@@ -125,7 +125,7 @@ class BuildGoogleSitemap extends ActionBase
             } else {
                 $langurl = [];
                 foreach ($lang as $code) {
-                    $code2 = $codeList[$code] ?? $code; var_dump($code, $code2);
+                    $code2 = $codeList[$code] ?? $code;
                     if ($code == config('lang.frontend')) {
                         $langurl[$code2] = $home . '/' . $url;
                     } else {
