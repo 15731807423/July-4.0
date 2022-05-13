@@ -684,7 +684,7 @@ class TranslateController extends Controller
         }
 
         // 搜索表单添加隐藏表单
-        $pattern = '/' . '<form action="/search" method="get"' . '([\w\W]*?)' . '</form>' . '/';
+        $pattern = '/' . '<form action="\/search" method="get"' . '([\w\W]*?)' . '<\/form>' . '/';
         $matches = [];
         preg_match_all($pattern, $html, $matches);
         foreach ($matches[0] as $key => $value) {
