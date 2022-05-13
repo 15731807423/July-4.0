@@ -24,13 +24,6 @@ class BuildGoogleSitemap extends ActionBase
         // 节点网址
         $aliases = NodeField::find('url')->getValueModel()->values();
 
-        $lang = config('lang.available');
-        foreach ($lang as $key => $value) {
-            if (!$value['accessible']) unset($lang[$key]);
-            if ($key == config('lang.frontend')) unset($lang[$key]);
-        }
-        $lang = array_keys($lang);
-
         foreach ($aliases as $key => $value) {
             unset($aliases[$key]);
             $aliases[substr($key,0,strrpos($key,"/"))] = $value;
@@ -42,9 +35,6 @@ class BuildGoogleSitemap extends ActionBase
             }
 
             $urls[$url] = $node->fetchHtml();
-            // foreach ($lang as $code) {
-                // $urls['/' . $code . $url] = $node->translateTo($code)->fetchHtml();
-            // }
         }
 
         // 规格网址
