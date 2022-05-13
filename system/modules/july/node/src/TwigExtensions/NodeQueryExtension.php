@@ -51,18 +51,33 @@ class NodeQueryExtension extends AbstractExtension implements GlobalsInterface
             new TwigFunction('short_url', [$this, 'short_url']),
 
             // 获取多语言列表
-            new TwigFunction('langname', [$this, 'langname']),
+            new TwigFunction('langname', function ($name, $language) {
+                return langname($name, $language);
+            }),
 
             // 切换url的语言
-            new TwigFunction('switch_lang_by_url', function ($url, $langname)
-            {
+            new TwigFunction('switch_lang_by_url', function ($url, $langname) {
                 if (!$url || !$langname) {
                     return $url;
                 }
                 $code = array_keys(config('lang.available'));
                 $url = explode('/', $url);
                 if (in_array($url[1], $code)) unset($url[1]);
+
+                if ($langname == config('lang.frontend')) return implode('/', $url);
                 return '/' . $langname . implode('/', $url);
+            }),
+
+            // 当前语言代码
+            new TwigFunction('current_lang_code', function ($url) {
+                if (!$url) {
+                    return config('lang.frontend');
+                }
+                $code = array_keys(config('lang.available'));
+                $url = explode('/', $url);
+                if (in_array($url[1], $code)) return $url[1];
+
+                return config('lang.frontend');
             }),
         ];
     }
@@ -185,17 +200,5 @@ class NodeQueryExtension extends AbstractExtension implements GlobalsInterface
     public function short_url($name, ...$parameters)
     {
         return short_url($name, $parameters);
-    }
-
-    /**
-     * 获取多语言列表
-     *
-     * @param  string $name 路由名
-     * @param  array $parameters 路由参数
-     * @return \Specs\Spec
-     */
-    public function langname($name, $language)
-    {
-        return langname($name, $language);
     }
 }
