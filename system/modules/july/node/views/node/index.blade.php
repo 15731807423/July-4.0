@@ -144,6 +144,8 @@
 <script src="/vue/js/c-pagination.js"></script>
 <link rel="stylesheet" type="text/css" href="/vue/css/c-pagination.css">
 <script>
+    Vue.component('c-pagination', cPagination)
+
     let app = new Vue({
         el: '#main_content',
 
