@@ -1,36 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
-  <url><loc>{{ home }}/</loc></url>
-  {% for url,content in urls %}
-    <url><loc>{{ url }}</loc>
-    {% if content.lang is empty %}
-
-    {% else %}
-        {% for code,langurl in content.lang %}
-        <xhtml:link rel="alternate" hreflang="{{ code }}" href="{{ langurl }}"/>
-        {% endfor %}
-
-    {% endif %}
-    {% if content.images is empty %}
-    {% else %}
-        {% for image in content.images|keys %}
-        <image:image><image:loc>{{ image }}</image:loc></image:image>
-        {% endfor %}
-    {% endif %}
-    {% if content.videoTitle is empty %}
-      {% else %}
-        {% for values in content.videoTitle %}
-            <video:video>
-              <video:thumbnail_loc>{{values.img[0]}}</video:thumbnail_loc>
-              <video:title>{{values.title[0]}}</video:title>
-              <video:content_loc>{{values.src[0]}}</video:content_loc>
-            </video:video>
-        {% endfor %}
-    {% endif %}
-  </url>
-  {% endfor %}
-  {% for pdf in pdfs|keys %}
-    <url><loc>{{ pdf }}</loc></url>
-  {% endfor %}
+    <url>
+        <loc>{{ home }}/</loc>
+    </url>
+    {% for url,content in urls %}
+        <url>
+            <loc>{{ url }}</loc>
+            {% if content.lang is empty %}
+            {% else %}
+                {% for code,langurl in content.lang %}
+                    <xhtml:link rel="alternate" hreflang="{{ code }}" href="{{ langurl }}" />
+                {% endfor %}
+            {% endif %}
+            {% if content.images is empty %}
+            {% else %}
+                {% for image in content.images|keys %}
+                    <image:image>
+                        <image:loc>{{ image }}</image:loc>
+                    </image:image>
+                {% endfor %}
+            {% endif %}
+            {% if content.videoTitle is empty %}
+            {% else %}
+                {% for values in content.videoTitle %}
+                    <video:video>
+                        <video:thumbnail_loc>{{values.img[0]}}</video:thumbnail_loc>
+                        <video:title>{{values.title[0]}}</video:title>
+                        <video:content_loc>{{values.src[0]}}</video:content_loc>
+                    </video:video>
+                {% endfor %}
+            {% endif %}
+        </url>
+    {% endfor %}
+    {% for pdf in pdfs|keys %}
+        <url>
+            <loc>{{ pdf }}</loc>
+        </url>
+    {% endfor %}
 </urlset>
-
