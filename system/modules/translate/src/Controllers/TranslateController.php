@@ -16,10 +16,7 @@ use App\Http\Controllers\Controller;
  */
 class TranslateController extends Controller
 {
-    // 执行时间
-    private $time = [];
-
-    // 全部不翻译的字段
+    // 全部不翻译的字段 如果不区分语言 用一维数组 如果区分语言 用二维数组
     private $notFields = [
         'url',
         'meta_canonical',
@@ -42,7 +39,7 @@ class TranslateController extends Controller
         'astraios'
     ];
 
-    // 全部不翻译的内容
+    // 全部不翻译的内容 如果不区分语言 用一维数组 如果区分语言 用二维数组
     private $notText = [
         'Argger',
         'ARGGER',
@@ -67,6 +64,21 @@ class TranslateController extends Controller
         'astraios'
     ];
 
+    // 指定翻译结果 str_replace函数 可能会替换不需要替换的内容 如果不区分语言 用一维数组 如果区分语言 用二维数组
+    private $replace = [
+        'cn' => [
+            'Argger' => '鉑格'
+        ]
+    ];
+
+    // 前面加语言代码的url
+    private $url = [
+        '/index.html'
+    ];
+
+    // 执行时间
+    private $time = [];
+
     // 不翻译的内容被替换的记录
     private $list = [];
 
@@ -84,6 +96,9 @@ class TranslateController extends Controller
 
     /**
      * 翻译全部字段
+     * 
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
      */
     public function all(Request $request)
     {
@@ -183,6 +198,9 @@ class TranslateController extends Controller
 
     /**
      * 翻译指定内容
+     * 
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
      */
     public function batch(Request $request)
     {
@@ -197,7 +215,7 @@ class TranslateController extends Controller
 
         // 过滤不翻译的内容
         foreach ($text as $key => $value) {
-            if (in_array($key, $this->notFields)) {
+            if (in_array($key, $this->getNotFields())) {
                 unset($text[$key]);
             }
         }
@@ -228,6 +246,9 @@ class TranslateController extends Controller
 
     /**
      * 复制模板并翻译
+     * 
+     * @param  string $code 翻译后的语言
+     * @return \Illuminate\Http\Response
      */
     public function tpl(string $code)
     {
@@ -291,7 +312,13 @@ class TranslateController extends Controller
         return response(['time' => $this->time, 'file' => $file]);
     }
 
-    private function tplCopy($old, $new)
+    /**
+     * 复制模板文件
+     * 
+     * @param  string $old 被复制的文件路径
+     * @param  string $new 复制后的文件路径
+     */
+    private function tplCopy(string $old, string $new)
     {
         // 复制的要求 old是一个文件 new不是文件也不是文件夹 防止覆盖
         if (is_file($old) && !is_file($new) && !is_dir($new)) {
@@ -312,7 +339,13 @@ class TranslateController extends Controller
         }
     }
 
-    private function tplFile($path)
+    /**
+     * 获取模板里需要翻译的文件的路径
+     * 
+     * @param  string $path 模板路径
+     * @return array  文件路径数组
+     */
+    private function tplFile(string $path)
     {
         $file = [];
 
@@ -337,6 +370,14 @@ class TranslateController extends Controller
         return $file;
     }
 
+    /**
+     * 翻译全部字段里创建其中一个语言的翻译任务
+     * 
+     * @param  string $from 源语言
+     * @param  string $to   目标语言
+     * @param  array  $id   被翻译的页面的id
+     * @return array  翻译任务的taskid和缓存文件的路径
+     */
     private function allLangCreate(string $from, string $to, array $id)
     {
         // 结果
@@ -363,6 +404,14 @@ class TranslateController extends Controller
         ];
     }
 
+    /**
+     * 翻译全部字段里获取一个页面需要翻译的内容
+     * 
+     * @param  string $id   页面id
+     * @param  string $from 源语言
+     * @param  string $to   目标语言
+     * @return array  需要翻译的内容
+     */
     private function allLangPage(string $id, string $from, string $to)
     {
         // 结果
@@ -372,7 +421,7 @@ class TranslateController extends Controller
         $fields = Db::table('node_fields')->pluck('id')->toArray();
 
         // 过滤不翻译的字段
-        $fields = array_diff($fields, $this->notFields);
+        $fields = array_diff($fields, $this->getNotFields());
 
         // 判断title是否存在翻译版本
         $check = Db::table('node_translations')->where('entity_id', $id)->where('langcode', $to)->exists();
@@ -397,6 +446,15 @@ class TranslateController extends Controller
         return array_filter($list);
     }
 
+    /**
+     * 翻译全部字段里设置其中一个语言的翻译结果
+     * 
+     * @param  string $html 翻译后的html
+     * @param  string $from 源语言
+     * @param  string $to   目标语言
+     * @param  array  $id   被翻译的页面的id
+     * @return array  修改记录
+     */
     private function allLangSet(string $html, string $from, string $to, array $id)
     {
         // 结果
@@ -427,6 +485,16 @@ class TranslateController extends Controller
         return array_values($id);
     }
 
+    /**
+     * 翻译全部字段里修改一个页面的翻译结果
+     * 
+     * @param  array  $old  需要翻译的内容
+     * @param  array  $new  翻译后的内容
+     * @param  string $id   页面id
+     * @param  string $from 源语言
+     * @param  string $to   目标语言
+     * @return array  修改的字段
+     */
     private function allLangUpdate(array $old, array $new, string $id, string $from, string $to)
     {
         // 把翻译后的内容按顺序覆盖到翻以前的内容上
@@ -470,6 +538,14 @@ class TranslateController extends Controller
         return array_keys($old);
     }
 
+    /**
+     * 对一段html进行翻译并返回结果
+     * 
+     * @param  string $html 被翻译的html
+     * @param  string $from 源语言
+     * @param  string $to   目标语言
+     * @return string|array 字符串表示翻译后的html 数组的0下标为错误信息
+     */
     private function html(string $html, string $from, string $to)
     {
         // 创建任务
@@ -497,6 +573,14 @@ class TranslateController extends Controller
         return $data;
     }
 
+    /**
+     * 创建翻译任务
+     * 
+     * @param  string $html 被翻译的html
+     * @param  string $from 源语言
+     * @param  string $to   目标语言
+     * @return array  翻译任务的taskid和缓存文件的路径
+     */
     private function create(string $html, string $from, string $to)
     {
         // 记录语言代码
@@ -539,6 +623,12 @@ class TranslateController extends Controller
         ];
     }
 
+    /**
+     * 获取翻译结果
+     * 
+     * @param  array $data 翻译任务的taskid和缓存文件的路径
+     * @return null|bool|string null表示翻译任务尚未完成 false表示翻译失败 string为翻译结果
+     */
     private function get(array $data)
     {
         // 获取结果
@@ -571,6 +661,11 @@ class TranslateController extends Controller
             $html = str_replace($key, $value, $html);
         }
 
+        // 指定翻译结果
+        foreach ($this->replace as $key => $value) {
+            $html = str_replace($key, $value, $html);
+        }
+
         // 页面里引入的路径前面添加语言代码 其他地方需要手动修改
         $html = str_replace('{% extends "_layout.twig" %}', '{% extends "' . $this->code . '/_layout.twig" %}', $html);
         $html = str_replace('{% use "_blocks.twig" %}', '{% use "' . $this->code . '/_blocks.twig" %}', $html);
@@ -584,7 +679,9 @@ class TranslateController extends Controller
         }
 
         // 所有首页的链接加上语言代码
-        $html = str_replace('href="/index.html"', 'href="/' . $this->code . '/index.html"', $html);
+        foreach ($this->url as $key => $value) {
+            $html = str_replace('href="' . $value . '"', 'href="/' . $this->code . $value . '"', $html);
+        }
 
         // 搜索表单添加隐藏表单
         $pattern = '/' . '<form action="/search" method="get"' . '([\w\W]*?)' . '</form>' . '/';
@@ -597,7 +694,13 @@ class TranslateController extends Controller
         return $html;
     }
 
-    private function except($html)
+    /**
+     * 获取不需要翻译的内容
+     * 
+     * @param  string $html 被翻译的html
+     * @return array  html里不需要翻译的内容
+     */
+    private function except(string $html)
     {
         // 正则获取两个字符之间的字符
         $wrap = [
@@ -618,10 +721,16 @@ class TranslateController extends Controller
         }
 
         // 返回内容里全部不翻译的内容
-        return array_values(array_unique(array_merge($except, $this->notText)));
+        return array_values(array_unique(array_merge($except, array_keys($this->getReplace()), $this->getNotText())));
     }
 
-    private function getNumber($html)
+    /**
+     * 获取一个一段html代码里不曾出现过的随机数
+     * 
+     * @param  string $html 被翻译的html
+     * @return string 随机数
+     */
+    private function getNumber(string $html)
     {
         // 创建随机数
         $number = strval(mt_rand(100000000, 999999999));
@@ -632,5 +741,35 @@ class TranslateController extends Controller
         } else {
             return $number;
         }
+    }
+
+    /**
+     * 获取不翻译的字段
+     * 
+     * @return array
+     */
+    private function getNotFields()
+    {
+        return count($this->notFields) == count($this->notFields, 1) ? $this->notFields : ($this->notFields[$this->code] ?? []);
+    }
+
+    /**
+     * 获取不翻译的内容
+     * 
+     * @return array
+     */
+    private function getNotText()
+    {
+        return count($this->notText) == count($this->notText, 1) ? $this->notText : ($this->notText[$this->code] ?? []);
+    }
+
+    /**
+     * 获取指定的翻译结果
+     * 
+     * @return array
+     */
+    private function getReplace()
+    {
+        return count($this->replace) == count($this->replace, 1) ? $this->replace : ($this->replace[$this->code] ?? []);
     }
 }
