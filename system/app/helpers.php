@@ -121,6 +121,26 @@ if (! function_exists('langname_by_chinese')) {
     }
 }
 
+if (! function_exists('current_lang_code')) {
+    /**
+     * 获取当前语言代码
+     *
+     * @param  string $url url
+     * @return string 代码
+     */
+    function current_lang_code(string $url)
+    {
+        if (!$url) {
+            return config('lang.frontend');
+        }
+        $code = array_keys(config('lang.available'));
+        $url = explode('/', trim($url));
+        if (in_array($url[0], $code)) return $url[0];
+
+        return config('lang.frontend');
+    }
+}
+
 if (! function_exists('cast')) {
     function cast($value, $caster, $force = true)
     {
