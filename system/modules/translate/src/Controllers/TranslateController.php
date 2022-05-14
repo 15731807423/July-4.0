@@ -735,7 +735,7 @@ class TranslateController extends Controller
         // 创建随机数
         $number = strval(mt_rand(1000000, 9999999));
 
-        // 如果内容里已经存在该随机数 再次调用本身 否则返回随机数
+        // 如果内容里已经存在该随机数或随机数中存在1 再次调用本身 否则返回由1开始和结束的随机数 这样每个随机数都是1xxxxxxx1
         if (strstr($html, $number) || strstr($number, '1')) {
             return $this->getNumber($html);
         } else {
