@@ -600,7 +600,7 @@ class TranslateController extends Controller
 
         // 定义需要的数据
         $url    = env('APP_URL');
-        $html   = html_entity_decode($html);
+        // $html   = html_entity_decode($html);
         $to     = $to == 'zh-Hans' ? 'zh' : $to;
         $path   = str_replace('system', '', base_path());
         $file   = md5(strval(time()) . strval(mt_rand(10000, 99999))) . '.html';
@@ -651,7 +651,7 @@ class TranslateController extends Controller
 
         // 获取翻译后内容并转义
         $html = file_get_contents($data['body']['TranslateFileUrl']);
-        $html = html_entity_decode($html);
+        // $html = html_entity_decode($html);
 
         // 获取不翻译的内容
         $except = $this->except($html);
