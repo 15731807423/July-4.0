@@ -76,6 +76,8 @@ class TranslateController extends Controller
         '/index.html'
     ];
 
+    private $lineElement = ['a', 'b', 'em', 'font', 'i', 'span', 'strong'];
+
     // 执行时间
     private $time = [];
 
@@ -598,6 +600,12 @@ class TranslateController extends Controller
         }
         $this->list = $list;
 
+        // 标记前后有空格的行元素
+        foreach ($this->lineElement as $key => $value) {
+            $html = str_replace(' <' . $value . ' ', ' <' . $value . ' space="1" ', $html);
+            $html = str_replace('</' . $value . '> ', '</' . $value . '><' . $value . ' space="2"></' . $value . '>', $html);
+        }
+
         // 定义需要的数据
         $url    = env('APP_URL');
         // $html   = html_entity_decode($html);
@@ -689,6 +697,13 @@ class TranslateController extends Controller
         preg_match_all($pattern, $html, $matches);
         foreach ($matches[0] as $key => $value) {
             $html = str_replace($value, str_replace('</form>', '<input type="hidden" name="lang" value="' . $this->code . '"></form>', $value), $html);
+        }
+
+        // 被标记前的行元素前后加空格
+        foreach ($this->lineElement as $key => $value) {
+            $html = str_replace(' <' . $value . ' space="1" ', '<' . $value . ' space="1" ', $html);
+            $html = str_replace('<' . $value . ' space="1" ', ' <' . $value . ' ', $html);
+            $html = str_replace('<' . $value . ' space="2"></' . $value . '>', ' ', $html);
         }
 
         return $html;
