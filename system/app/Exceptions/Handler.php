@@ -57,7 +57,7 @@ class Handler extends ExceptionHandler
 
             $lang = current_lang_code($request->path());
 
-            $lang = $lang == langcode('frontend') ? '/' : '/' . $lang . '/';
+            $lang = $lang == langcode('frontend') ? '/' : ('/' . $lang . '/');
 
             if (is_file($file = public_path($lang . $code . '.html'))) {
                 return response(file_get_contents($file), $code);
