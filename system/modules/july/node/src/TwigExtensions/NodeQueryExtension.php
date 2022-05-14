@@ -70,14 +70,7 @@ class NodeQueryExtension extends AbstractExtension implements GlobalsInterface
 
             // 当前语言代码
             new TwigFunction('current_lang_code', function ($url) {
-                if (!$url) {
-                    return config('lang.frontend');
-                }
-                $code = array_keys(config('lang.available'));
-                $url = explode('/', $url);
-                if (in_array($url[1], $code)) return $url[1];
-
-                return config('lang.frontend');
+                return current_lang_code($url);
             }),
         ];
     }
