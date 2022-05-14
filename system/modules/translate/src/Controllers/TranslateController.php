@@ -76,6 +76,7 @@ class TranslateController extends Controller
         '/index.html'
     ];
 
+    // 行元素
     private $lineElement = ['a', 'b', 'em', 'font', 'i', 'span', 'strong'];
 
     // 执行时间
