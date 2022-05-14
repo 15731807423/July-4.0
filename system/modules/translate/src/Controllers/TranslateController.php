@@ -733,13 +733,13 @@ class TranslateController extends Controller
     private function getNumber(string $html)
     {
         // 创建随机数
-        $number = strval(mt_rand(100000000, 999999999));
+        $number = strval(mt_rand(1000000, 9999999));
 
         // 如果内容里已经存在该随机数 再次调用本身 否则返回随机数
-        if (strstr($html, $number)) {
+        if (strstr($html, $number) || strstr($number, '1')) {
             return $this->getNumber($html);
         } else {
-            return $number;
+            return '1' . $number . '1';
         }
     }
 
