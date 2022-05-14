@@ -54,7 +54,12 @@ class Handler extends ExceptionHandler
         // 修改错误页面（如 404 页）获取方式，优先读取对应的 html 文件
         if ($exception instanceof HttpException) {
             $code = $exception->getStatusCode();
-            if (is_file($file = public_path($code.'.html'))) {
+
+            $lang = current_lang_code($request->path());
+
+            $lang = $lang == langcode('frontend') ? '/' : '/' . $lang . '/';
+
+            if (is_file($file = public_path($lang . $code . '.html'))) {
                 return response(file_get_contents($file), $code);
             }
         }
