@@ -600,7 +600,7 @@ class TranslateController extends Controller
         }
         $this->list = $list;
 
-        // 标记前后有空格的行元素
+        // 把行元素前后的空格用指定内容替换
         foreach ($this->lineElement as $key => $value) {
             $html = str_replace(' <' . $value . ' ', '<' . $value . ' space="1"></' . $value . '><' . $value . ' ', $html);
             $html = str_replace('</' . $value . '> ', '</' . $value . '><' . $value . ' space="1"></' . $value . '>', $html);
@@ -699,7 +699,7 @@ class TranslateController extends Controller
             $html = str_replace($value, str_replace('</form>', '<input type="hidden" name="lang" value="' . $this->code . '"></form>', $value), $html);
         }
 
-        // 被标记前的行元素前后加空格
+        // 恢复行元素前后的空格
         foreach ($this->lineElement as $key => $value) {
             $html = str_replace('<' . $value . ' space="1"></' . $value . '>', ' ', $html);
         }
