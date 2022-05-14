@@ -602,8 +602,8 @@ class TranslateController extends Controller
 
         // 标记前后有空格的行元素
         foreach ($this->lineElement as $key => $value) {
-            $html = str_replace(' <' . $value . ' ', ' <' . $value . ' space="1" ', $html);
-            $html = str_replace('</' . $value . '> ', '</' . $value . '><' . $value . ' space="2"></' . $value . '>', $html);
+            $html = str_replace(' <' . $value . ' ', '<' . $value . ' space="1"></' . $value . '><' . $value . ' ', $html);
+            $html = str_replace('</' . $value . '> ', '</' . $value . '><' . $value . ' space="1"></' . $value . '>', $html);
         }
 
         // 定义需要的数据
@@ -701,9 +701,7 @@ class TranslateController extends Controller
 
         // 被标记前的行元素前后加空格
         foreach ($this->lineElement as $key => $value) {
-            $html = str_replace(' <' . $value . ' space="1" ', '<' . $value . ' space="1" ', $html);
-            $html = str_replace('<' . $value . ' space="1" ', ' <' . $value . ' ', $html);
-            $html = str_replace('<' . $value . ' space="2"></' . $value . '>', ' ', $html);
+            $html = str_replace('<' . $value . ' space="1"></' . $value . '>', ' ', $html);
         }
 
         return $html;
