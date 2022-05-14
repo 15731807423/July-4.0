@@ -588,6 +588,10 @@ class TranslateController extends Controller
         // 记录语言代码
         $this->code = $to;
 
+        // 替换特殊空格
+        $html = str_replace(chr(0xC2).chr(0xA0), ' ', $html);
+        $html = str_replace('&nbsp;', ' ', $html);
+
         // 获取内容里不翻译的内容
         $except = $this->except($html);
 
