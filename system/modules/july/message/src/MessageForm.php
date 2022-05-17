@@ -59,13 +59,13 @@ class MessageForm extends EntityMoldBase
      * @param  array $values
      * @return string
      */
-    public function render($values = [])
+    public function render($values = [], $langcode = null)
     {
         /** @var \Twig\Environment */
         $twig = app('twig');
 
         // 默认模板
-        $view = 'message/form/'.$this->getKey().'.twig';
+        $view = ($langcode ? $langcode . '/' : '') . 'message/form/'.$this->getKey().'.twig';
 
         // 数据
         $data = $this->gather();
