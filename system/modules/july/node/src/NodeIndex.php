@@ -282,6 +282,18 @@ class NodeIndex extends ModelBase
     {
         $this->weight = 0;
         $content = trim($this->attributes['content']);
+        $pattern = '/{{([\w\W]*?)}}/';
+        $matches = [];
+        preg_match_all($pattern, $content, $matches);
+        $pattern2 = '/{%([\w\W]*?)%}/';
+        $matches2 = [];
+        preg_match_all($pattern2, $content, $matches2);
+        $matches = array_merge($matches[0], $matches2[0]);
+
+        foreach ($matches as $key => $value) {
+            $content = str_replace($value . ';', '', $content);
+            $content = str_replace($value, '', $content);
+        }
         $tokens = [];
         foreach ($keywords as $keyword => $weight) {
             $keyword = (string) $keyword;
