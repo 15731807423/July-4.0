@@ -648,7 +648,7 @@ class TranslateController extends Controller
         // 创建翻译任务
         $data = Translate::create($this->website . '/' . $file, $from, $to);
         return [
-            'file'  => $this->path . $this->file,
+            'file'  => $this->path . $file,
             'data'  => $data
         ];
     }
