@@ -97,6 +97,25 @@ class TranslateController extends Controller
     // 错误信息
     private $error = [];
 
+    // 缓存文件路径
+    private $path;
+
+    // 缓存文件网址
+    private $website;
+
+    // 模板_layout里的html标签
+    private $htmlHeader = '<html lang="en">';
+
+    function __construct()
+    {
+        $this->path     = base_path('../');
+        $this->website  = env('APP_URL');
+
+        // 如果证书不能用用这个 前提在同一个空间下
+        // $this->path     = '/home2/wiremesh/hecland.com/';
+        // $this->website  = 'http://www.hecland.com';
+    }
+
     /**
      * 翻译全部字段
      * 
@@ -608,30 +627,28 @@ class TranslateController extends Controller
         // 把行元素前后的空格用指定内容替换
         foreach ($this->lineElement as $key => $value) {
             $html = str_replace(' <' . $value . ' ', '<' . $value . ' space="1"></' . $value . '><' . $value . ' ', $html);
+            $html = str_replace(' <' . $value . '>', '<' . $value . ' space="1"></' . $value . '><' . $value . '>', $html);
             $html = str_replace('</' . $value . '> ', '</' . $value . '><' . $value . ' space="1"></' . $value . '>', $html);
         }
 
         // 定义需要的数据
-        $url    = env('APP_URL');
         // $html   = html_entity_decode($html);
         $to     = $to == 'zh-Hans' ? 'zh' : $to;
-        $path   = str_replace('system', '', base_path());
         $file   = md5(strval(time()) . strval(mt_rand(10000, 99999))) . '.html';
 
         // 创建文档
-        $result = touch($path . $file);
+        $result = touch($this->path . $file);
         if (!$result) return 'html缓存文件生成失败';
 
         // 写入文档
-        $handle = fopen($path . $file, 'w');
+        $handle = fopen($this->path . $file, 'w');
         fwrite($handle, $html);
         fclose($handle);
 
         // 创建翻译任务
-        $url .= '/' . $file;
-        $data = Translate::create($url, $from, $to);
+        $data = Translate::create($this->website . '/' . $file, $from, $to);
         return [
-            'file'  => $path . $file,
+            'file'  => $this->path . $this->file,
             'data'  => $data
         ];
     }
@@ -655,6 +672,9 @@ class TranslateController extends Controller
 
         // 如果状态是错误 返回false
         elseif ($data['body']['Status'] == 'error') {
+            // 删除本地文档
+            if (file_exists($file)) unlink($file);
+
             $this->error[] = $data['body']['TranslateErrorMessage'];
             return false;
         }
@@ -664,7 +684,7 @@ class TranslateController extends Controller
 
         // 获取翻译后内容并转义
         $html = file_get_contents($data['body']['TranslateFileUrl']);
-        // $html = html_entity_decode($html);
+        $html = html_entity_decode($html);
 
         // 获取不翻译的内容
         $except = $this->except($html);
@@ -675,7 +695,7 @@ class TranslateController extends Controller
         }
 
         // 指定翻译结果
-        foreach ($this->replace as $key => $value) {
+        foreach ($this->getReplace() as $key => $value) {
             $html = str_replace($key, $value, $html);
         }
 
@@ -708,6 +728,8 @@ class TranslateController extends Controller
         foreach ($this->lineElement as $key => $value) {
             $html = str_replace('<' . $value . ' space="1"></' . $value . '>', ' ', $html);
         }
+
+        $html = str_replace($this->htmlHeader, str_replace(langcode('frontend'), $this->code, $this->htmlHeader), $html);
 
         return $html;
     }
