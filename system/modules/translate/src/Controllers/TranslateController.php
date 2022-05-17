@@ -672,6 +672,9 @@ class TranslateController extends Controller
 
         // 如果状态是错误 返回false
         elseif ($data['body']['Status'] == 'error') {
+            // 写入日志
+            $this->log($file, $data);
+
             // 删除本地文档
             if (file_exists($file)) unlink($file);
 
@@ -679,15 +682,15 @@ class TranslateController extends Controller
             return false;
         }
 
+        // 写入日志
+        $this->log($file, $data);
+
         // 删除本地文档
         if (file_exists($file)) unlink($file);
 
         // 获取翻译后内容并转义
         $html = file_get_contents($data['body']['TranslateFileUrl']);
         $html = html_entity_decode($html);
-
-        // 获取不翻译的内容
-        $except = $this->except($html);
 
         // 根据记录恢复
         foreach ($this->list as $key => $value) {
@@ -776,7 +779,7 @@ class TranslateController extends Controller
         $number = strval(mt_rand(1000000, 9999999));
 
         // 如果内容里已经存在该随机数或随机数中存在1 再次调用本身 否则返回由1开始和结束的随机数 这样每个随机数都是1xxxxxxx1
-        if (strstr($html, $number) || strstr($number, '1')) {
+        if (strstr($html, $number) || strstr($number, '1') || in_array($number, array_keys($this->list)) !== false) {
             return $this->getNumber($html);
         } else {
             return '1' . $number . '1';
@@ -811,5 +814,48 @@ class TranslateController extends Controller
     private function getReplace()
     {
         return count($this->replace) == count($this->replace, 1) ? $this->replace : ($this->replace[$this->code] ?? []);
+    }
+
+    /**
+     * 翻译记录保存
+     * 
+     * @param  string $file   被翻译的文件路径 根目录下
+     * @param  array  $result 阿里云返回的结果
+     */
+    private function log(string $file, array $result)
+    {
+        // 定义日志目录 根目录下的translate_log文件夹
+        $path = str_replace('system', '', base_path()) . 'translate_log';
+
+        // 如果没有文件夹 创建
+        if (!is_dir($path)) mkdir($path);
+
+        // 定义本次日志保存的文件夹名称并创建 当前日期
+        $path .= '/' . date('YmdHis');
+        mkdir($path);
+
+        // 复制翻以前的html
+        copy($file, $path . '/from.html');
+
+        // 如果翻译成功 保存翻译后的内容
+        if ($result['body']['Status'] == 'translated') {
+            touch($path . '/to.html');
+            file_put_contents($path . '/to.html', file_get_contents($result['body']['TranslateFileUrl']));
+        }
+
+        // 本次翻译的所有信息保存为json
+        $data = [
+            'notFields'     => $this->notFields,
+            'notText'       => $this->notText,
+            'replace'       => $this->replace,
+            'url'           => $this->url,
+            'lineElement'   => $this->lineElement,
+            'list'          => $this->list,
+            'cutting'       => $this->cutting,
+            'code'          => $this->code,
+            'result'        => $result
+        ];
+        touch($path . '/result.json');
+        file_put_contents($path . '/result.json', json_encode($data, JSON_PRETTY_PRINT));
     }
 }
