@@ -135,7 +135,7 @@ if (! function_exists('current_lang_code')) {
         }
         $code = array_keys(config('lang.available'));
         $url = explode('/', trim($url));
-        if (in_array($url[0], $code)) return $url[0];
+        if (in_array($url[1], $code)) return $url[1];
 
         return config('lang.frontend');
     }
