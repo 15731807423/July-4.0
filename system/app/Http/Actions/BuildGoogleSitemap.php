@@ -100,9 +100,11 @@ class BuildGoogleSitemap extends ActionBase
             $video = [];
             $videoNum = 0;
 
-            foreach($videos as $value){
-                $video[$videoNum] = $content->extractMpTitle($value,$home);
-                $videoNum++;
+            if ($lang === false) {
+                foreach($videos as $value){
+                    $video[$videoNum] = $content->extractMpTitle($value,$home);
+                    $videoNum++;
+                }
             }
 
             $codeList = require base_path('language/code.php');
