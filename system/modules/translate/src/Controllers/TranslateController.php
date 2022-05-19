@@ -21,47 +21,21 @@ class TranslateController extends Controller
         'url',
         'meta_canonical',
         'image_src',
-        'nav_icon',
-        'applications',
-        'projects',
-        'installation',
-        'data_pdf',
-        'brochure_pdf',
-        'nav_img',
-        'index_pro',
-        'pro',
-        'list_icon',
-        'muses',
-        'athena',
-        'apollo',
-        'hephaistos',
-        'triton',
-        'astraios'
     ];
 
     // 全部不翻译的内容 如果不区分语言 用一维数组 如果区分语言 用二维数组
     private $notText = [
-        'Argger',
-        'ARGGER',
-        'argger',
-        'MUSES',
-        'Muses',
-        'muses',
-        'ATHENA',
-        'Athena',
-        'athena',
-        'APOLLO',
-        'Apollo',
-        'apollo',
-        'HEPHAISTOS',
-        'Hephaistos',
-        'hephaistos',
-        'TRITON',
-        'Triton',
-        'triton',
-        'ASTRAIOS',
-        'Astraios',
-        'astraios'
+        'Hebei Yingbo Safe Boxes Co., Ltd.',
+        'Hebei UTOP Technologies Co.,Ltd.',
+        'YINGBO safe',
+        'Yingbo safe',
+        'yingbo safe',
+        'YINGBO',
+        'Yingbo',
+        'yingbo',
+        'ANNA',
+        'Anna',
+        'anna'
     ];
 
     // 指定翻译结果 str_replace函数 可能会替换不需要替换的内容 如果不区分语言 用一维数组 如果区分语言 用二维数组
@@ -73,11 +47,31 @@ class TranslateController extends Controller
 
     // 前面加语言代码的url
     private $url = [
-        '/index.html'
+        '/index.html',
+        '/privacy-policy.html',
+        '/terms-conditions.html',
+        '/products/index.html',
+        '/about/quality-control.html',
+        '/about/company-profile.html',
+        '/about/certificate-patent.html',
+        '/products/home-safes/zy-series.html',
+        '/products/home-safes/index.html',
+        '/products/hotel-safes/index.html',
+        '/products/office-safes/index.html',
+        '/products/bank-safes/index.html',
+        '/products/jewellery-safes.html',
+        '/products/home-safes/index.html',
+        '/products/hotel-safes/index.html',
+        '/products/office-safes/index.html',
+        '/products/bank-safes/index.html',
+        '/products/jewellery-safes/index.html'
     ];
 
     // 行元素
     private $lineElement = ['a', 'b', 'em', 'font', 'i', 'span', 'strong'];
+
+    // 模板_layout里的html标签
+    private $htmlHeader = '<html lang="en">';
 
     // 执行时间
     private $time = [];
@@ -85,10 +79,11 @@ class TranslateController extends Controller
     // 不翻译的内容被替换的记录
     private $list = [];
 
-    // 把所有内容拼接在一起时用的切割符号 第一个用于切割字段 第二个用于切割页面
+    // 标识 第一个用于切割字段 第二个用于切割页面 第三个用于替换空格
     private $cutting = [
         '<div class="translate-field-cutting"></div>',
-        '<div class="translate-page-cutting"></div>'
+        '<div class="translate-page-cutting"></div>',
+        '<div class="translate-space"></div>'
     ];
 
     // 项目里定义的转换后的语言代码
@@ -102,9 +97,6 @@ class TranslateController extends Controller
 
     // 缓存文件网址
     private $website;
-
-    // 模板_layout里的html标签
-    private $htmlHeader = '<html lang="en">';
 
     function __construct()
     {
@@ -140,6 +132,9 @@ class TranslateController extends Controller
         }
 
         if (count($list) == 0) return response('没有要翻译的语言');
+
+        // 记录翻译语言
+        $this->code = $list;
 
         // 过滤完开始翻译
         // 创建保存翻译id和状态的数组 状态默认false表示未翻译完成
@@ -184,7 +179,7 @@ class TranslateController extends Controller
                 if ($status[$key]) continue;
 
                 // 用id获取结果 结果为数组表示获取成功 结果为null表示还在翻译 结果为false表示翻译失败
-                $data = $this->get($value);
+                $data = $this->get($value, $key);
 
                 // 如果结果是字符串 修改语言的状态和数据库
                 if (is_string($data)) {
@@ -235,9 +230,12 @@ class TranslateController extends Controller
             return $text;
         }
 
+        // 记录翻译语言
+        $this->code = $to;
+
         // 过滤不翻译的内容
         foreach ($text as $key => $value) {
-            if (in_array($key, $this->getNotFields())) {
+            if (in_array($key, $this->getNotFields($to))) {
                 unset($text[$key]);
             }
         }
@@ -276,6 +274,9 @@ class TranslateController extends Controller
     {
         // 记录时间
         $this->time[0] = [time()];
+
+        // 记录翻译语言
+        $this->code = $code;
 
         // 模板路径
         $path = base_path('../themes/frontend/template/');
@@ -443,7 +444,7 @@ class TranslateController extends Controller
         $fields = Db::table('node_fields')->pluck('id')->toArray();
 
         // 过滤不翻译的字段
-        $fields = array_diff($fields, $this->getNotFields());
+        $fields = array_diff($fields, $this->getNotFields($to));
 
         // 判断title是否存在翻译版本
         $check = Db::table('node_translations')->where('entity_id', $id)->where('langcode', $to)->exists();
@@ -581,7 +582,7 @@ class TranslateController extends Controller
         while (true) {
             sleep(3);
 
-            $data = $this->get([$id, $file]);
+            $data = $this->get([$id, $file], $to);
 
             if (is_string($data)) {
                 return $data;
@@ -605,15 +606,12 @@ class TranslateController extends Controller
      */
     private function create(string $html, string $from, string $to)
     {
-        // 记录语言代码
-        $this->code = $to;
-
         // 替换特殊空格
         $html = str_replace(chr(0xC2).chr(0xA0), ' ', $html);
         $html = str_replace('&nbsp;', ' ', $html);
 
         // 获取内容里不翻译的内容
-        $except = $this->except($html);
+        $except = $this->except($html, $to);
 
         // 把内容替换为随机数字 并记录
         $list = [];
@@ -622,13 +620,13 @@ class TranslateController extends Controller
             $html = str_replace($value, $number, $html);
             $list[$number] = $value;
         }
-        $this->list = $list;
+        $this->list[$to] = $list;
 
         // 把行元素前后的空格用指定内容替换
         foreach ($this->lineElement as $key => $value) {
-            $html = str_replace(' <' . $value . ' ', '<' . $value . ' space="1"></' . $value . '><' . $value . ' ', $html);
-            $html = str_replace(' <' . $value . '>', '<' . $value . ' space="1"></' . $value . '><' . $value . '>', $html);
-            $html = str_replace('</' . $value . '> ', '</' . $value . '><' . $value . ' space="1"></' . $value . '>', $html);
+            $html = str_replace(' <' . $value . ' ', $this->cutting[2] . '<' . $value . ' ', $html);
+            $html = str_replace(' <' . $value . '>', $this->cutting[2] . '<' . $value . '>', $html);
+            $html = str_replace('</' . $value . '> ', '</' . $value . '>' . $this->cutting[2], $html);
         }
 
         // 定义需要的数据
@@ -656,10 +654,11 @@ class TranslateController extends Controller
     /**
      * 获取翻译结果
      * 
-     * @param  array $data 翻译任务的taskid和缓存文件的路径
+     * @param  array  $data 翻译任务的taskid和缓存文件的路径
+     * @param  string $code 目标语言
      * @return null|bool|string null表示翻译任务尚未完成 false表示翻译失败 string为翻译结果
      */
-    private function get(array $data)
+    private function get(array $data, string $code)
     {
         // 获取结果
         $file = $data[1];
@@ -693,30 +692,30 @@ class TranslateController extends Controller
         $html = html_entity_decode($html);
 
         // 根据记录恢复
-        foreach ($this->list as $key => $value) {
+        foreach ($this->list[$code] as $key => $value) {
             $html = str_replace($key, $value, $html);
         }
 
         // 指定翻译结果
-        foreach ($this->getReplace() as $key => $value) {
+        foreach ($this->getReplace($code) as $key => $value) {
             $html = str_replace($key, $value, $html);
         }
 
         // 页面里引入的路径前面添加语言代码 其他地方需要手动修改
-        $html = str_replace('{% extends "_layout.twig" %}', '{% extends "' . $this->code . '/_layout.twig" %}', $html);
-        $html = str_replace('{% use "_blocks.twig" %}', '{% use "' . $this->code . '/_blocks.twig" %}', $html);
+        $html = str_replace('{% extends "_layout.twig" %}', '{% extends "' . $code . '/_layout.twig" %}', $html);
+        $html = str_replace('{% use "_blocks.twig" %}', '{% use "' . $code . '/_blocks.twig" %}', $html);
 
         // 调用表单时传参加上语言代码
         $pattern = '/' . '{{ forms\(' . '([\w\W]*?)' . '\).render\(\)\|raw }}' . '/';
         $matches = [];
         preg_match_all($pattern, $html, $matches);
         foreach ($matches[0] as $key => $value) {
-            $html = str_replace($value, str_replace('render()', 'render([], \'' . $this->code . '\')', $value), $html);
+            $html = str_replace($value, str_replace('render()', 'render([], \'' . $code . '\')', $value), $html);
         }
 
-        // 所有首页的链接加上语言代码
+        // 所有链接加上语言代码
         foreach ($this->url as $key => $value) {
-            $html = str_replace('href="' . $value . '"', 'href="/' . $this->code . $value . '"', $html);
+            $html = str_replace('href="' . $value . '"', 'href="/' . $code . $value . '"', $html);
         }
 
         // 搜索表单添加隐藏表单
@@ -724,15 +723,15 @@ class TranslateController extends Controller
         $matches = [];
         preg_match_all($pattern, $html, $matches);
         foreach ($matches[0] as $key => $value) {
-            $html = str_replace($value, str_replace('</form>', '<input type="hidden" name="lang" value="' . $this->code . '"></form>', $value), $html);
+            $html = str_replace($value, str_replace('</form>', '<input type="hidden" name="lang" value="' . $code . '"></form>', $value), $html);
         }
 
         // 恢复行元素前后的空格
-        foreach ($this->lineElement as $key => $value) {
-            $html = str_replace('<' . $value . ' space="1"></' . $value . '>', ' ', $html);
-        }
+        $html = str_replace($this->cutting[2], ' ', $html);
 
-        $html = str_replace($this->htmlHeader, str_replace(langcode('frontend'), $this->code, $this->htmlHeader), $html);
+        $html = str_replace($this->htmlHeader, str_replace(langcode('frontend'), $code, $this->htmlHeader), $html);
+
+        $html = str_replace('&#39;', '\'', $html);
 
         return $html;
     }
@@ -741,9 +740,10 @@ class TranslateController extends Controller
      * 获取不需要翻译的内容
      * 
      * @param  string $html 被翻译的html
+     * @param  string $code 目标语言
      * @return array  html里不需要翻译的内容
      */
-    private function except(string $html)
+    private function except(string $html, string $code)
     {
         // 正则获取两个字符之间的字符
         $wrap = [
@@ -764,7 +764,7 @@ class TranslateController extends Controller
         }
 
         // 返回内容里全部不翻译的内容
-        return array_values(array_unique(array_merge($except, array_keys($this->getReplace()), $this->getNotText())));
+        return array_values(array_unique(array_merge($except, array_keys($this->getReplace($code)), $this->getNotText($code))));
     }
 
     /**
@@ -788,32 +788,35 @@ class TranslateController extends Controller
 
     /**
      * 获取不翻译的字段
+     * @param string $code 目标语言
      * 
      * @return array
      */
-    private function getNotFields()
+    private function getNotFields(string $code)
     {
-        return count($this->notFields) == count($this->notFields, 1) ? $this->notFields : ($this->notFields[$this->code] ?? []);
+        return count($this->notFields) == count($this->notFields, 1) ? $this->notFields : ($this->notFields[$code] ?? []);
     }
 
     /**
      * 获取不翻译的内容
+     * @param string $code 目标语言
      * 
      * @return array
      */
-    private function getNotText()
+    private function getNotText(string $code)
     {
-        return count($this->notText) == count($this->notText, 1) ? $this->notText : ($this->notText[$this->code] ?? []);
+        return count($this->notText) == count($this->notText, 1) ? $this->notText : ($this->notText[$code] ?? []);
     }
 
     /**
      * 获取指定的翻译结果
+     * @param string $code 目标语言
      * 
      * @return array
      */
-    private function getReplace()
+    private function getReplace(string $code)
     {
-        return count($this->replace) == count($this->replace, 1) ? $this->replace : ($this->replace[$this->code] ?? []);
+        return count($this->replace) == count($this->replace, 1) ? $this->replace : ($this->replace[$code] ?? []);
     }
 
     /**
