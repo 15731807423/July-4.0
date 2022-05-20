@@ -129,6 +129,11 @@ class NodeIndex extends ModelBase
             $node_id = $result->entity_id;
             $field_id = $result->field_id;
             $result = $result->toSearchResult($keywords);
+
+            if ($result === false) {
+                continue;
+            }
+
             if (! isset($results[$node_id])) {
                 $results[$node_id] = [
                     'node_id' => $node_id,
@@ -262,6 +267,10 @@ class NodeIndex extends ModelBase
     {
         // $this->tokenize($keywords);
         $tokens = $this->tokenizer($keywords);
+        
+        if ($tokens === false) {
+            return false;
+        }
 
         $similar = $this->similar($this->attributes['content'], key($keywords));
         $weight = $this->weight*($this->attributes['weight'] ?? 1)*pow(10, pow($similar, 3));
@@ -295,6 +304,11 @@ class NodeIndex extends ModelBase
             $content = str_replace($value, '', $content);
         }
         $tokens = [];
+        
+        if (strstr($content, strval(array_keys($keywords)[0])) === false) {
+            return false;
+        }
+
         foreach ($keywords as $keyword => $weight) {
             $keyword = (string) $keyword;
             $pos = stripos($content, $keyword);
