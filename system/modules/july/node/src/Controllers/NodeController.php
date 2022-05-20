@@ -299,6 +299,7 @@ class NodeController extends Controller
         $lang = $multiple ? $request->input('lang', langcode('frontend')) : langcode('frontend');
 
         $results = NodeIndex::search($request->input('keywords'), $lang);
+        $results['lang'] = $lang;
         $results['title'] = 'Search';
         $results['meta_title'] = 'Search Result';
         $results['meta_keywords'] = 'Search';
