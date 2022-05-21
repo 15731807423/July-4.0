@@ -70,9 +70,6 @@ class TranslateController extends Controller
     // 行元素
     private $lineElement = ['a', 'b', 'em', 'font', 'i', 'span', 'strong'];
 
-    // 模板_layout里的html标签
-    private $htmlHeader = '<html lang="en">';
-
     // 执行时间
     private $time = [];
 
@@ -728,8 +725,6 @@ class TranslateController extends Controller
 
         // 恢复行元素前后的空格
         $html = str_replace($this->cutting[2], ' ', $html);
-
-        $html = str_replace($this->htmlHeader, str_replace(langcode('frontend'), $code, $this->htmlHeader), $html);
 
         $html = str_replace('&#39;', '\'', $html);
 
