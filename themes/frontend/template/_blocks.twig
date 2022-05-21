@@ -30,30 +30,38 @@
 {# Body底部 #}
 {% block insertBodyBottom -%}{% endblock -%}
 
-{# 多语言 #}
-{% block lang_multiple -%}
-    {# <div class="lang-multiple">
-        {% for key, item in config('lang.available') %}
-            <a href="{{ switch_lang_by_url(_node.url, key) }}">
-                {% if config('lang.icon') %}
-                    <img src="{{ item.icon }}">
-                {% endif %}
-                <span>{{ langname(key, key) }}</span>
-            </a>
-        {% endfor %}
-    </div> #}
-{% endblock -%}
-
 {# 导航 #}
-{% block top_logo_nav -%}{% endblock -%}
+{% block top_logo_nav -%}
+
+{# 多语言标签 哪里需要复制到哪里 #}
+{# <div class="lang-multiple">
+    <i class="iconfont icon-duoyuyan-copy"></i>
+    <ul>
+        {% for key, item in config('lang.available') %}
+            {% if item.accessible %}
+                <li>
+                    <a href="{{ switch_lang_by_url(_node.url, key) }}">
+                        {% if config('lang.icon') %}
+                            <img src="{{ item.icon }}">
+                        {% endif %}
+                        <span>{{ key|upper }}</span>
+                    </a>
+                </li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+</div> #}
+{% endblock -%}
 
 
 {# footer #}
-{% block footer -%}{% endblock -%}
+{% block footer -%}
+
+{% endblock -%}
 
 
 {# footer-popup #}
-{% block footer_popup -%}
+{% block popup -%}
 
 {% endblock -%}
 
