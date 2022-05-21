@@ -306,7 +306,7 @@ class NodeController extends Controller
         $results['meta_description'] = 'Search Result';
 
         foreach ($results['results'] as &$result) {
-            $result['node'] = $nodes->get($result['node_id']);
+            $result['node'] = $nodes->get($result['node_id'])->translateTo($lang);
         }
 
         $tpl = $lang == langcode('frontend') ? 'search.twig' : $lang . '/search.twig';
