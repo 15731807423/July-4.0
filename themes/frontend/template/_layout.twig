@@ -8,11 +8,13 @@
 </head>
 
 <body>
+  {% block insertBodyTop %}{% endblock %}
   {% block top_logo_nav %}{% endblock %}
-  {% block lang_multiple %}{% endblock %}
   {% block main %}{% endblock %}
-  {% block js %}{% endblock %}
   {% block footer %}{% endblock %}
+  {% block popup %}{% endblock %}
+  {% block js %}{% endblock %}
+  {% block insertBodyBottom %}{% endblock %}
 </body>
 
 </html>
