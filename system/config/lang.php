@@ -19,12 +19,7 @@ return [
             'accessible' => true,   // 前端可访问该语言页面
             'translatable' => true, // 内容可翻译为该语言
             'name' => '英语'
-        ],
-        'zh' => [
-            'accessible' => false,
-            'translatable' => false,
-            'name' => '简体中文'
-        ],
+        ]
     ],
 
     // 可选语言（代码）列表
@@ -70,6 +65,10 @@ return [
             'native' => '简体中文',
             'dir' => 'ltr',
             'alias' => ['zh', 'zh-CN', 'cn'],
+        ],
+        'cht' => [
+            'native' => '繁体中文',
+            'dir' => 'ltr'
         ],
     ],
 ];
