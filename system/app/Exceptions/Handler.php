@@ -55,7 +55,7 @@ class Handler extends ExceptionHandler
         if ($exception instanceof HttpException) {
             $code = $exception->getStatusCode();
 
-            $lang = current_lang_code($request->path());
+            $lang = current_lang_code('/' . ltrim($request->path(), '/'));
 
             $lang = $lang == langcode('frontend') ? '/' : ('/' . $lang . '/');
 
