@@ -58,6 +58,15 @@ class MessageFieldSeeder extends SeederBase
                     'required' => true,
                 ],
             ],
+            [
+                'id' => 'form_required',
+                'field_type' => FieldTypes\Input::class,
+                'label' => 'Form_required',
+                'field_meta' => [
+                    'required' => true,
+                    'rules' => 'in:form_required:Failed delivery, please send messages to E-mail.'
+                ],
+            ],
         ];
 
         $share = [
