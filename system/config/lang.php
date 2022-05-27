@@ -55,16 +55,14 @@ return [
         'ja' => [
             'native' => '日本語',
             'dir' => 'ltr',
-            'alias' => ['jp']
         ],
         'ru' => [
             'native' => 'русский',
             'dir' => 'ltr',
         ],
-        'zh' => [
+        'cn' => [
             'native' => '简体中文',
             'dir' => 'ltr',
-            'alias' => ['zh', 'zh-CN', 'cn'],
         ],
         'cht' => [
             'native' => '繁体中文',
