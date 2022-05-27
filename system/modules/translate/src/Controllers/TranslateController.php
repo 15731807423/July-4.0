@@ -67,6 +67,11 @@ class TranslateController extends Controller
         '/products/jewellery-safes/index.html'
     ];
 
+    // 语言代码转换 网站上的语言代码和阿里云的代码不一致时使用
+    private $codeChange = [
+        'cn' => 'zh-TW'
+    ];
+
     // 行元素
     private $lineElement = ['a', 'b', 'em', 'font', 'i', 'span', 'strong'];
 
@@ -97,8 +102,9 @@ class TranslateController extends Controller
 
     function __construct()
     {
-        $this->path     = base_path('../');
+        $this->path     = base_path('../translate/');
         $this->website  = env('APP_URL');
+        if (!is_dir($this->path)) mkdir($this->path);
 
         // 如果证书不能用用这个 前提在同一个空间下
         // $this->path     = '/home2/wiremesh/hecland.com/';
@@ -628,7 +634,7 @@ class TranslateController extends Controller
 
         // 定义需要的数据
         // $html   = html_entity_decode($html);
-        $to     = $to == 'zh-Hans' ? 'zh' : $to;
+        $to     = $this->codeChange[$to] ?? $to;
         $file   = md5(strval(time()) . strval(mt_rand(10000, 99999))) . '.html';
 
         // 创建文档
@@ -823,7 +829,7 @@ class TranslateController extends Controller
     private function log(string $file, array $result)
     {
         // 定义日志目录 根目录下的translate_log文件夹
-        $path = str_replace('system', '', base_path()) . 'translate_log';
+        $path = $this->path . 'translate_log';
 
         // 如果没有文件夹 创建
         if (!is_dir($path)) mkdir($path);
