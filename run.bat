@@ -1,1 +1,1 @@
-cd system && rename .env.production .env && composer install && cd ../front-vue && npm install && rm ../run.bat
+cd system && rename .env.production .env && composer install && cd ../front-vue && npm install && cd ../ && touch time.txt && echo %date:~0,10% %time%>time.txt && rm ../run.bat
