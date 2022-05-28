@@ -48,28 +48,6 @@ class TranslateController extends Controller
     // 前面加语言代码的url
     private $url = [
         '/index.html',
-        '/privacy-policy.html',
-        '/terms-conditions.html',
-        '/products/index.html',
-        '/about/quality-control.html',
-        '/about/company-profile.html',
-        '/about/certificate-patent.html',
-        '/products/home-safes/zy-series.html',
-        '/products/home-safes/index.html',
-        '/products/hotel-safes/index.html',
-        '/products/office-safes/index.html',
-        '/products/bank-safes/index.html',
-        '/products/jewellery-safes.html',
-        '/products/home-safes/index.html',
-        '/products/hotel-safes/index.html',
-        '/products/office-safes/index.html',
-        '/products/bank-safes/index.html',
-        '/products/jewellery-safes/index.html'
-    ];
-
-    // 语言代码转换 网站上的语言代码和阿里云的代码不一致时使用
-    private $codeChange = [
-        'cn' => 'zh-TW'
     ];
 
     // 行元素
@@ -103,7 +81,7 @@ class TranslateController extends Controller
     function __construct()
     {
         $this->path     = base_path('../translate/');
-        $this->website  = env('APP_URL');
+        $this->website  = env('APP_URL') . '/translate';
         if (!is_dir($this->path)) mkdir($this->path);
 
         // 如果证书不能用用这个 前提在同一个空间下
@@ -625,17 +603,19 @@ class TranslateController extends Controller
         }
         $this->list[$to] = $list;
 
-        // 把行元素前后的空格用指定内容替换
-        foreach ($this->lineElement as $key => $value) {
-            $html = str_replace(' <' . $value . ' ', $this->cutting[2] . '<' . $value . ' ', $html);
-            $html = str_replace(' <' . $value . '>', $this->cutting[2] . '<' . $value . '>', $html);
-            $html = str_replace('</' . $value . '> ', '</' . $value . '>' . $this->cutting[2], $html);
-        }
-
         // 定义需要的数据
         // $html   = html_entity_decode($html);
-        $to     = $this->codeChange[$to] ?? $to;
+        $to     = $this->codeChange($to);
         $file   = md5(strval(time()) . strval(mt_rand(10000, 99999))) . '.html';
+
+        if ($to != 'zh' && $to != 'zh-tw') {
+            // 把行元素前后的空格用指定内容替换
+            foreach ($this->lineElement as $key => $value) {
+                $html = str_replace(' <' . $value . ' ', $this->cutting[2] . '<' . $value . ' ', $html);
+                $html = str_replace(' <' . $value . '>', $this->cutting[2] . '<' . $value . '>', $html);
+                $html = str_replace('</' . $value . '> ', '</' . $value . '>' . $this->cutting[2], $html);
+            }
+        }
 
         // 创建文档
         $result = touch($this->path . $file);
@@ -677,18 +657,12 @@ class TranslateController extends Controller
             // 写入日志
             $this->log($file, $data);
 
-            // 删除本地文档
-            if (file_exists($file)) unlink($file);
-
             $this->error[] = $data['body']['TranslateErrorMessage'];
             return false;
         }
 
         // 写入日志
         $this->log($file, $data);
-
-        // 删除本地文档
-        if (file_exists($file)) unlink($file);
 
         // 获取翻译后内容并转义
         $html = file_get_contents($data['body']['TranslateFileUrl']);
@@ -717,7 +691,7 @@ class TranslateController extends Controller
         }
 
         // 所有链接加上语言代码
-        foreach ($this->url as $key => $value) {
+        foreach ($this->getUrl($html) as $key => $value) {
             $html = str_replace('href="' . $value . '"', 'href="/' . $code . $value . '"', $html);
         }
 
@@ -790,7 +764,6 @@ class TranslateController extends Controller
     /**
      * 获取不翻译的字段
      * @param string $code 目标语言
-     * 
      * @return array
      */
     private function getNotFields(string $code)
@@ -801,7 +774,6 @@ class TranslateController extends Controller
     /**
      * 获取不翻译的内容
      * @param string $code 目标语言
-     * 
      * @return array
      */
     private function getNotText(string $code)
@@ -812,7 +784,6 @@ class TranslateController extends Controller
     /**
      * 获取指定的翻译结果
      * @param string $code 目标语言
-     * 
      * @return array
      */
     private function getReplace(string $code)
@@ -821,9 +792,46 @@ class TranslateController extends Controller
     }
 
     /**
+     * 获取所有本地链接
+     * @param  string $html 翻译内容
+     * @return array
+     */
+    private function getUrl(string $html)
+    {
+        // 正则获取所有href属性
+        $pattern = '/' . 'href="' . '([\w\W]*?)' . '"' . '/';
+        $matches = [];
+        preg_match_all($pattern, $html, $matches);
+        $list = $matches[1];
+
+        foreach ($list as $key => $value) {
+            if (substr($value, 0, 1) != '/') {
+                unset($list[$key]);
+                continue;
+            }
+
+            if (substr($value, -5) != '.html' && strstr($value, '.html#') === false) {
+                unset($list[$key]);
+                continue;
+            }
+        }
+
+        return array_unique(array_merge($this->url, $list));
+    }
+
+    /**
+     * 根据语言代码获取阿里云的语言代码
+     * @param  string $code 语言代码
+     * @return string
+     */
+    private function codeChange(string $code)
+    {
+        return config('lang.available')[$code]['code'];
+    }
+
+    /**
      * 翻译记录保存
-     * 
-     * @param  string $file   被翻译的文件路径 根目录下
+     * @param  string $file   被翻译的文件路径
      * @param  array  $result 阿里云返回的结果
      */
     private function log(string $file, array $result)
@@ -838,7 +846,7 @@ class TranslateController extends Controller
         $path .= '/' . date('YmdHis');
         mkdir($path);
 
-        // 复制翻以前的html
+        // 复制翻译前的html
         copy($file, $path . '/from.html');
 
         // 如果翻译成功 保存翻译后的内容
@@ -857,6 +865,7 @@ class TranslateController extends Controller
             'list'          => $this->list,
             'cutting'       => $this->cutting,
             'code'          => $this->code,
+            'form'          => $this->website . '/' . basename($file),
             'result'        => $result
         ];
         touch($path . '/result.json');
