@@ -1,19 +1,35 @@
-<form id="form_request" action="{{ action }}" method="post">
+<form id="form_request" class="report_trace" action="{{ action }}" method="post">
     <div class="item">
         <i class="iconfont icon-user"></i>
-        <input type="text" name="name" placeholder="Full name *">
+        <input type="text" name="name" placeholder="Full name *" value="test" required>
     </div>
     <div class="item">
         <i class="iconfont icon-email"></i>
-        <input type="text" name="email" placeholder="E-mail Address *">
+        <input type="email" name="email" placeholder="E-mail Address *" value="test@test.com" required>
     </div>
     <div class="item">
         <i class="iconfont icon-phone"></i>
-        <input type="text" name="phone" placeholder="Country Code + Phone Number *">
+        <input type="text" name="phone" placeholder="Country Code + Phone Number *" value="test">
     </div>
     <div class="item">
         <i class="iconfont icon-edit"></i>
-        <textarea name="message" placeholder="Message *" rows="4"></textarea>
+        <textarea name="message" placeholder="Message *" rows="4" required>test</textarea>
+    </div>
+    <div class="item">
+        <i class="iconfont icon-file"></i>
+        <input type="file" name="enclosure">
+    </div>
+    <div class="item">
+        <i class="iconfont icon-file"></i>
+        <input type="file" name="enclosures" multiple>
+    </div>
+    <div class='item'>
+        <div class="progress">
+            <div class="line" style="width: 100px; height: 2px; background: #ccc;">
+                <div class="speed" style="height: 2px; background: blue;"></div>
+            </div>
+            <div class="message">0%</div>
+        </div>
     </div>
     <div class="item">
         <button>Submit</button>
