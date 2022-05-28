@@ -58,6 +58,15 @@ Route::group([
     Route::post('nodes/render', [Controllers\NodeController::class, 'render'])
         ->name('nodes.render');
 
+    // 回收站页面
+    Route::get('nodes/recovery', [Controllers\NodeController::class, 'recovery'])->name('nodes.recovery');
+
+    // 回收站恢复接口
+    Route::post('nodes/recovery_recovery_data', [Controllers\NodeController::class, 'recovery_recovery_data'])->name('nodes.recovery_recovery_data');
+
+    // 回收站删除接口
+    Route::post('nodes/recovery_delete_data', [Controllers\NodeController::class, 'recovery_delete_data'])->name('nodes.recovery_delete_data');
+
     Route::resource('nodes', Controllers\NodeController::class)
         ->except(['create'])
         ->parameters(['nodes' => 'node'])

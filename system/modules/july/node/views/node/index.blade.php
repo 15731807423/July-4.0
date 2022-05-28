@@ -231,8 +231,15 @@
                         lock: true,
                         text: '正在删除 ...',
                         background: 'rgba(255, 255, 255, 0.7)',
-                    });
+                    }), _this = this;
                     axios.delete(this.deleteUrl.replace('_ID_', node.id)).then(function(response) {
+                        var data = response.data;
+                        if (Array.isArray(data)) {
+                            loading.close();
+                            _this.$message.error('该内容在' + data.join('、') + '目录下存在子集，无法删除');
+                            return false;
+                        }
+
                         loading.spinner = 'el-icon-success';
                         loading.text = '已删除';
                         window.location.reload();
