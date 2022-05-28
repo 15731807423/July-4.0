@@ -168,7 +168,7 @@ const app = new Vue({
     computed: {
         isLangcodeSelectable() {
             const code = this.langcode, name = this.selected;
-            return code && name && !this.settings['lang.available'][code];
+            return code && name && !this.settings['lang.available'][code] && this.checkLanguageName(name);
         },
 
         translatableLangcodes() {
@@ -204,18 +204,32 @@ const app = new Vue({
             if (code.length > 5) {
                 this.$message.warning('代码最长5位');
             } else if (this.settings['lang.available'][code]) {
-                this.$message.warning('已存在');
+                this.$message.warning('代码已存在');
+            } else if (!this.checkLanguageName(name)) {
+                this.$message.warning('语言已存在');
             } else {
                 const list = _.cloneDeep(this.settings['lang.available']);
+                for (let key in this.langnames) {
+                    if (this.langnames[key] == name) var code2 = key;
+                }
                 list[code] = {
                     translatable: true,
                     accessible: true,
-                    name: name
+                    name: name,
+                    code: code2
                 };
                 this.$set(this.settings, 'lang.available', list);
                 this.selected = null;
                 this.langcode = null;
             }
+        },
+
+        // 判断一个语言是否存在
+        checkLanguageName(name) {
+            for (let key in this.settings['lang.available']) {
+                if (name == this.settings['lang.available'][key].name) return false;
+            }
+            return true;
         },
 
         // 从可用列表移除指定语言
