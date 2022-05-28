@@ -628,6 +628,10 @@ class TranslateController extends Controller
 
         // 创建翻译任务
         $data = Translate::create($this->website . '/' . $file, $from, $to);
+
+        // 写入日志
+        $this->log($file, $data, 1);
+
         return [
             'file'  => $this->path . $file,
             'data'  => $data
@@ -655,14 +659,14 @@ class TranslateController extends Controller
         // 如果状态是错误 返回false
         elseif ($data['body']['Status'] == 'error') {
             // 写入日志
-            $this->log($file, $data);
+            $this->log($file, $data, 2);
 
             $this->error[] = $data['body']['TranslateErrorMessage'];
             return false;
         }
 
         // 写入日志
-        $this->log($file, $data);
+        $this->log($file, $data, 2);
 
         // 获取翻译后内容并转义
         $html = file_get_contents($data['body']['TranslateFileUrl']);
@@ -834,7 +838,7 @@ class TranslateController extends Controller
      * @param  string $file   被翻译的文件路径
      * @param  array  $result 阿里云返回的结果
      */
-    private function log(string $file, array $result)
+    private function log(string $file, array $result, int $status)
     {
         // 定义日志目录 根目录下的translate_log文件夹
         $path = $this->path . 'translate_log';
@@ -869,6 +873,6 @@ class TranslateController extends Controller
             'result'        => $result
         ];
         touch($path . '/result.json');
-        file_put_contents($path . '/result.json', json_encode($data, JSON_PRETTY_PRINT));
+        file_put_contents($path . '/result' . $status . '.json', json_encode($data, JSON_PRETTY_PRINT));
     }
 }
