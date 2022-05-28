@@ -278,6 +278,12 @@ return [
                     'route' => 'messages.index',
                     'children' => [],
                 ],
+                [
+                    'title' => '内容回收站',
+                    'icon' => null,
+                    'route' => 'nodes.recovery',
+                    'children' => [],
+                ],
             ],
         ],
 

@@ -6,9 +6,12 @@ use App\Entity\TranslatableEntityBase;
 use App\Support\JustInTwig;
 use Illuminate\Support\Facades\Log;
 use July\Node\CatalogSet;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Node extends TranslatableEntityBase
 {
+    use SoftDeletes;
+
     /**
      * 与模型关联的表名
      *

@@ -168,25 +168,65 @@ class NodeController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * 内容列表删除 nodes表软删除
      *
      * @param  \July\Node\Node  $node
      * @return \Illuminate\Http\Response
      */
     public function destroy(Node $node)
     {
-        $langcode = request('langcode') ?? langcode('content');
+        $list = Db::table('catalog_node')->where('parent_id', $node->id)->distinct()->pluck('catalog_id')->toArray();
+        if (count($list)) return $list;
 
-        // 删除节点及其翻译
-        if ($langcode === $node->getOriginalLangcode()) {
-            $node->translations()->delete();
-            $node->delete();
-        }
+        $node->delete();
 
-        // 删除节点翻译
-        else {
-            $node->translations()->where('langcode', $langcode)->delete();
-            $node->touch();
+        return response('');
+    }
+
+    /**
+     * 回收站页面
+     */
+    public function recovery()
+    {
+        $data = [
+            'models' => Node::onlyTrashed()->get()->toArray(),
+            'context' => [
+                'molds' => NodeType::query()->pluck('label', 'id')->all(),
+                'catalogs' => Catalog::query()->pluck('label', 'id')->all(),
+                'languages' => Lang::getTranslatableLangnames(),
+            ],
+        ];
+
+        return view('node::node.recovery', $data);
+    }
+
+    /**
+     * 回收站恢复 nodes表取消软删除
+     */
+    public function recovery_recovery_data(Request $request)
+    {
+        $id = $request->input('nodes');
+        if (count($id) == 0) return response('');
+
+        Node::onlyTrashed()->whereIn('id', $id)->restore();
+
+        return response('');
+    }
+
+    /**
+     * 回收站删除 nodes表和其他表永久删除
+     */
+    public function recovery_delete_data(Request $request)
+    {
+        $id = $request->input('nodes');
+
+        Node::whereIn('id', $id)->onlyTrashed()->forceDelete();
+
+        $fields = Db::table('node_fields')->where('id', '<>', 'url')->pluck('id')->toArray();
+        foreach ($fields as $key => $value) $fields[$key] = 'node__' . $value;
+        $fields[] = 'node_translations';
+        foreach ($fields as $field) {
+            Db::table($field)->whereIn('entity_id', $id)->delete();
         }
 
         return response('');
