@@ -18,7 +18,8 @@ return [
         'en' => [
             'accessible' => true,   // 前端可访问该语言页面
             'translatable' => true, // 内容可翻译为该语言
-            'name' => '英语'
+            'name' => '英语',
+            'code' => 'en'
         ]
     ],
 
@@ -60,11 +61,11 @@ return [
             'native' => 'русский',
             'dir' => 'ltr',
         ],
-        'cn' => [
+        'zh' => [
             'native' => '简体中文',
             'dir' => 'ltr',
         ],
-        'cht' => [
+        'zh-tw' => [
             'native' => '繁体中文',
             'dir' => 'ltr'
         ],
