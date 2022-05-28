@@ -170,7 +170,8 @@ if (! function_exists('under_route')) {
     function under_route($route, $path)
     {
         $url = short_url($route);
-        return $path == $url || strpos($path, $url.'/') === 0;
+        // return $path == $url || strpos($path, $url.'/') === 0;
+        return $path == $url;
     }
 }
 
