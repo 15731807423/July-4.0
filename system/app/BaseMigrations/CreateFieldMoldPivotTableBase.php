@@ -30,7 +30,7 @@ class CreateFieldMoldPivotTableBase extends MigrationBase
             $table->unsignedSmallInteger('delta')->default(0);
 
             // 字段元数据
-            $table->binary('field_meta')->nullable();
+            $table->string('field_meta')->nullable();
 
             // 字段 + 类型 唯一
             $table->unique(['mold_id', 'field_id']);

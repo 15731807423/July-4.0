@@ -28,7 +28,7 @@ class CreateFieldTranslationsTableBase extends MigrationBase
             $table->string('langcode', 12);
 
             // 字段参数
-            $table->binary('field_meta')->nullable();
+            $table->string('field_meta')->nullable();
 
             // 时间戳
             $table->timestamps();

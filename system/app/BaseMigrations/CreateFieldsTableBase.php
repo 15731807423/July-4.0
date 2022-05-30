@@ -38,7 +38,7 @@ class CreateFieldsTableBase extends MigrationBase
             $table->unsignedTinyInteger('weight')->default(0);
 
             // 字段元数据
-            $table->binary('field_meta')->nullable();
+            $table->string('field_meta')->nullable();
 
             // 初始语言版本
             $table->string('langcode', 12);
