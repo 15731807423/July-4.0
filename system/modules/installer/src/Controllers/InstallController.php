@@ -18,7 +18,7 @@ class InstallController extends Controller
      */
     public function home()
     {
-        return view('installer::install', [
+        return view('installer::' . config('database.default') . '-install', [
             'requirements' => Installer::checkRequirements(),
         ]);
     }
@@ -31,9 +31,23 @@ class InstallController extends Controller
      */
     public function install(Request $request)
     {
-        Installer::prepareDatabase($request->input('db_database'));
-        Installer::updateEnv($request->all());
-        return response('');
+        switch ($request->input('type')) {
+            case 'sqlite':
+                Installer::prepareDatabaseSqlite($request->input('db_database'));
+                Installer::updateEnv($request->all());
+                return response('');
+                break;
+
+            case 'mysql':
+                Installer::prepareDatabaseMysql($request->input('db_database'), $request->input('db_username'), $request->input('db_password'));
+                Installer::updateEnv($request->all());
+                return response('');
+                break;
+            
+            default:
+                // code...
+                break;
+        }
     }
 
     /**

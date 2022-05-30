@@ -584,7 +584,11 @@ abstract class FieldBase extends ModelBase implements TranslatableInterface
             $table->id();
             $table->unsignedBigInteger('entity_id');
 
-            $table->addColumn($column['type'], $column['name'], $column['parameters'] ?? []);
+            if ($column['type'] == 'string' && config('database.default') == 'mysql') {
+                $table->string($column['name'], 16364);
+            } else {
+                $table->addColumn($column['type'], $column['name'], $column['parameters'] ?? []);
+            }
 
             $table->string('langcode', 12);
             $table->timestamps();

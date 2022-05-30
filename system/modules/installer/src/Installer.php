@@ -3,6 +3,7 @@
 namespace Installer;
 
 use Illuminate\Encryption\Encrypter;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Storage;
 
@@ -19,6 +20,20 @@ class Installer
             'PHP Version >= 7.2.5' => defined('PHP_VERSION_ID') && PHP_VERSION_ID >= 70205
         ];
 
+        switch (config('database.default')) {
+            case 'sqlite':
+                $pdo = 'PDO_SQLite';
+                break;
+
+            case 'mysql':
+                $pdo = 'PDO_MySQL';
+                break;
+            
+            default:
+                abort(500, 'Database type not supported');
+                break;
+        }
+
         foreach ([
             'BCMath',
             'Ctype',
@@ -28,7 +43,7 @@ class Installer
             'Fileinfo',
             'Mbstring',
             'OpenSSL',
-            'PDO_SQLite',
+            $pdo,
         ] as $requirement) {
             $results[$requirement] = extension_loaded($requirement);
         }
@@ -42,11 +57,30 @@ class Installer
      * @param  string $database
      * @return void
      */
-    public static function prepareDatabase(string $database)
+    public static function prepareDatabaseSqlite(string $database)
     {
         if (! is_file($database = database_path($database))) {
             touch($database);
         }
+    }
+
+    /**
+     * 创建 MySQL 数据库
+     *
+     * @param  string $database
+     * @return void
+     */
+    public static function prepareDatabaseMysql(string $database, string $username, string $password)
+    {
+        try {
+            $connect = new \PDO('mysql:host=' . config('database.connections.mysql.host'), $username, $password);
+            $connect->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+            // create database {数据库名称} CHARACTER SET {字符集} COLLATE {排序规则}
+            $connect->exec('CREATE DATABASE ' . $database . ' CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+        } catch (PDOException $e) {
+        }
+
+        unset($connect);
     }
 
     /**
@@ -84,17 +118,37 @@ class Installer
      */
     protected static function generateEnv($settings)
     {
-        return implode("\n", [
-            'APP_ENV='.config('app.env'),
-            'APP_DEBUG='.(config('app.debug') ? 'true' : 'false'),
-            'APP_KEY='.static::generateRandomKey(),
-            'APP_URL='.($settings['app_url'] ?? null),
-            'SITE_SUBJECT='.'"'.($settings['site_subject'] ?? null).'"',
-            'DB_DATABASE='.($settings['db_database'] ?? null),
-            'MAIL_TO_ADDRESS='.($settings['mail_to_address'] ?? null),
-            'MAIL_TO_NAME='.preg_replace('/@.*$/', '', ($settings['mail_to_address'] ?? null)),
-            '',
-        ]);
+        switch ($settings['type']) {
+            case 'sqlite':
+                return implode("\n", [
+                    'APP_ENV='.config('app.env'),
+                    'APP_DEBUG='.(config('app.debug') ? 'true' : 'false'),
+                    'APP_KEY='.static::generateRandomKey(),
+                    'APP_URL='.($settings['app_url'] ?? null),
+                    'SITE_SUBJECT='.'"'.($settings['site_subject'] ?? null).'"',
+                    'DB_DATABASE='.($settings['db_database'] ?? null),
+                    'MAIL_TO_ADDRESS='.($settings['mail_to_address'] ?? null),
+                    'MAIL_TO_NAME='.preg_replace('/@.*$/', '', ($settings['mail_to_address'] ?? null)),
+                    '',
+                ]);
+                break;
+
+            case 'mysql':
+                return implode("\n", [
+                    'APP_ENV='.config('app.env'),
+                    'APP_DEBUG='.(config('app.debug') ? 'true' : 'false'),
+                    'APP_KEY='.static::generateRandomKey(),
+                    'APP_URL='.($settings['app_url'] ?? null),
+                    'SITE_SUBJECT='.'"'.($settings['site_subject'] ?? null).'"',
+                    'DB_USERNAME='.($settings['db_username'] ?? null),
+                    'DB_PASSWORD='.($settings['db_password'] ?? null),
+                    'DB_DATABASE='.($settings['db_database'] ?? null),
+                    'MAIL_TO_ADDRESS='.($settings['mail_to_address'] ?? null),
+                    'MAIL_TO_NAME='.preg_replace('/@.*$/', '', ($settings['mail_to_address'] ?? null)),
+                    '',
+                ]);
+                break;
+        }
     }
 
     /**
