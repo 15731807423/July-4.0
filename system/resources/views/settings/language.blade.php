@@ -36,12 +36,12 @@
                 </div>
                 <div class="jc-table-wrapper">
                     <table class="jc-table jc-dense is-draggable with-operators">
-                        <colgroup>
+                        <!-- <colgroup>
                             <col width="180px">
                             <col width="auto">
                             <col width="auto">
                             <col width="100px">
-                        </colgroup>
+                        </colgroup> -->
                         <thead>
                             <tr>
                                 <th>语言 [代码]</th>
@@ -54,9 +54,15 @@
                         </thead>
                         <tbody>
                             <tr v-for="(info, langcode) in settings['lang.available']" :key="langcode">
-                                <td><span>@{{ info.name+' ['+langcode+']' }}</span></td>
-                                <td><el-switch v-model="info['translatable']" :disabled="langcode==='en'" @change="handleTranslatableChange(langcode)"></el-switch></td>
-                                <td><el-switch v-model="info['accessible']" :disabled="langcode==='en'" @change="handleAccessibleChange(langcode)"></el-switch></td>
+                                <td>
+                                    <span>@{{ info.name+' ['+langcode+']' }}</span>
+                                </td>
+                                <td>
+                                    <el-switch v-model="info['translatable']" :disabled="langcode==='en'" @change="handleTranslatableChange(langcode)"></el-switch>
+                                </td>
+                                <td>
+                                    <el-switch v-model="info['accessible']" :disabled="langcode==='en'" @change="handleAccessibleChange(langcode)"></el-switch>
+                                </td>
                                 <td>
                                     <el-upload
                                     class="upload-demo"
@@ -68,19 +74,20 @@
                                     :auto-upload="true"
                                     :show-file-list="false"
                                     :data="data">
-
                                         <div class="jc-operators">
                                             <button type="button" class="md-button md-icon-button md-primary md-theme-default" title="上传" @click="select(langcode)">
                                                 <img v-if="info.icon" class="icon" :src="info.icon">
                                                 <i v-else class="md-icon md-icon-font md-theme-default">upload</i>
                                             </button>
                                         </div>
-
                                     </el-upload>
                                 </td>
                                 <td>
                                     <div class="jc-operators">
-                                        <el-button type="primary" :disabled="langcode == 'en' || !info.translatable || !info.accessible" @click.stop="generateTemplate(langcode)">生成模板</el-button>
+                                        <!-- <el-button type="primary" :disabled="langcode == 'en' || !info.translatable || !info.accessible" @click.stop="generateTemplate(langcode)">生成模板</el-button> -->
+                                        <button type="button" class="md-button md-icon-button md-primary md-theme-default" title="生成" :disabled="langcode == 'en' || !info.translatable || !info.accessible" @click.stop="generateTemplate(langcode)">
+                                            <i class="md-icon md-icon-font md-theme-default">done</i>
+                                        </button>
                                     </div>
                                 </td>
                                 <td>
