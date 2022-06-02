@@ -45,7 +45,7 @@
                         </div>
                         <div class="md-list-expand">
                             <ul class="md-list md-theme-default">
-                                @foreach ($item['children'] as $child)
+                                @foreach (array_unique_two($item['children']) as $child)
                                 <li class="md-list-item md-inset{{ under_route($child['route'], Request::getPathInfo())?' is-active':'' }}">
                                     <a href="{{ short_url($child['route']) }}" class="md-list-item-link md-list-item-container md-button-clean">
                                         <div class="md-list-item-content">{{ $child['title'] }}</div>
@@ -75,7 +75,7 @@
                     </div>
                 </button>
 
-                @foreach (config('app.actions') as $action)
+                @foreach (array_unique(config('app.actions')) as $action)
                 <button type="button" class="md-button md-small md-primary md-theme-default" @click.stop="doAction('{{ short_url($action::getRouteName()) }}', '{{ $action::getTitle() }}')">
                     <div class="md-ripple">
                         <div class="md-button-content">{{ $action::getTitle() }}</div>
