@@ -8,6 +8,7 @@ use Illuminate\Contracts\View\Factory as ViewFactory;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Specs\spec;
+use Illuminate\Support\Facades\Artisan;
 
 if (! function_exists('backend_path')) {
     /**
@@ -357,5 +358,91 @@ if (! function_exists('specs_name')) {
         return Spec::all()->map(function(Spec $spec) {
             return $spec->attributesToArray()['id'];
         })->all();
+    }
+}
+
+if (!function_exists('array_unique_two')) {
+    /**
+     * 多维数组去重 原理 第二维数组转json去重再转回数组
+     */
+    function array_unique_two(array $data)
+    {
+        if (count($data) == count($data, 1)) {
+            return array_unique($data);
+        }
+
+        foreach ($data as $key => $value) {
+            ksort($value);
+            $data[$key] = json_encode($value);
+        }
+
+        $data = array_unique($data);
+
+        foreach ($data as $key => $value) {
+            $data[$key] = json_decode($value, true);
+        }
+
+        return $data;
+    }
+}
+
+if (!function_exists('custom_migration')) {
+    /**
+     * 创建表的迁移文件 安装项目后 所有后台创建的数据库的迁移文件
+     * @param  string $table  表名称
+     * @param  array  $data   字段信息
+     * @param  array  $column 列的信息
+     */
+    function custom_migration(string $table, array $data, array $column)
+    {
+        // 文件存放路径
+        $dir = base_path('database/custom');
+
+        // 如果路径不存在 创建
+        if (!is_dir($dir)) {
+            mkdir($dir);
+        }
+
+        // 生成表的迁移文件
+        Artisan::call('make:migration ' . $table . ' --path=database/custom');
+
+        // 获取文件名称
+        $list = scandir($dir);
+        foreach ($list as $key => $value) {
+            if (strpos($value, $table . '.php') == 18) {
+                $name = $value;
+            }
+        }
+
+        // 定义文件路径
+        $path = base_path('database/custom/' . $name);
+
+        // 获取文件内容
+        $file = file_get_contents($path);
+
+        // 定义表信息
+        $up = implode("\n", array_merge([
+            'Schema::create(\'' . $table . '\', function (Blueprint $table) {',
+            '            $column = json_decode(\'' . json_encode($column) . '\', true);'
+        ], $data, ['        });']));
+
+        $down = 'Schema::dropIfExists(\'' . $table . '\');';
+
+        // 替换文件内容
+        $file = str_replace(
+            '    public function up()' . "\n" . '    {' . "\n" . '        //' . "\n" . '    }',
+            '    public function up()' . "\n" . '    {' . "\n" . '        ' . $up . "\n" . '    }',
+            $file
+        );
+
+        $file = str_replace(
+            '    public function down()' . "\n" . '    {' . "\n" . '        //' . "\n" . '    }',
+            '    public function down()' . "\n" . '    {' . "\n" . '        ' . $down . "\n" . '    }',
+            $file
+        );
+
+        // 设置文件内容
+        file_put_contents($path, $file);
+        rename($path, $dir . '/' . str_replace('.php', '.txt', $name));
     }
 }
