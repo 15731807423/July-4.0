@@ -216,6 +216,22 @@ class Spec extends ModelBase
             );
         }
 
+        $list = ['            $table->id();'];
+
+        foreach ($columns as $key => $value) {
+            if ($value['type'] == 'string') {
+                $value['parameters']['length'] = $value['parameters']['length'] ?? 255;
+            }
+
+            $list[] = '            $table->addColumn(\'' . $value['type'] . '\', \'' . $value['name'] . '\', json_decode(\'' . json_encode($value['parameters']) . '\', true));';
+        }
+
+        $list[] = '            $table->timestamps();';
+
+
+        // 创建迁移文件
+        custom_migration($tableName, $list, []);
+
         // 创建数据表
         Schema::create($tableName, function (Blueprint $table) use ($columns) {
             $table->id();
