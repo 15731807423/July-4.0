@@ -32,10 +32,10 @@ class CreateMessagesTable extends Migration
             $table->string('ip');
 
             // 浏览轨迹报告
-            $table->string('trails')->nullable();
+            $table->text('trails')->nullable();
 
             // 序列化的 $_SERVER 数组
-            $table->binary('_server');
+            $table->text('_server');
 
             // 源语言
             $table->string('langcode', 12);
