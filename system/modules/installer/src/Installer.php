@@ -76,7 +76,7 @@ class Installer
             $connect = new \PDO('mysql:host=' . config('database.connections.mysql.host'), $username, $password);
             $connect->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
             // create database {数据库名称} CHARACTER SET {字符集} COLLATE {排序规则}
-            $connect->exec('CREATE DATABASE ' . $database . ' CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+            $connect->exec('CREATE DATABASE IF NOT EXISTS ' . $database . ' CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
         } catch (PDOException $e) {
         }
 
