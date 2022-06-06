@@ -4,7 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Artisan;
 
 class SettingsController extends Controller
 {
@@ -27,6 +31,8 @@ class SettingsController extends Controller
      */
     public function edit(string $group)
     {
+        if ($group == 'db') return redirect('/update/db');
+
         if ($group = app()->make('settings.'.$group)) {
             return $group->view();
         }
