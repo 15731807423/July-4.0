@@ -3,6 +3,7 @@
 /front-vue/node_modules/
 /js/
 !/system/
+/system/database/custom/
 /system/database/database.db3
 /system/language/*
 !/system/language/code.php
