@@ -194,7 +194,7 @@ class Update
                 unset($list['migrations']);
                 return $list;
                 break;
-            
+
             default:
                 return [];
                 break;
@@ -233,7 +233,7 @@ class Update
                 $db = Db::connection('mysql');
                 $tables = $db->select('SHOW TABLES');
                 foreach ($tables as $key => $value) {
-                    $list[] = $value->Tables_in_test;
+                    $list[] = $value->{'Tables_in_' . config('db.mysql.database')};
                 }
                 return $list;
                 break;
@@ -256,8 +256,18 @@ class Update
 
     private static function insertAll(array $list, string $model)
     {
-        foreach ($list as $key => $value) {
-            Db::connection($model)->table($key)->insert($value);
+        $loop = ['messages', 'node__content'];
+        foreach ($list as $table => $all) {
+            if (in_array($table, $loop)) {
+                foreach ($all as $index => $data) {
+                    Db::connection($model)->table($table)->insert($data);
+                }
+            } else {
+                $count = intval(ceil(count($all) / 50));
+                for ($i = 0; $i < $count; $i++) { 
+                    Db::connection($model)->table($table)->insert(array_splice($all, 0, 50));
+                }
+            }
         }
     }
 
