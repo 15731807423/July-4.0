@@ -160,6 +160,8 @@ class Update
 
         Artisan::call('cache:clear');
         Artisan::call('view:clear');
+
+        return response([]);
     }
 
     private static function dataAll(string $model)
