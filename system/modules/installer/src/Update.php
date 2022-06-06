@@ -241,7 +241,7 @@ class Update
             case 'sqlite':
                 $list = [];
                 $db = Db::connection('sqlite');
-                $tables = $db->select('SELECT name FROM sqlite_master WHERE type = "table" AND name != "sqlite_sequence"');
+                $tables = $db->select('SELECT name FROM sqlite_master WHERE type = \'table\' AND name != \'sqlite_sequence\'');
                 foreach ($tables as $key => $value) {
                     $list[] = $value->name;
                 }
