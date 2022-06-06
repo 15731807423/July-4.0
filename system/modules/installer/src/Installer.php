@@ -126,9 +126,11 @@ class Installer
                     'APP_KEY='.static::generateRandomKey(),
                     'APP_URL='.($settings['app_url'] ?? null),
                     'SITE_SUBJECT='.'"'.($settings['site_subject'] ?? null).'"',
-                    'DB_DATABASE='.($settings['db_database'] ?? null),
                     'MAIL_TO_ADDRESS='.($settings['mail_to_address'] ?? null),
                     'MAIL_TO_NAME='.preg_replace('/@.*$/', '', ($settings['mail_to_address'] ?? null)),
+                    '',
+                    'DB_CONNECTION=sqlite',
+                    'DB_SQLITE_DATABASE='.($settings['db_database'] ?? null),
                     '',
                 ]);
                 break;
@@ -140,11 +142,13 @@ class Installer
                     'APP_KEY='.static::generateRandomKey(),
                     'APP_URL='.($settings['app_url'] ?? null),
                     'SITE_SUBJECT='.'"'.($settings['site_subject'] ?? null).'"',
-                    'DB_USERNAME='.($settings['db_username'] ?? null),
-                    'DB_PASSWORD='.($settings['db_password'] ?? null),
-                    'DB_DATABASE='.($settings['db_database'] ?? null),
                     'MAIL_TO_ADDRESS='.($settings['mail_to_address'] ?? null),
                     'MAIL_TO_NAME='.preg_replace('/@.*$/', '', ($settings['mail_to_address'] ?? null)),
+                    '',
+                    'DB_CONNECTION=mysql',
+                    'DB_MYSQL_USERNAME='.($settings['db_username'] ?? null),
+                    'DB_MYSQL_PASSWORD='.($settings['db_password'] ?? null),
+                    'DB_MYSQL_DATABASE='.($settings['db_database'] ?? null),
                     '',
                 ]);
                 break;
