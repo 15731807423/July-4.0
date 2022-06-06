@@ -579,17 +579,31 @@ abstract class FieldBase extends ModelBase implements TranslatableInterface
         // 获取用于创建数据表列的参数
         $column = $this->getValueColumn();
 
+        if ($column['type'] == 'string') {
+            $column['parameters']['length'] = $column['parameters']['length'] ?? 255;
+        }
+
+        // 创建迁移文件
+        custom_migration($tableName, [
+            '            $table->id();',
+            '            $table->unsignedBigInteger(\'entity_id\');',
+
+            $column['name'] == 'content' && config('database.default') == 'mysql' ?
+            '            $table->text($column[\'name\']);' :
+            '            $table->addColumn($column[\'type\'], $column[\'name\'], $column[\'parameters\'] ?? []);',
+
+            '            $table->string(\'langcode\', 12);',
+            '            $table->timestamps();',
+            '            $table->unique([\'entity_id\', \'langcode\']);',
+        ], $column);
+
         // 创建数据表
         Schema::create($tableName, function (Blueprint $table) use ($column) {
             $table->id();
             $table->unsignedBigInteger('entity_id');
 
-            if ($column['type'] == 'string' && config('database.default') == 'mysql') {
-                if ($column['name'] == 'content') {
-                    $table->text($column['name']);
-                } else {
-                    $table->string($column['name'], 16300);
-                }
+            if ($column['name'] == 'content' && config('database.default') == 'mysql') {
+                $table->text($column['name']);
             } else {
                 $table->addColumn($column['type'], $column['name'], $column['parameters'] ?? []);
             }
