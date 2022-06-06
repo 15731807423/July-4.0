@@ -34,7 +34,7 @@ class MessageFieldMessageFormSeeder extends SeederBase
 
         // 类型关联字段
         $molds = [
-            'new_message' => ['email', 'message'],
+            'new_message' => ['name', 'email', 'phone', 'message', 'form_required']
         ];
 
         // 生成记录
