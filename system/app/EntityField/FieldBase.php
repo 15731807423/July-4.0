@@ -580,7 +580,7 @@ abstract class FieldBase extends ModelBase implements TranslatableInterface
         $column = $this->getValueColumn();
 
         if ($column['type'] == 'string') {
-            $column['parameters']['length'] = $column['parameters']['length'] ?? 255;
+            $column['parameters']['length'] = $column['parameters']['length'] ?? 9999;
         }
 
         // 创建迁移文件

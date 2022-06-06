@@ -220,7 +220,7 @@ class Spec extends ModelBase
 
         foreach ($columns as $key => $value) {
             if ($value['type'] == 'string') {
-                $value['parameters']['length'] = $value['parameters']['length'] ?? 255;
+                $value['parameters']['length'] = $value['parameters']['length'] ?? 9999;
             }
 
             $list[] = '            $table->addColumn(\'' . $value['type'] . '\', \'' . $value['name'] . '\', json_decode(\'' . json_encode($value['parameters']) . '\', true));';
