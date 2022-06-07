@@ -20,20 +20,6 @@ class Installer
             'PHP Version >= 7.2.5' => defined('PHP_VERSION_ID') && PHP_VERSION_ID >= 70205
         ];
 
-        switch (config('database.default')) {
-            case 'sqlite':
-                $pdo = 'PDO_SQLite';
-                break;
-
-            case 'mysql':
-                $pdo = 'PDO_MySQL';
-                break;
-            
-            default:
-                abort(500, 'Database type not supported');
-                break;
-        }
-
         foreach ([
             'BCMath',
             'Ctype',
@@ -43,7 +29,8 @@ class Installer
             'Fileinfo',
             'Mbstring',
             'OpenSSL',
-            $pdo,
+            'PDO_SQLite',
+            'PDO_MySQL'
         ] as $requirement) {
             $results[$requirement] = extension_loaded($requirement);
         }
