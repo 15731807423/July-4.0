@@ -18,6 +18,7 @@
     <div id="install" class="md-elevation-7">
         <h1 class="jc-install-title">欢迎使用 JulyCMS</h1>
         <el-steps :active="currentStep" finish-status="success" align-center>
+            <el-step title="选择数据库" icon="el-icon-coin"></el-step>
             <el-step title="检查安装环境" icon="el-icon-finished"></el-step>
             <el-step title="初始化配置" icon="el-icon-s-operation"></el-step>
             <el-step title="安装" icon="el-icon-s-flag" :status="lastStepStatus"></el-step>
@@ -25,12 +26,25 @@
         <div id="install_steps" v-show="isMounted" style="display: none">
             <div class="jc-install-step" v-if="currentStep===0">
                 <div class="jc-install-step-content">
+                    <el-radio-group v-model="database" size="medium">
+                        <el-radio-button label="mysql"></el-radio-button>
+                        <el-radio-button label="sqlite"></el-radio-button>
+                    </el-radio-group>
+                </div>
+                <div class="jc-install-step-footer">
+                    <button type="button" class="md-button md-raised md-primary md-theme-default" @click.stop="env">
+                        <div class="md-ripple">
+                            <div class="md-button-content">下一步</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+            <div class="jc-install-step" v-if="currentStep===1">
+                <div class="jc-install-step-content">
                     <ul class="jc-env-list">
-                        @foreach ($requirements as $requirement => $ok)
-                        <li class="jc-env{{ $ok ? ' is-ok' : '' }}">
-                            <span>{{ $requirement }}</span>
+                        <li v-for="(item, key) in requirements" :class="'jc-env' + (item ? ' is-ok' : '')">
+                            <span>@{{ key }}</span>
                         </li>
-                        @endforeach
                     </ul>
                 </div>
                 <div class="jc-install-step-footer">
@@ -41,7 +55,7 @@
                     </button>
                 </div>
             </div>
-            <div class="jc-install-step" v-if="currentStep===1">
+            <div class="jc-install-step" v-if="currentStep===2">
                 <div class="jc-install-step-content">
                     <el-form ref="settings_form" :model="settings" :rules="rules" label-width="120px">
                         <el-form-item label="网址" prop="app_url">
@@ -62,18 +76,45 @@
                                 </button>
                             </div>
                         </el-form-item>
-                        <el-form-item label="数据文件" prop="db_database" class="has-helptext">
-                            <div class="jc-form-item-group">
-                                <el-input size="medium" native-size="50" v-model="settings.db_database" placeholder="database.db3">
-                                </el-input>
-                                <button type="button" class="md-button md-raised md-dense md-primary md-theme-default" @click.stop="randomDatabase">
-                                    <div class="md-ripple">
-                                        <div class="md-button-content">随机</div>
-                                    </div>
-                                </button>
-                            </div>
-                            <span class="jc-form-item-help"><i class="el-icon-info"></i> SQLite 数据文件</span>
-                        </el-form-item>
+
+                        <template v-if="database == 'mysql'">
+                            <el-form-item label="数据库用户名" prop="db_username" class="has-helptext">
+                                <div class="jc-form-item-group">
+                                    <el-input size="medium" native-size="50" v-model="settings.db_username"></el-input>
+                                </div>
+                            </el-form-item>
+                            <el-form-item label="数据库密码" prop="db_password" class="has-helptext">
+                                <div class="jc-form-item-group">
+                                    <el-input size="medium" native-size="50" v-model="settings.db_password"></el-input>
+                                </div>
+                            </el-form-item>
+                            <el-form-item label="数据库名称" prop="db_database" class="has-helptext">
+                                <div class="jc-form-item-group">
+                                    <el-input size="medium" native-size="50" v-model="settings.db_database"></el-input>
+                                    <button type="button" class="md-button md-raised md-dense md-primary md-theme-default" @click.stop="randomDatabase">
+                                        <div class="md-ripple">
+                                            <div class="md-button-content">随机</div>
+                                        </div>
+                                    </button>
+                                </div>
+                            </el-form-item>
+                        </template>
+
+                        <template v-if="database == 'sqlite'">
+                            <el-form-item label="数据文件" prop="db_database" class="has-helptext">
+                                <div class="jc-form-item-group">
+                                    <el-input size="medium" native-size="50" v-model="settings.db_database" placeholder="database.db3">
+                                    </el-input>
+                                    <button type="button" class="md-button md-raised md-dense md-primary md-theme-default" @click.stop="randomDatabase">
+                                        <div class="md-ripple">
+                                            <div class="md-button-content">随机</div>
+                                        </div>
+                                    </button>
+                                </div>
+                                <span class="jc-form-item-help"><i class="el-icon-info"></i> SQLite 数据文件</span>
+                            </el-form-item>
+                        </template>
+
                         <el-form-item label="企业名" prop="site_subject">
                             <el-input size="medium" native-size="50" v-model="settings.site_subject" placeholder="衡水网科计算机服务有限公司">
                             </el-input>
@@ -93,7 +134,7 @@
                     </button>
                 </div>
             </div>
-            <div class="jc-install-step" v-if="currentStep===2">
+            <div class="jc-install-step" v-if="currentStep===3">
                 <div class="jc-install-step-content">
                     <div v-if="lastStepStatus==='finish'">
                         <h3>账号：@{{ settings.admin_name }}</h3>
@@ -118,13 +159,17 @@
         el: '#install',
         data() {
             return {
+                database: 'mysql',
                 currentStep: 0,
+                requirements: @jjson($requirements),
                 environmentsOk: true,
                 settings: {
-                    type: 'sqlite',
+                    type: '',
                     app_url: 'http://127.0.0.1',
                     admin_name: 'admin',
                     admin_password: 'admin666',
+                    db_username: 'root',
+                    db_password: 'root',
                     db_database: null,
                     site_subject: 'Someone',
                     mail_to_address: 'someone@example.com',
@@ -144,9 +189,14 @@
                         { required: true, message: '管理密码不能为空', trigger: 'blur' },
                         { min: 8, message: '管理密码至少 8 位字符', trigger: 'blur' },
                     ],
+                    db_username: [
+                        { required: true, message: '数据库用户名', trigger: 'blur' },
+                    ],
+                    db_password: [
+                        { required: true, message: '数据库密码', trigger: 'blur' },
+                    ],
                     db_database: [
-                        { required: true, message: '数据文件不能为空', trigger: 'blur' },
-                        { pattern: /^[a-z0-9_]+\.db3$/, message: '数据文件只能包含小写字母、数字和下划线，且后缀名必须是 .db3', trigger: 'blur' },
+                        { required: true, message: '数据库名称', trigger: 'blur' },
                     ],
                     site_subject: [
                         { required: true, message: '企业名不能为空', trigger: 'blur' },
@@ -165,13 +215,6 @@
 
         created() {
             this.randomDatabase();
-
-            @foreach($requirements as $requirement => $ok)
-            @if(!$ok)
-            this.environmentsOk = false;
-            @break
-            @endif
-            @endforeach
         },
 
         mounted() {
@@ -179,9 +222,29 @@
         },
 
         methods: {
+            env() {
+                switch (this.database) {
+                    case 'mysql':
+                        delete this.requirements.PDO_SQLite;
+                        break;
+
+                    case 'sqlite':
+                        delete this.requirements.PDO_MySQL;
+                        break;
+                }
+
+                for (let key in this.requirements) {
+                    if (!this.requirements[key]) {
+                        this.environmentsOk = false;
+                    }
+                }
+
+                this.currentStep = 1;
+            },
+
             stepToSettings() {
                 if (this.environmentsOk) {
-                    this.currentStep = 1;
+                    this.currentStep = 2;
                 }
             },
 
@@ -192,7 +255,12 @@
                 for (let i = 0; i < 12; i++) {
                     db += chars.charAt(Math.floor(Math.random() * maxPos));
                 }
-                this.settings.db_database = db + '.db3';
+                if (this.database == 'mysql') {
+                    this.settings.db_database = db;
+                }
+                if (this.database == 'sqlite') {
+                    this.settings.db_database = db + '.db3';
+                }
             },
 
             randomPassword() {
@@ -214,8 +282,10 @@
                 });
 
                 form.validate().then(() => {
-                    this.currentStep = 2;
+                    this.currentStep = 3;
                     this.lastStepStatus = 'process';
+
+                    this.settings.type = this.database;
 
                     // 更新 .env 文件，创建数据库
                     axios.post('/install', this.settings).then(response => {

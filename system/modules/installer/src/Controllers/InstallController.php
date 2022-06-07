@@ -18,7 +18,7 @@ class InstallController extends Controller
      */
     public function home()
     {
-        return view('installer::' . config('database.default') . '-install', [
+        return view('installer::install', [
             'requirements' => Installer::checkRequirements(),
         ]);
     }
