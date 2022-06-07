@@ -214,7 +214,7 @@
         },
 
         created() {
-            this.randomDatabase();
+            // this.randomDatabase();
         },
 
         mounted() {
@@ -244,6 +244,7 @@
 
             stepToSettings() {
                 if (this.environmentsOk) {
+                    this.randomDatabase();
                     this.currentStep = 2;
                 }
             },
