@@ -44,6 +44,7 @@
                         </colgroup> -->
                         <thead>
                             <tr>
+                                <th></th>
                                 <th>语言 [代码]</th>
                                 <th>可翻译</th>
                                 <th>可访问</th>
@@ -52,16 +53,19 @@
                                 <th>删除</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr v-for="(info, langcode) in settings['lang.available']" :key="langcode">
+                        <tbody is="draggable" v-model="settings['lang.available']" :animation="150" ghost-class="jc-drag-ghost" handle=".jc-drag-handle" tag="tbody">
+                            <tr v-for="(info, key) in settings['lang.available']" :key="key">
                                 <td>
-                                    <span>@{{ info.name+' ['+langcode+']' }}</span>
+                                    <i class="md-icon md-icon-font md-theme-default jc-drag-handle">swap_vert</i>
                                 </td>
                                 <td>
-                                    <el-switch v-model="info['translatable']" :disabled="langcode==='en'" @change="handleTranslatableChange(langcode)"></el-switch>
+                                    <span>@{{ info.name+' ['+info.key+']' }}</span>
                                 </td>
                                 <td>
-                                    <el-switch v-model="info['accessible']" :disabled="langcode==='en'" @change="handleAccessibleChange(langcode)"></el-switch>
+                                    <el-switch v-model="info['translatable']" :disabled="info.key==='en'" @change="handleTranslatableChange(info.key)"></el-switch>
+                                </td>
+                                <td>
+                                    <el-switch v-model="info['accessible']" :disabled="info.key==='en'" @change="handleAccessibleChange(info.key)"></el-switch>
                                 </td>
                                 <td>
                                     <el-upload
@@ -75,7 +79,7 @@
                                     :show-file-list="false"
                                     :data="data">
                                         <div class="jc-operators">
-                                            <button type="button" class="md-button md-icon-button md-primary md-theme-default" title="上传" @click="select(langcode)">
+                                            <button type="button" class="md-button md-icon-button md-primary md-theme-default" title="上传" @click="select(info.key)">
                                                 <img v-if="info.icon" class="icon" :src="info.icon">
                                                 <i v-else class="md-icon md-icon-font md-theme-default">upload</i>
                                             </button>
@@ -84,15 +88,15 @@
                                 </td>
                                 <td>
                                     <div class="jc-operators">
-                                        <!-- <el-button type="primary" :disabled="langcode == 'en' || !info.translatable || !info.accessible" @click.stop="generateTemplate(langcode)">生成模板</el-button> -->
-                                        <button type="button" class="md-button md-icon-button md-primary md-theme-default" title="生成" :disabled="langcode == 'en' || !info.translatable || !info.accessible" @click.stop="generateTemplate(langcode)">
+                                        <!-- <el-button type="primary" :disabled="info.key == 'en' || !info.translatable || !info.accessible" @click.stop="generateTemplate(info.key)">生成模板</el-button> -->
+                                        <button type="button" class="md-button md-icon-button md-primary md-theme-default" title="生成" :disabled="info.key == 'en' || !info.translatable || !info.accessible" @click.stop="generateTemplate(info.key)">
                                             <i class="md-icon md-icon-font md-theme-default">done</i>
                                         </button>
                                     </div>
                                 </td>
                                 <td>
                                     <div class="jc-operators">
-                                        <button type="button" class="md-button md-icon-button md-accent md-theme-default" title="删除" :disabled="isReserved(langcode)" @click.stop="removeLanguage(langcode)">
+                                        <button type="button" class="md-button md-icon-button md-accent md-theme-default" title="删除" :disabled="isReserved(info.key)" @click.stop="removeLanguage(info.key)">
                                             <i class="md-icon md-icon-font md-theme-default">remove_circle</i>
                                         </button>
                                     </div>
@@ -121,7 +125,7 @@
                 <span>{{ $items['lang.content']['label'] }}</span>
             </el-tooltip>
             <el-select v-model="settings['lang.content']">
-                <el-option v-for="langcode in translatableLangcodes" :key="langcode" :label="'['+langcode+'] '+settings['lang.available'][langcode].name" :value="langcode">
+                <el-option v-for="langcode in translatableLangcodes" :key="langcode" :label="'['+langcode+'] '+ getInfoByCode(langcode).name" :value="langcode">
                 </el-option>
             </el-select>
             @if ($items['lang.content']['description'])
@@ -133,7 +137,7 @@
                 <span>{{ $items['lang.frontend']['label'] }}</span>
             </el-tooltip>
             <el-select v-model="settings['lang.frontend']">
-                <el-option v-for="langcode in accessibleLangcodes" :key="langcode" :label="'['+langcode+'] '+settings['lang.available'][langcode].name" :value="langcode">
+                <el-option v-for="langcode in accessibleLangcodes" :key="langcode" :label="'['+langcode+'] '+ getInfoByCode(langcode).name" :value="langcode">
                 </el-option>
             </el-select>
             @if ($items['lang.frontend']['description'])
@@ -155,7 +159,7 @@ const app = new Vue({
     el: '#main_content',
     data() {
         return {
-            settings: @jjson($settings),
+            settings: {},
             selected: null,
             langnames: @jjson(lang()->getLangnames()),
             langcode: '',
@@ -169,6 +173,12 @@ const app = new Vue({
     },
 
     created() {
+        var data = @jjson($settings), available = [];
+        for (let key in data['lang.available']) {
+            data['lang.available'][key].key = key;
+        }
+        data['lang.available'] = Object.values(data['lang.available']);
+        this.settings = data;
         this.original_settings = _.cloneDeep(this.settings);
     },
 
@@ -179,25 +189,39 @@ const app = new Vue({
         },
 
         translatableLangcodes() {
-            const list = this.settings['lang.available'];
-            const langcodes = [];
-            for (const key in list) {
-                if (list[key].translatable) {
-                    langcodes.push(key);
+            const list = this.settings['lang.available'], langcodes = [];
+            for (var i = 0; i < list.length; i++) {
+                if (list[i].translatable) {
+                    langcodes.push(list[i].key);
                 }
             }
             return langcodes;
         },
 
         accessibleLangcodes() {
-            const list = this.settings['lang.available'];
-            const langcodes = [];
-            for (const key in list) {
-                if (list[key].accessible) {
-                    langcodes.push(key);
+            const list = this.settings['lang.available'], langcodes = [];
+            for (var i = 0; i < list.length; i++) {
+                if (list[i].accessible) {
+                    langcodes.push(list[i].key);
                 }
             }
             return langcodes;
+        },
+
+        fieldTypeHelper() {console.log(this.mold.globalFields)
+            const meta = this.fieldTypes[this.newField.model.field_type];
+            if (meta) {
+                return meta.description;
+            }
+            return '（请选择字段类型）';
+        },
+
+        fieldMetakeys() {console.log(this.mold.globalFields)
+            const meta = this.fieldTypes[this.newField.model.field_type];
+            if (meta) {
+                return meta.metakeys;
+            }
+            return [];
         },
     },
 
@@ -219,28 +243,45 @@ const app = new Vue({
                 for (let key in this.langnames) {
                     if (this.langnames[key] == name) var code2 = key;
                 }
-                list[code] = {
+                list.push({
                     translatable: true,
                     accessible: true,
                     name: name,
-                    code: code2
-                };
+                    code: code2,
+                    key: code
+                })
                 this.$set(this.settings, 'lang.available', list);
                 this.selected = null;
                 this.langcode = null;
             }
         },
 
+        // 根据语言代码获取信息
+        getInfoByCode(code) {
+            var data = {};
+            for (var i = 0; i < this.settings['lang.available'].length; i++) {
+                if (this.settings['lang.available'][i].key == code) data = this.settings['lang.available'][i];
+            }
+            return data;
+        },
+
         // 判断一个语言是否存在
         checkLanguageName(name) {
-            for (let key in this.settings['lang.available']) {
-                if (name == this.settings['lang.available'][key].name) return false;
+            for (var i = 0; i < this.settings['lang.available'].length; i++) {
+                if (name == this.settings['lang.available'][i].name) return false;
             }
             return true;
         },
 
         // 从可用列表移除指定语言
         removeLanguage(langcode) {
+            for (var i = 0; i < this.settings['lang.available'].length; i++) {
+                if (this.settings['lang.available'][i].key == langcode) {
+                    var list = _.cloneDeep(this.settings['lang.available']);
+                    list.splice(i, 1);
+                    this.$set(this.settings, 'lang.available', list);
+                }
+            }
             if (this.settings['lang.available'][langcode]) {
                 const list = _.cloneDeep(this.settings['lang.available']);
                 delete list[langcode];
@@ -260,7 +301,7 @@ const app = new Vue({
 
         // 响应语言可访问性改变事件
         handleAccessibleChange(langcode) {
-            const config = this.settings['lang.available'][langcode];
+            const config = this.getInfoByCode(langcode);
             if (config['accessible'] && !config['translatable']) {
                 config['translatable'] = true;
             }
@@ -271,7 +312,7 @@ const app = new Vue({
 
         // 响应语言可翻译性改变事件
         handleTranslatableChange(langcode) {
-            const config = this.settings['lang.available'][langcode];
+            const config = this.getInfoByCode(langcode);
             if (config['accessible'] && !config['translatable']) {
                 config['accessible'] = false;
             }
@@ -300,7 +341,8 @@ const app = new Vue({
             $('.upload-demo').each(function (index) {
                 _this.$refs.upload[index].clearFiles();
             });
-            this.settings['lang.available'][this.uploadCode].icon = path;
+            var data = this.getInfoByCode(this.uploadCode);
+            data.icon = path;
             this.$forceUpdate();
         },
 
@@ -340,7 +382,14 @@ const app = new Vue({
             });
 
             this.$refs.main_form.validate().then(() => {
-                axios.post("{{ short_url('settings.update', $name) }}", this.settings).then(response => {
+                var data = JSON.parse(JSON.stringify(this.settings)), available = {};
+                for (var i = 0; i < this.settings['lang.available'].length; i++) {
+                    available[this.settings['lang.available'][i].key] = JSON.parse(JSON.stringify(this.settings['lang.available'][i]));
+                    delete available[this.settings['lang.available'][i].key].key;
+                }
+                data['lang.available'] = available;
+
+                axios.post("{{ short_url('settings.update', $name) }}", data).then(response => {
                     loading.close();
                     this.original_settings = _.cloneDeep(this.settings);
                     this.$message.success('设置已更新');
