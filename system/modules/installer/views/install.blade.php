@@ -27,8 +27,8 @@
             <div class="jc-install-step" v-if="currentStep===0">
                 <div class="jc-install-step-content">
                     <el-radio-group v-model="database" size="medium">
-                        <el-radio-button label="mysql"></el-radio-button>
                         <el-radio-button label="sqlite"></el-radio-button>
+                        <el-radio-button label="mysql"></el-radio-button>
                     </el-radio-group>
                 </div>
                 <div class="jc-install-step-footer">
@@ -159,7 +159,7 @@
         el: '#install',
         data() {
             return {
-                database: 'mysql',
+                database: 'sqlite',
                 currentStep: 0,
                 requirements: @jjson($requirements),
                 environmentsOk: true,
