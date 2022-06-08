@@ -12,7 +12,7 @@ class Application extends LaravelApplication
      * @author   jchenk <jchenk@live.com>
      * @var string
      */
-    const JULYCMS_VERSION = '3.5.3';
+    const JULYCMS_VERSION = '4.0';
 
     /**
      * Get the path to the public / web directory.
