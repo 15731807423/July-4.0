@@ -114,7 +114,7 @@ class NodeMixin
 
     public function get_columns()
     {
-        return function($catalog = null) {
+        return function($catalog = 'main') {
             return CatalogSet::fetch($catalog)->get_under(0);
         };
     }

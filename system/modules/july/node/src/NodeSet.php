@@ -28,14 +28,14 @@ class NodeSet extends ModelSetBase
      * @param  mixed $catalog
      * @return \July\Node\NodeSet
      */
-    public function get_children($catalog = null)
+    public function get_children($catalog = 'main')
     {
         $ids = $this->pluck('id')->all();
 
         return CatalogSet::fetch($catalog)->get_children(...$ids);
     }
 
-    public function get_under($catalog = null)
+    public function get_under($catalog = 'main')
     {
         return $this->get_children($catalog);
     }
@@ -46,14 +46,14 @@ class NodeSet extends ModelSetBase
      * @param mixed $catalog
      * @return \July\Node\NodeSet
      */
-    public function get_descendants($catalog = null)
+    public function get_descendants($catalog = 'main')
     {
         $ids = array_keys($this->items);
 
         return CatalogSet::fetch($catalog)->get_descendants(...$ids);
     }
 
-    public function get_below($catalog = null)
+    public function get_below($catalog = 'main')
     {
         return $this->get_descendants($catalog);
     }
@@ -64,14 +64,14 @@ class NodeSet extends ModelSetBase
      * @param mixed $catalog
      * @return \July\Node\NodeSet
      */
-    public function get_parent($catalog = null)
+    public function get_parent($catalog = 'main')
     {
         $ids = $this->pluck('id')->all();
 
         return CatalogSet::fetch($catalog)->get_parent(...$ids);
     }
 
-    public function get_over($catalog = null)
+    public function get_over($catalog = 'main')
     {
         return $this->get_parent($catalog);
     }
@@ -82,14 +82,14 @@ class NodeSet extends ModelSetBase
      * @param mixed $catalog
      * @return \July\Node\NodeSet
      */
-    public function get_ancestors($catalog = null)
+    public function get_ancestors($catalog = 'main')
     {
         $ids = $this->pluck('id')->all();
 
         return CatalogSet::fetch($catalog)->get_ancestors(...$ids);
     }
 
-    public function get_above($catalog = null)
+    public function get_above($catalog = 'main')
     {
         return $this->get_ancestors($catalog);
     }
@@ -100,14 +100,14 @@ class NodeSet extends ModelSetBase
      * @param mixed $catalog
      * @return \July\Node\NodeSet
      */
-    public function get_siblings($catalog = null)
+    public function get_siblings($catalog = 'main')
     {
         $ids = $this->pluck('id')->all();
 
         return CatalogSet::fetch($catalog)->get_siblings(...$ids);
     }
 
-    public function get_around($catalog = null)
+    public function get_around($catalog = 'main')
     {
         return $this->get_siblings($catalog);
     }
