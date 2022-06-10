@@ -305,12 +305,12 @@ class Node extends TranslatableEntityBase
      * @param mixed $catalog
      * @return \July\Node\NodeSet
      */
-    public function get_children($catalog = null)
+    public function get_children($catalog = 'main')
     {
         return CatalogSet::fetch($catalog)->get_children($this->id);
     }
 
-    public function get_under($catalog = null)
+    public function get_under($catalog = 'main')
     {
         return $this->get_children($catalog);
     }
@@ -321,12 +321,12 @@ class Node extends TranslatableEntityBase
      * @param mixed $catalog
      * @return \July\Node\NodeSet
      */
-    public function get_descendants($catalog = null)
+    public function get_descendants($catalog = 'main')
     {
         return CatalogSet::fetch($catalog)->get_descendants($this->id);
     }
 
-    public function get_below($catalog = null)
+    public function get_below($catalog = 'main')
     {
         return $this->get_descendants($catalog);
     }
@@ -337,12 +337,12 @@ class Node extends TranslatableEntityBase
      * @param mixed $catalog
      * @return \July\Node\NodeSet
      */
-    public function get_parent($catalog = null)
+    public function get_parent($catalog = 'main')
     {
         return CatalogSet::fetch($catalog)->get_parent($this->id);
     }
 
-    public function get_over($catalog = null)
+    public function get_over($catalog = 'main')
     {
         return $this->get_parent($catalog);
     }
@@ -353,12 +353,12 @@ class Node extends TranslatableEntityBase
      * @param mixed $catalog
      * @return \July\Node\NodeSet
      */
-    public function get_ancestors($catalog = null)
+    public function get_ancestors($catalog = 'main')
     {
         return CatalogSet::fetch($catalog)->get_ancestors($this->id);
     }
 
-    public function get_above($catalog = null)
+    public function get_above($catalog = 'main')
     {
         return $this->get_ancestors($catalog);
     }
@@ -369,12 +369,12 @@ class Node extends TranslatableEntityBase
      * @param mixed $catalog
      * @return \July\Node\NodeSet
      */
-    public function get_siblings($catalog = null)
+    public function get_siblings($catalog = 'main')
     {
         return CatalogSet::fetch($catalog)->get_siblings($this->id);
     }
 
-    public function get_around($catalog = null)
+    public function get_around($catalog = 'main')
     {
         return $this->get_siblings($catalog);
     }
@@ -385,7 +385,7 @@ class Node extends TranslatableEntityBase
      * @param mixed $catalog
      * @return \July\Node\NodeSet
      */
-    public function get_prev($catalog = null)
+    public function get_prev($catalog = 'main')
     {
         return CatalogSet::fetch($catalog)->get_prev($this->id);
     }
@@ -396,7 +396,7 @@ class Node extends TranslatableEntityBase
      * @param mixed $catalog
      * @return \July\Node\NodeSet
      */
-    public function get_next($catalog = null)
+    public function get_next($catalog = 'main')
     {
         return CatalogSet::fetch($catalog)->get_next($this->id);
     }
@@ -407,7 +407,7 @@ class Node extends TranslatableEntityBase
      * @param mixed $catalog
      * @return \Illuminate\Support\Collection
      */
-    public function get_path($catalog = null)
+    public function get_path($catalog = 'main')
     {
         return CatalogSet::fetch($catalog)->get_path($this->id);
     }
