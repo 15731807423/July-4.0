@@ -331,6 +331,8 @@ class Catalog extends ModelBase implements GetNodesInterface
             $ids = array_merge($ids, $tree->ancestors($id));
         }
 
+        $ids = array_filter($ids);
+
         return NodeSet::fetch($ids);
     }
 
