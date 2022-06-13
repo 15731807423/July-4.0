@@ -505,6 +505,14 @@ abstract class EntityBase extends ModelBase
         }
     }
 
+    public function restoreValue()
+    {
+        $entity = $this;
+        $this->fields->each(function (FieldBase $field) use($entity) {
+            $field->bindEntity($entity)->restoreValue();
+        });
+    }
+
     /**
      * Bootstrap the model and its traits.
      *

@@ -192,29 +192,6 @@
                 }).catch(()=>{});
             },
 
-            deleteNode(node) {
-                if (! node) return;
-
-                this.$confirm(`确定要删除内容？`, '删除内容', {
-                    confirmButtonText: '删除',
-                    cancelButtonText: '取消',
-                    type: 'warning',
-                }).then(() => {
-                    const loading = app.$loading({
-                        lock: true,
-                        text: '正在删除 ...',
-                        background: 'rgba(255, 255, 255, 0.7)',
-                    });
-                    axios.delete(this.deleteUrl.replace('_ID_', node.id)).then(function(response) {
-                        loading.spinner = 'el-icon-success';
-                        loading.text = '已删除';
-                        window.location.reload();
-                    }).catch(function(error) {
-                        console.error(error);
-                    });
-                }).catch(()=>{});
-            },
-
             handleSelectionChange(selected) {
                 this.$set(this.$data, 'selected', selected);
             },
