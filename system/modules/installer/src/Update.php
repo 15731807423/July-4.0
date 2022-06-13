@@ -37,7 +37,6 @@ class Update
                 }
 
                 unset($connect);
-                self::dropAll('mysql');
 
                 // config切换数据库并设置数据库文件名
                 config(['database.connections.mysql.username' => $database['mysql']['username']]);
@@ -48,6 +47,8 @@ class Update
                 static::env(['DB_MYSQL_PASSWORD' => $database['mysql']['password']]);
                 static::env(['DB_MYSQL_DATABASE' => $database['mysql']['database']]);
                 static::env(['DB_CONNECTION' => 'mysql']);
+
+                self::dropAll('mysql');
 
                 // 执行迁移文件创建表
                 $time = time();
