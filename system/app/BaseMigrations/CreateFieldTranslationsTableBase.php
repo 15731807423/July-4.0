@@ -19,10 +19,10 @@ class CreateFieldTranslationsTableBase extends MigrationBase
             $table->id();
 
             // 字段 id
-            $table->string('field_id');
+            $table->string('field_id', 50);
 
             // 实体类型 id
-            $table->string('mold_id')->nullable();
+            $table->string('mold_id', 50)->nullable();
 
             // 语言版本
             $table->string('langcode', 12);

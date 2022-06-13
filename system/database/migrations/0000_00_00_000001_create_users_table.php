@@ -18,7 +18,7 @@ class CreateUsersTable extends Migration
             $table->id();
 
             // 用户名
-            $table->string('name')->unique();
+            $table->string('name', 32)->unique();
 
             // 密码
             $table->string('password');

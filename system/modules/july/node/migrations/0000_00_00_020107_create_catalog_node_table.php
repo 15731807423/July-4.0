@@ -17,7 +17,7 @@ class CreateCatalogNodeTable extends Migration
             $table->id();
 
             // 目录 id
-            $table->string('catalog_id');
+            $table->string('catalog_id', 20);
 
             // 节点 id
             $table->unsignedBigInteger('node_id');

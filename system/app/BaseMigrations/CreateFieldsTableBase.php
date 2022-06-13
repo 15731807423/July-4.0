@@ -17,7 +17,7 @@ class CreateFieldsTableBase extends MigrationBase
     {
         Schema::create($this->getTable(), function (Blueprint $table) {
             // 字段 id
-            $table->string('id')->primary();
+            $table->string('id', 32)->primary();
 
             // 字段类型（直接保存类全名可好？）
             $table->string('field_type');
