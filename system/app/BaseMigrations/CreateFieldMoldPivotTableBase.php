@@ -18,10 +18,10 @@ class CreateFieldMoldPivotTableBase extends MigrationBase
             $table->id();
 
             // 类型 id
-            $table->string('mold_id');
+            $table->string('mold_id', 50);
 
             // 字段 id
-            $table->string('field_id');
+            $table->string('field_id', 50);
 
             $table->string('label')->nullable();
             $table->string('description')->nullable();
