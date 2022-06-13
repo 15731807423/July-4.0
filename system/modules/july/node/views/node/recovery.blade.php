@@ -58,7 +58,7 @@
                 <template slot-scope="scope">
                     <div class="jc-operators">
                         <button type="button" title="恢复" class="md-button md-fab md-dense md-primary md-theme-default" @click.stop="recovery(scope.row)">
-                            <div class="md-ripple"><div class="md-button-content"><i class="md-icon md-icon-font md-theme-default">check</i></div></div>
+                            <div class="md-ripple" style="background: #448aff;"><div class="md-button-content"><i class="md-icon md-icon-font md-theme-default">check</i></div></div>
                         </button>
                         <button type="button" title="删除" class="md-button md-fab md-dense md-accent md-theme-default" @click.stop="destroy(scope.row)">
                             <div class="md-ripple"><div class="md-button-content"><i class="md-icon md-icon-font md-theme-default">remove</i></div></div>
