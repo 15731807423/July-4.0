@@ -8,9 +8,12 @@ use App\Models\ModelBase;
 use App\Support\Arr;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 abstract class ValueBase extends ModelBase
 {
+    use SoftDeletes;
+
     /**
      * 绑定的字段
      *
@@ -208,6 +211,17 @@ abstract class ValueBase extends ModelBase
     public function deleteValue(EntityBase $entity)
     {
         return $this->newQuery()->ofEntity($entity)->delete();
+    }
+
+    /**
+     * 恢复字段值
+     *
+     * @param  \App\Entity\EntityBase $entity
+     * @return mixed
+     */
+    public function restoreValue(EntityBase $entity)
+    {
+        return $this->newQuery()->ofEntity($entity)->restore();
     }
 
     /**

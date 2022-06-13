@@ -508,6 +508,16 @@ abstract class FieldBase extends ModelBase implements TranslatableInterface
     }
 
     /**
+     * 恢复字段值
+     *
+     * @return void
+     */
+    public function restoreValue()
+    {
+        return $this->getValueModel()->restoreValue($this->entity);
+    }
+
+    /**
      * 搜索字段值
      *
      * @param  string $needle 搜索该字符串
@@ -609,6 +619,10 @@ abstract class FieldBase extends ModelBase implements TranslatableInterface
             }
 
             $table->string('langcode', 12);
+
+            // 软删除
+            $table->softDeletes();
+
             $table->timestamps();
 
             $table->unique(['entity_id', 'langcode']);

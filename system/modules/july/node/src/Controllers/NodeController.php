@@ -208,7 +208,11 @@ class NodeController extends Controller
         $id = $request->input('nodes');
         if (count($id) == 0) return response('');
 
-        Node::onlyTrashed()->whereIn('id', $id)->restore();
+        foreach ($id as $key => $value) {
+            $node = Node::onlyTrashed()->find($value);
+            $node->restore();
+            $node->restoreValue();
+        }
 
         return response('');
     }
@@ -220,7 +224,7 @@ class NodeController extends Controller
     {
         $id = $request->input('nodes');
 
-        Node::whereIn('id', $id)->onlyTrashed()->forceDelete();
+        Node::onlyTrashed()->whereIn('id', $id)->forceDelete();
 
         $fields = Db::table('node_fields')->where('id', '<>', 'url')->pluck('id')->toArray();
         foreach ($fields as $key => $value) $fields[$key] = 'node__' . $value;
