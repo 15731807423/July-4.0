@@ -254,7 +254,7 @@ abstract class FieldBase extends ModelBase implements TranslatableInterface
      */
     public static function groupbyPresetType()
     {
-        return static::all()->groupBy(function(FieldBase $field) {
+        return static::orderBy('id', 'desc')->get()->groupBy(function(FieldBase $field) {
             if ($field->is_global) {
                 return 'global';
             } elseif ($field->is_reserved) {
@@ -272,7 +272,7 @@ abstract class FieldBase extends ModelBase implements TranslatableInterface
      */
     public static function bisect()
     {
-        return static::all()->map(function(FieldBase $field){
+        return static::orderBy('id', 'desc')->get()->map(function(FieldBase $field){
             return  $field->getMeta();
         })->groupBy(function($field) {
             if ($field['is_global'] || $field['is_reserved']) {
