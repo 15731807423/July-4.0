@@ -143,6 +143,7 @@
 @section('script')
 <script src="/front-vue/js/c-pagination.js"></script>
 <link rel="stylesheet" type="text/css" href="/front-vue/css/c-pagination.css">
+<script type="text/javascript" src="/themes/backend/js/translate.js"></script>
 <script>
     Vue.component('c-pagination', cPagination)
 
@@ -379,42 +380,7 @@
             },
 
             translate() {
-                var nodes = [];
-
-                this.original_models.forEach(element => {
-                    nodes.push(element.id);
-                });
-
-                this.translateRequest(nodes, 0);
-            },
-
-            translateRequest(nodes, i) {
-                const count = 50, current = nodes.slice(i, i + count);
-
-                if (current.length == 0) {
-                    this.$message.success('翻译完成');
-                    return false;
-                }
-
-                const loading = this.$loading({
-                    lock: true,
-                    text: '正在一键翻译' + current[0] + ' - ' + current[current.length - 1] + ' ...',
-                    background: 'rgba(255, 255, 255, 0.7)',
-                });
-
-                axios.post("{{ short_url('manage.translate.all') }}", { id: current.join(',') }).then((response) => {
-                    loading.close();
-
-                    if (typeof response.data == 'string') {
-                        this.$message.error(response.data);
-                        return false;
-                    }
-
-                    this.translateRequest(nodes, i + count);
-                }).catch(err => {
-                    loading.close();
-                    this.$message.error('发生错误');
-                });
+                translate.frame(this.$loading, this.$message).createAll("{{ short_url('manage.translate.all') }}");
             },
 
             render(node) {

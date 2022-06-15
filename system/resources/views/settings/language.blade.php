@@ -154,6 +154,7 @@
 @endsection
 
 @section('script')
+<script type="text/javascript" src="/themes/backend/js/translate.js"></script>
 <script>
 const app = new Vue({
     el: '#main_content',
@@ -348,24 +349,7 @@ const app = new Vue({
 
         // 生成模板
         generateTemplate(code) {
-            const loading = this.$loading({
-                lock: true,
-                text: '正在生成模板 ...',
-                background: 'rgba(255, 255, 255, 0.7)',
-            });
-
-            axios.post("{{ short_url('manage.translate.tpl', 'code') }}".replace('code', code), {}).then(response => {
-                loading.close();
-                if (typeof response.data == 'string') {
-                    this.$message.error(response.data);
-                } else {
-                    this.$message.success('生成模板成功');
-                }
-            }).catch(err => {
-                loading.close();
-                console.error(err);
-                this.$message.error('发生错误，可查看控制台');
-            });
+            translate.frame(this.$loading, this.$message).createTpl("{{ short_url('manage.translate.tpl', 'code') }}".replace('code', code));
         },
 
         // 提交

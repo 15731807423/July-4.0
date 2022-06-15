@@ -99,8 +99,7 @@ class TranslateController extends Controller
     {
         if (!config('lang.multiple')) return response('没有开启多语言');
 
-        $id = $request->input('id', '');
-        $id = explode(',', $id);
+        $id = DB::table('nodes')->pluck('id')->toArray();
 
         if (count($id) == 0) return response('没有要翻译的页面');
 
@@ -146,52 +145,11 @@ class TranslateController extends Controller
         }
 
         if (count($taskid) == 0) {
-            return response([]);
+            return response('没有要翻译的内容');
         }
 
-        // 创建死循环获取翻译结果
-        while (true) {
-            // 3秒后开始获取结果
-            sleep(3);
-
-            // 循环每个id获取结果
-            foreach ($taskid as $key => $value) {
-                // 如果这个语言编码的状态为真 表示已经获取到结果并修改了数据库 跳过这个语言
-                if ($status[$key]) continue;
-
-                // 用id获取结果 结果为数组表示获取成功 结果为null表示还在翻译 结果为false表示翻译失败
-                $data = $this->get($value, $key);
-
-                // 如果结果是字符串 修改语言的状态和数据库
-                if (is_string($data)) {
-                    $this->time[$key][1] = time();
-                    $status[$key] = true;
-                    $result[$key] = $this->allLangSet($data, $front, $key, $id);
-                } 
-
-                // 如果是null 跳过本次循环 3秒后继续获取结果
-                elseif (is_null($data)) {
-                    continue;
-                }
-
-                // 如果是false 记录这个语言翻译失败
-                elseif ($data === false) {
-                    $error[$key] = false;
-                }
-            }
-
-            // 如果全部语言的状态都为真 说明全部语言翻译完成 终止循环
-            if (count($status) == count(array_filter($status))) {
-                break;
-            }
-
-            // 如果翻译完成的结果数量加上翻译失败的结果数量等于全部语言的数量 表示全部语言都获取到了结果 终止循环
-            elseif (count(array_filter($status)) + count($error) == count($status)) {
-                break;
-            }
-        }
-
-        return response(['time' => $this->time, 'update' => $result]);
+        $taskid['type'] = 'all';
+        return response($taskid);
     }
 
     /**
@@ -208,7 +166,7 @@ class TranslateController extends Controller
         $text   = json_decode($request->input('text'), true);
 
         if ($from == $to || count($text) == 0) {
-            return $text;
+            return '不需要翻译';
         }
 
         // 记录翻译语言
@@ -221,28 +179,16 @@ class TranslateController extends Controller
             }
         }
 
-        // 获取翻译后内容
-        $html = $this->html(implode($this->cutting[0], $text), $from, $to);
+        // 创建任务
+        $result = $this->create(implode($this->cutting[0], $text), $from, $to);
+        $result['id'] = $result['data']['body']['TaskId'];
+        $result['code'] = $to;
+        $result['type'] = 'batch';
+        $result['field'] = array_keys($text);
+        unset($result['data']);
 
-        // 如果是数组 则0下标是错误信息
-        if (is_array($html)) return $html[0];
-
-        // 切割结果
-        $html = explode($this->cutting[0], $html);
-
-        // 判断数量
-        if (count($html) != count($text)) {
-            return '翻译后内容数量不一致';
-        }
-
-        // 把结果按顺序替换翻以前的内容
-        $i = 0;
-        foreach ($text as $key => $value) {
-            $text[$key] = $html[$i];
-            $i++;
-        }
-
-        return $text;
+        // 返回任务信息
+        return response($result);
     }
 
     /**
@@ -253,12 +199,6 @@ class TranslateController extends Controller
      */
     public function tpl(string $code)
     {
-        // 记录时间
-        $this->time[0] = [time()];
-
-        // 记录翻译语言
-        $this->code = $code;
-
         // 模板路径
         $path = base_path('../themes/frontend/template/');
 
@@ -294,13 +234,131 @@ class TranslateController extends Controller
             $html[] = file_get_contents($value);
         }
 
-        // 翻译内容获取结果
-        $html = $this->html(implode($this->cutting[1], $html), langcode('frontend'), $code);
+        // 创建任务
+        $result = $this->create(implode($this->cutting[1], $html), langcode('frontend'), $code);
+        $result['id'] = $result['data']['body']['TaskId'];
+        $result['code'] = $code;
+        $result['type'] = 'tpl';
+        unset($result['data']);
 
-        if (is_array($html)) return response($html[0]);
+        // 返回任务信息
+        return response($result);
+    }
+
+    /**
+     * 根据id获取结果 如果翻译完成 处理数据
+     * 
+     * @param  \Illuminate\Http\Request  $request
+     */
+    public function result(Request $request)
+    {
+        $data = $request->all();
+
+        switch ($data['type']) {
+            case 'all':
+                return $this->resultAll($data);
+                break;
+
+            case 'batch':
+                $result = $this->get([$data['id'], $data['file']], $data['code'], $data['log']);
+                if (is_array($result) && count($result) == 1) return $result[0];
+                return $this->resultBatch($data, $result);
+                break;
+
+            case 'tpl':
+                $result = $this->get([$data['id'], $data['file']], $data['code'], $data['log']);
+                if (is_array($result) && count($result) == 1) return $result[0];
+                return $this->resultTpl($data, $result);
+                break;
+
+            default:
+                return response('非法操作');
+                break;
+        }
+    }
+
+    /**
+     * 根据结果处理模板
+     * 
+     * @param  array  $data 翻译接口返回的数据
+     * @param  string $html 翻译的结果
+     * @return \Illuminate\Http\Response
+     */
+    private function resultAll(array $data)
+    {
+        unset($data['type']);
+        $front  = config('lang.frontend');
+        $code = array_keys(config('lang.available'));
+
+        foreach ($data as $key => $value) {
+            if (!in_array($key, $code)) {
+                unset($data[$key]);
+            }
+        }
+
+        foreach ($data as $key => $value) {
+            if (isset($value['result'])) {
+                $data[$key] = $value['result'];
+                continue;
+            }
+
+            $result = $this->get([$value['id'], $value['file']], $value['code'], $value['log']);
+            if (is_array($result) && count($result) == 1) {
+                $data[$key] = $result[0];
+            } else {
+                $id = DB::table('nodes')->pluck('id')->toArray();
+                $this->allLangSet($result, $front, $key, $id);
+                $data[$key] = 'translated';
+            }
+        }
+        return response($data);
+    }
+
+    /**
+     * 根据结果处理模板
+     * 
+     * @param  array  $data 翻译接口返回的数据
+     * @param  string $html 翻译的结果
+     * @return \Illuminate\Http\Response
+     */
+    private function resultBatch(array $data, string $html)
+    {
+        // 切割结果
+        $html = explode($this->cutting[0], $html);
+
+        // 判断数量
+        if (count($html) != count($data['field'])) {
+            return '翻译后内容数量不一致';
+        }
+
+        // 把结果按顺序替换翻以前的内容
+        $i = 0;
+        $text = [];
+        foreach ($data['field'] as $key => $value) {
+            $text[$value] = $html[$i];
+            $i++;
+        }
+
+        return response($text);
+    }
+
+    /**
+     * 根据结果处理模板
+     * 
+     * @param  array  $data 翻译接口返回的数据
+     * @param  string $html 翻译的结果
+     * @return \Illuminate\Http\Response
+     */
+    private function resultTpl(array $data, string $html)
+    {
+        // 模板路径
+        $path = base_path('../themes/frontend/template/');
 
         // 切割结果
         $html = explode($this->cutting[1], $html);
+
+        // 获取目录下需要翻译的文件路径
+        $file = $this->tplFile($path . $data['code']);
 
         // 按顺序写入文件
         foreach ($file as $key => $value) {
@@ -309,11 +367,8 @@ class TranslateController extends Controller
             fclose($handle);
         }
 
-        // 记录时间
-        $this->time[0][] = time();
-
         // 返回修改过的文件的路径
-        return response(['time' => $this->time, 'file' => $file]);
+        return response(['file' => $file]);
     }
 
     /**
@@ -401,11 +456,11 @@ class TranslateController extends Controller
 
         // 创建任务 获取taskid
         $data = $this->create($html, $from, $to);
+        $data['id'] = $data['data']['body']['TaskId'];
+        $data['code'] = $to;
+        unset($data['data']);
 
-        return [
-            $data['data']['body']['TaskId'],
-            $data['file']
-        ];
+        return $data;
     }
 
     /**
@@ -543,41 +598,6 @@ class TranslateController extends Controller
     }
 
     /**
-     * 对一段html进行翻译并返回结果
-     * 
-     * @param  string $html 被翻译的html
-     * @param  string $from 源语言
-     * @param  string $to   目标语言
-     * @return string|array 字符串表示翻译后的html 数组的0下标为错误信息
-     */
-    private function html(string $html, string $from, string $to)
-    {
-        // 创建任务
-        $data = $this->create($html, $from, $to);
-
-        $id = $data['data']['body']['TaskId'];
-
-        $file = $data['file'];
-
-        // 循环获取结果
-        while (true) {
-            sleep(3);
-
-            $data = $this->get([$id, $file], $to);
-
-            if (is_string($data)) {
-                return $data;
-            } elseif (is_null($data)) {
-                continue;
-            } elseif ($data === false) {
-                return $this->error;
-            }
-        }
-
-        return $data;
-    }
-
-    /**
      * 创建翻译任务
      * 
      * @param  string $html 被翻译的html
@@ -630,11 +650,12 @@ class TranslateController extends Controller
         $data = Translate::create($this->website . '/' . $file, $from, $to);
 
         // 写入日志
-        $this->log($file, $data, 1);
+        $log = $this->log($this->path . $file, $data, 1);
 
         return [
             'file'  => $this->path . $file,
-            'data'  => $data
+            'data'  => $data,
+            'log'   => $log
         ];
     }
 
@@ -643,33 +664,45 @@ class TranslateController extends Controller
      * 
      * @param  array  $data 翻译任务的taskid和缓存文件的路径
      * @param  string $code 目标语言
+     * @param  string $log  日志名称
      * @return null|bool|string null表示翻译任务尚未完成 false表示翻译失败 string为翻译结果
      */
-    private function get(array $data, string $code)
+    private function get(array $data, string $code, string $log)
     {
         // 获取结果
         $file = $data[1];
         $data = Translate::get($data[0]);
 
-        // 如果状态是准备或翻译中表示翻译任务尚未完成 返回null
+        // 如果状态是准备或翻译中表示翻译任务尚未完成 返回结果
         if ($data['body']['Status'] == 'ready' || $data['body']['Status'] == 'translating') {
-            return null;
+            return [$data['body']['Status']];
         }
 
-        // 如果状态是错误 返回false
+        // 如果状态是错误 返回结果
         elseif ($data['body']['Status'] == 'error') {
             // 写入日志
             $this->log($file, $data, 2);
 
             $this->error[] = $data['body']['TranslateErrorMessage'];
-            return false;
+            return [$data['body']['Status']];
         }
 
         // 写入日志
         $this->log($file, $data, 2);
 
+        $log = json_decode(file_get_contents($this->path . 'translate_log/' . $log . '/result1.json'), true);
+
+        // $this->notFields    = $log['notFields'];
+        // $this->notText      = $log['notText'];
+        // $this->replace      = $log['replace'];
+        // $this->url          = $log['url'];
+        // $this->lineElement  = $log['lineElement'];
+        $this->list         = $log['list'];
+        // $this->cutting      = $log['cutting'];
+        $this->code         = $log['code'];
+
         // 获取翻译后内容并转义
-        $html = file_get_contents($data['body']['TranslateFileUrl']);
+        $html = url_get_contents($data['body']['TranslateFileUrl']);
         $html = html_entity_decode($html);
 
         // 根据记录恢复
@@ -847,7 +880,8 @@ class TranslateController extends Controller
         if (!is_dir($path)) mkdir($path);
 
         // 定义本次日志保存的文件夹名称并创建 当前日期
-        $path .= '/' . date('YmdHis');
+        $name = date('YmdHis') . strval(mt_rand(10000, 99999));
+        $path .= '/' . $name;
         mkdir($path);
 
         // 复制翻译前的html
@@ -856,7 +890,7 @@ class TranslateController extends Controller
         // 如果翻译成功 保存翻译后的内容
         if ($result['body']['Status'] == 'translated') {
             touch($path . '/to.html');
-            file_put_contents($path . '/to.html', file_get_contents($result['body']['TranslateFileUrl']));
+            file_put_contents($path . '/to.html', url_get_contents($result['body']['TranslateFileUrl']));
         }
 
         // 本次翻译的所有信息保存为json
@@ -872,7 +906,9 @@ class TranslateController extends Controller
             'form'          => $this->website . '/' . basename($file),
             'result'        => $result
         ];
-        touch($path . '/result.json');
+
         file_put_contents($path . '/result' . $status . '.json', json_encode($data, JSON_PRETTY_PRINT));
+
+        return $name;
     }
 }
