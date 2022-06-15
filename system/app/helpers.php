@@ -445,25 +445,25 @@ if (!function_exists('custom_migration')) {
         file_put_contents($path, $file);
         rename($path, $dir . '/' . str_replace('.php', '.txt', $name));
     }
+}
 
-    if (!function_exists('url_get_contents')) {
-        /**
-         * 获取链接的页面内容
-         * @param  string $url 链接
-         * @return string
-         */
-        public function url_get_contents(string $url)
-        {
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_HEADER, false);
-            curl_setopt($ch, CURLOPT_URL, $url);
-            curl_setopt($ch, CURLOPT_SSLVERSION,3);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-            $result = curl_exec($ch);
-            curl_close($ch);
-            return $result;
-        }
+if (!function_exists('url_get_contents')) {
+    /**
+     * 获取链接的页面内容
+     * @param  string $url 链接
+     * @return string
+     */
+    function url_get_contents(string $url)
+    {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_HEADER, false);
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_SSLVERSION,3);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        $result = curl_exec($ch);
+        curl_close($ch);
+        return $result;
     }
 }
