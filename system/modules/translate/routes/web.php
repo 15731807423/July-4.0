@@ -15,4 +15,7 @@ Route::prefix(config('app.management_prefix', 'admin'))
 
     // 创建模板并翻译
     Route::post('translate/tpl/{code}', [Controllers\TranslateController::class, 'tpl'])->name('translate.tpl');
+
+    // 获取翻译结果
+    Route::post('translate/result', [Controllers\TranslateController::class, 'result'])->name('translate.result');
 });

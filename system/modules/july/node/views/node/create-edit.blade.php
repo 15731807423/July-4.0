@@ -75,6 +75,7 @@
 @endsection
 
 @section('script')
+<script type="text/javascript" src="/themes/backend/js/translate.js"></script>
 <script>
     window.showMediasWindow = function() {
         let mediaWindow = null;
@@ -142,12 +143,6 @@
             },
 
             translate() {
-                const loading = this.$loading({
-                    lock: true,
-                    text: '正在翻译内容 ...',
-                    background: 'rgba(255, 255, 255, 0.7)',
-                });
-
                 var data = {};
                 for (let key in this.model) {
                     if (typeof this.model[key] == 'string' && this.model[key].length > 0) data[key] = this.model[key];
@@ -159,23 +154,13 @@
                 delete data.url;
                 delete data.view;
 
-                axios.post("{{ short_url('manage.translate.batch') }}", {
+                translate.frame(this.$loading, this.$message).createBatch("{{ short_url('manage.translate.batch') }}", {
                     text: JSON.stringify(data),
                     to: '{{ $langcode }}'
-                }).then((response) => {
-                    loading.close();
-
-                    if (typeof response.data == 'string') {
-                        this.$message.error(response.data);
-                        return false;
+                }, (data) => {
+                    for (let key in data) {
+                        this.model[key] = data[key];
                     }
-
-                    for (let key in response.data) {
-                        this.model[key] = response.data[key];
-                    }
-                }).catch((error) => {
-                    loading.close();
-                    this.$message.error(error);
                 });
             },
 
