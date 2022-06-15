@@ -23,6 +23,10 @@ class Update
             case 'mysql':
                 if (config('database.default') == 'mysql') return response([]);
 
+                if (!extension_loaded('PDO_MySQL')) {
+                    return response('PDO_MySQL没有开启');
+                }
+
                 // 记录旧数据库
                 $old = config('database.default');
 
@@ -92,6 +96,10 @@ class Update
 
             case 'sqlite':
                 if (config('database.default') == 'sqlite') return response([]);
+
+                if (!extension_loaded('PDO_SQLite')) {
+                    return response('PDO_SQLite没有开启');
+                }
 
                 // 记录旧数据库
                 $old = config('database.default');
