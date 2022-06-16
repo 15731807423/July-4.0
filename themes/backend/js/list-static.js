@@ -1003,7 +1003,7 @@ const dataList = {
                 let searchValue = [];
 
                 for (var j = 0; j < this.searchInside.field.length; j++) {
-                    if (list[i][this.searchInside.field[j]] === undefined) continue;
+                    if (list[i][this.searchInside.field[j]] === undefined || list[i][this.searchInside.field[j]] === null) continue;
 
                     let value = this.searchInside.caseSensitive
                     ? list[i][this.searchInside.field[j]].toString()

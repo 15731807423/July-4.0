@@ -141,8 +141,8 @@
 @endsection
 
 @section('script')
-<script src="/front-vue/js/c-pagination.js"></script>
-<link rel="stylesheet" type="text/css" href="/front-vue/css/c-pagination.css">
+<script src="/themes/backend/vue/js/c-pagination.js"></script>
+<link rel="stylesheet" type="text/css" href="/themes/backend/vue/css/c-pagination.css">
 <script type="text/javascript" src="/themes/backend/js/translate.js"></script>
 <script>
     Vue.component('c-pagination', cPagination)

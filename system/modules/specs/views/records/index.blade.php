@@ -310,7 +310,7 @@
       massAssign() {
         this.assign.dialogVisible = false;
 
-        const field = this.assign.field;
+        const field = this.assign.field;console.log(this.selectedRecords.length, field)
         if (!this.selectedRecords.length || !field) return;
 
         const value = this.assign.value.trim();
