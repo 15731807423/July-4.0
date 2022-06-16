@@ -1,4 +1,7 @@
 User-agent: *
 Allow: /
-Disallow: /july/admin/
+Disallow: /manage/
+Disallow: /package/
 Disallow: /404.html
+
+Sitemap: https://www.xxxxxx.com/sitemap.xml
