@@ -52,7 +52,7 @@ class ListController extends Controller
 
         // exit(htmlentities(json_encode($data)));
 
-        // 用js组件 页面路径 themes/frontend/template/specs/list-static.twig 组件路径 themes/backend/vue/js/list-static.js
+        // 用js组件 页面路径 themes/frontend/template/specs/list-static.twig 组件路径 themes/backend/js/list-static.js
         return html_compress(app('twig')->render('specs/list-static.twig', $data));
 
         // 直接写在页面里 页面路径 themes/frontend/template/specs/list-static2.twig
@@ -104,7 +104,7 @@ class ListController extends Controller
 
         // exit(htmlentities(json_encode($data)));
 
-        // 用js组件 页面路径 themes/frontend/template/specs/list-static.twig 组件路径 themes/backend/vue/js/list-static.js
+        // 用js组件 页面路径 themes/frontend/template/specs/list-static.twig 组件路径 themes/backend/js/list-static.js
         return html_compress(app('twig')->render('specs/list-static.twig', $data));
 
         // 直接写在页面里 页面路径 themes/frontend/template/specs/list-static2.twig
@@ -260,7 +260,7 @@ class ListController extends Controller
 
         // exit(htmlentities(json_encode($data)));
 
-        // 用js组件 页面路径 themes/frontend/template/specs/list-dynamic.twig 组件路径 themes/backend/vue/js/list-dynamic.js
+        // 用js组件 页面路径 themes/frontend/template/specs/list-dynamic.twig 组件路径 themes/backend/js/list-dynamic.js
         return html_compress(app('twig')->render('specs/list-dynamic.twig', $data));
 
         // 直接写在页面里 页面路径 themes/frontend/template/specs/list-dynamic2.twig
