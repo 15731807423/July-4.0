@@ -1,6 +1,6 @@
 /*
-/themes/backend/vue/node_modules/
 /js/
+!/package/
 !/system/
 /system/database/custom/
 /system/database/database.db3
@@ -22,6 +22,7 @@
 /system/vendor/*
 /system/.env
 !/themes/
+/themes/backend/vue/node_modules/
 /themes/frontend/template/*
 !/.editorconfig
 !/.gitignore
