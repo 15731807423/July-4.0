@@ -1,5 +1,6 @@
 /*
 !/package/
+/package/FileManager/_files/
 !/system/
 /system/bootstrap/cache/*
 /system/database/custom/
