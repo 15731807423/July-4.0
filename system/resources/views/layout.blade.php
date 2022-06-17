@@ -27,14 +27,25 @@
             <ul class="md-list md-theme-default">
                 @foreach (config('app.main_menu') as $item)
                 @if ($item['route'])
-                <li class="md-list-item{{ under_route($item['route'], Request::getPathInfo())?' is-active':'' }}">
-                    <a href="{{ short_url($item['route']) }}" class="md-list-item-link md-list-item-container md-button-clean">
-                        <div class="md-list-item-content">
-                            <i class="md-icon md-icon-font md-theme-default">{{ $item['icon'] }}</i>
-                            <span class="md-list-item-text">{{ $item['title'] }}</span>
-                        </div>
-                    </a>
-                </li>
+                    @if (short_url($item['route']) == '/manage/media')
+                        <li class="md-list-item{{ under_route($item['route'], Request::getPathInfo())?' is-active':'' }}">
+                            <a href="{{ short_url($item['route']) }}" target="_blank" class="md-list-item-link md-list-item-container md-button-clean">
+                                <div class="md-list-item-content">
+                                    <i class="md-icon md-icon-font md-theme-default">{{ $item['icon'] }}</i>
+                                    <span class="md-list-item-text">{{ $item['title'] }}</span>
+                                </div>
+                            </a>
+                        </li>
+                    @else
+                        <li class="md-list-item{{ under_route($item['route'], Request::getPathInfo())?' is-active':'' }}">
+                            <a href="{{ short_url($item['route']) }}" class="md-list-item-link md-list-item-container md-button-clean">
+                                <div class="md-list-item-content">
+                                    <i class="md-icon md-icon-font md-theme-default">{{ $item['icon'] }}</i>
+                                    <span class="md-list-item-text">{{ $item['title'] }}</span>
+                                </div>
+                            </a>
+                        </li>
+                    @endif
                 @else
                 <li class="md-list-item">
                     <div class="md-list-item-expand md-list-item-container md-button-clean">
