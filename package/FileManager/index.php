@@ -133,7 +133,7 @@ class config {
     static $__dir__ = __DIR__;
     static $__file__ = __FILE__;
     static $assets;
-    static $prod = true;
+    static $prod = false;
     static $version = '0.5.5';
     static $root;
     static $doc_root;
@@ -260,8 +260,8 @@ class config {
         self::$config = array_replace(self::$default, $user_valid);
 
         // CDN assets
-        self::$assets = self::$prod ? 'https://cdn.jsdelivr.net/npm/files.photo.gallery@' . self::$version . '/' : '';
-        // self::$assets = self::$prod ? 'https://cdn.jsdelivr.net/npm/files.photo.gallery@' . self::$version . '/' : './npm/node_modules/files.photo.gallery/';
+        // self::$assets = self::$prod ? 'https://cdn.jsdelivr.net/npm/files.photo.gallery@' . self::$version . '/' : '';
+        self::$assets = self::$prod ? 'https://cdn.jsdelivr.net/npm/files.photo.gallery@' . self::$version . '/' : './npm/node_modules/files.photo.gallery/';
 
         // root
         self::$root = real_path(self::$config['root']);
