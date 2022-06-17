@@ -97,7 +97,7 @@ class config {
         'license_key' => 'F1-HY7I-P60X-LXFD-P36S-5A1G-XZ1K',
         'filter_live' => true,
         'filter_props' => 'name, filetype, mime, features, title',
-        'download_dir' => 'zip',
+        'download_dir' => '',
         'download_dir_cache' => 'dir',
 
         // filemanager options
