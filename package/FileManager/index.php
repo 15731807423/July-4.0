@@ -2,10 +2,12 @@
 
 // 只允许从后台和当前目录打开 其他页面不允许打开
 $front = 'https://' . $_SERVER['HTTP_HOST'] . '/manage';
+$front2 = 'http://' . $_SERVER['HTTP_HOST'] . '/manage';
 $current = 'https://' . $_SERVER['HTTP_HOST'] . '/package/FileManager';
+$current2 = 'http://' . $_SERVER['HTTP_HOST'] . '/package/FileManager';
 $referer = $_SERVER['HTTP_REFERER'] ?? '';
 
-if (strpos($referer, $front) !== 0 && strpos($referer, $current) !== 0) {
+if (strpos($referer, $front) !== 0 && strpos($referer, $current) !== 0 && strpos($referer, $front2) !== 0 && strpos($referer, $current2) !== 0) {
     exit('非法操作');
 }
 
