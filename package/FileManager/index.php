@@ -2,7 +2,7 @@
 
 // 只允许从后台和当前目录打开 其他页面不允许打开
 $front = 'https://' . $_SERVER['HTTP_HOST'] . '/manage';
-$current = 'https://' . $_SERVER['HTTP_HOST'] . '/package/filemanager';
+$current = 'https://' . $_SERVER['HTTP_HOST'] . '/package/FileManager';
 $referer = $_SERVER['HTTP_REFERER'] ?? '';
 
 if (strpos($referer, $front) !== 0 && strpos($referer, $current) !== 0) {
@@ -85,14 +85,14 @@ class config {
         'click' => 'popup',
         'click_window' => '',
         'click_window_popup' => true,
-        'code_max_load' => 100000,
+        'code_max_load' => 1024 * 1024,
         'topbar_sticky' => 'scroll',
         'check_updates' => false,
         'allow_tasks' => false,
         'get_mime_type' => false,
         'context_menu' => true,
         'prevent_right_click' => false,
-        'license_key' => '',
+        'license_key' => 'F1-HY7I-P60X-LXFD-P36S-5A1G-XZ1K',
         'filter_live' => true,
         'filter_props' => 'name, filetype, mime, features, title',
         'download_dir' => 'zip',
