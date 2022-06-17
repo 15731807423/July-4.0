@@ -38,7 +38,7 @@ class config {
         // images
         'load_images' => true,
         'load_files_proxy_php' => false,
-        'load_images_max_filesize' => 1000000,
+        'load_images_max_filesize' => 1024 * 1024,
         'image_resize_enabled' => true,
         'image_resize_cache' => true,
         'image_resize_dimensions' => 320,
@@ -49,7 +49,7 @@ class config {
         'image_resize_function' => 'imagecopyresampled',
         'image_resize_sharpen' => true,
         'image_resize_memory_limit' => 128,
-        'image_resize_max_pixels' => 30000000,
+        'image_resize_max_pixels' => 1024 * 1024 * 32,
         'image_resize_min_ratio' => 1.5,
         'image_resize_cache_direct' => false,
         'folder_preview_image' => true,
@@ -88,7 +88,7 @@ class config {
         'click_window' => '',
         'click_window_popup' => true,
         'code_max_load' => 1024 * 1024,
-        'topbar_sticky' => 'scroll',
+        'topbar_sticky' => true,
         'check_updates' => false,
         'allow_tasks' => false,
         'get_mime_type' => false,
@@ -112,7 +112,7 @@ class config {
 
         // uploader options
         'upload_allowed_file_types' => '',
-        'upload_max_filesize' => 0,
+        'upload_max_filesize' => 1024 * 1024 * 200,
         'upload_exists' => 'increment',
 
         // popup options
