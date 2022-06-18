@@ -20,7 +20,7 @@
 /system/vendor/
 /system/.env
 !/themes/
-/themes/backend/vue/node_modules/
+/themes/frontend/vue/node_modules/
 /themes/frontend/template/*
 !/themes/frontend/template/message/
 !/themes/frontend/template/specs/

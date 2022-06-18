@@ -43,4 +43,4 @@ Route::get('specs/{spec}/records/{record_id}', [Controllers\RecordController::cl
 Route::get('specs/list/{spec?}', [Controllers\ListController::class, 'list'])->name('specs.list.get');
 
 // 规格列表页
-Route::post('specs/getlist/{spec?}', [Controllers\ListController::class, 'getlist'])->name('specs.getlist.post');
+Route::post('specs/getlist', [Controllers\ListController::class, 'getlist'])->name('specs.getlist.post');

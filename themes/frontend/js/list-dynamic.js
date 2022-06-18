@@ -1,93 +1,4 @@
-// 计算数量的详细过程 待优化
-// 循环单选组和多选组 循环每个组里的选项 循环全部数据判断是否符合 符合的放到一个集合里计算总量
-
-// 筛选类型
-// 筛选项传参格式 ['name' => $value, 'field' => $value, 'type' => 1]
-// 插件的配置详细信息见https://element-plus.gitee.io/zh-CN/
-// 1 单选 选项从数据里获取 config属性配置‘Radio 属性’ configGroup属性配置‘Radio-group 属性’ 单选选项前面自动添加‘All’ 默认值‘All’ button为true设置为按钮 例：
-// 单选的值是‘All’时表示没有筛选
-// {
-//     name: 'name',       筛选组前面的名字
-//     field: 'field',     筛选的字段
-//     type: 1,            筛选类型
-//     default: 'apple',   默认值
-//     config: {           Radio属性
-//                         属性详见官网
-//     },
-//     configGroup: {      RadioGroup属性
-//                         属性详见官网
-//     }
-// }
-// 2 多选 选项从数据里获取 config属性配置‘Checkbox 属性’ configGroup属性配置‘Checkbox-group 属性’ 默认值‘[]’ button为true设置为按钮 例：
-// 多选的值是‘[]’时表示没有筛选
-// {
-//     name: 'name',       筛选组前面的名字
-//     field: 'field',     筛选的字段
-//     type: 2,            筛选类型
-//     default: ['apple'], 默认值
-//     config: {           Checkbox属性
-//                         属性详见官网
-//     },
-//     configGroup: {      CheckboxGroup属性
-//                         属性详见官网
-//     }
-// }
-// 3 滑块 最大值和最小值必传 如果是范围选择 默认值为‘[最大值, 最小值]’ 如果不是范围选择 默认值为‘0’ 例：
-// {
-//     name: 'age',        筛选组前面的名字
-//     field: 'field',     筛选的字段
-//     type: 3,            筛选类型
-//     default: 5,         默认的默认值
-//     default: [5, 10],   范围选择的默认值
-//     config: {           Slider属性
-//                         属性详见官网
-//     }
-// }
-// 4 日期范围 根据组件配置传值 例：
-// {
-//     name: 'time',       筛选组前面的名字
-//     field: 'field',     筛选的字段
-//     type: 4,            筛选类型
-//     default: '',        默认值
-//     config: {           DateTimePicker属性
-//                         属性详见官网
-//     }
-// }
-// 5 下拉菜单 根据组件配置传值 如果是多选 默认值必须是一维数组 例：
-// {
-//     name: 'name',       筛选组前面的名字
-//     field: 'field',     筛选的字段
-//     type: 5,            筛选类型
-//     default: 'apple',   单选的默认值
-//     default: ['apple'], 多选的默认值
-//     config: {           Select属性
-//                         属性详见官网
-//     }
-// }
-
-// 筛选组之间关联的类型
-// 1 根据screenAll的内容排序 逐级计算数量 0.5
-// 2 根据screenAll的内容排序 逐级计算数量 且点击高级的筛选组时会重置低级的筛选组 0.5
-// 3 根据点击筛选组的顺序排序 逐级计算数量 0.4
-// 4 根据其他筛选组筛选的结果计算当前筛选组每个筛选项的数量 1
-
-// 默认值的选择 比如数组里五个对象 可以指定其中一个为当前对象 但是指定了多个 系统在找到一个之后就会终止进程 所以设置了多个的时候用设置了的第一个 如果没设置但是必须设置则用第一个
-// element组件的参数默认为undefined 因为传undefined不会影响组件本身的默认值 传'', 0, null, [], false等都达不到这个效果
-
-// 需要用到的element-plus
-// 搜索框     ElInput
-// 搜索按钮   ElButton
-// 筛选单选   ElRadioGroup ElRadio ElRadioButton
-// 筛选多选   ElCheckboxGroup ElCheckbox ElCheckboxButton
-// 滑块       ElSlider
-// 日期范围   ElDatePicker
-// 下拉菜单   ElSelect ElOption
-// 模式选择器 ElRadioGroup ElRadio ElRadioButton
-// 表格       ElTable ElTableColumn
-// 分页       ElPagination
-
-
-const dataList = {
+const dataListDynamic = {
     template: `
         <div :class="className">
             <div v-if="searchInside.status" :class="searchInside.class">
@@ -333,7 +244,7 @@ const dataList = {
                     <div :class="listClass">
                         <el-table
                             v-if="tableInside.status && (!selectorInside || selectorInside.value == 'table')"
-                            :data="currentList"
+                            :data="list"
                             :height="tableInside.config.height"
                             :max-height="tableInside.config.maxHeight"
                             :stripe="tableInside.config.stripe"
@@ -403,9 +314,9 @@ const dataList = {
                         </el-table>
 
                         <template v-if="listItem.length > 0 && (!selectorInside || selectorInside.value == 'list')">
-                            <p class="empty" v-if="currentList.length == 0">{{ dataEmptyText }}</p>
+                            <p class="empty" v-if="list.length == 0">{{ dataEmptyText }}</p>
 
-                            <div v-else v-for="item in currentList" :class="listItemClass" v-html="handleHtml(item)"></div>
+                            <div v-else v-for="item in list" :class="listItemClass" v-html="handleHtml(item)"></div>
                         </template>
                     </div>
 
@@ -416,7 +327,7 @@ const dataList = {
                             :small="paginationInside.small"
                             :background="paginationInside.background"
                             :default-page-size="paginationInside.defaultPageSize"
-                            :total="paginationInside.total ? paginationInside.total : screenList.length"
+                            :total="paginationInside.total"
                             :page-count="paginationInside.pageCount"
                             :pager-count="paginationInside.pagerCount"
                             :default-current-page="paginationInside.defaultCurrentPage"
@@ -435,8 +346,11 @@ const dataList = {
     `,
 
     props: {
-        // 全部数据的集合 对象数组
-        list: { type: Array, default: [] },
+        // 规格的名称
+        name: { type: Object, required: true },
+
+        // 自定义配置信息
+        configUser: { type: String, default: '' },
 
         // 搜索的配置信息 默认searchInside
         search: { type: Object, default: {} },
@@ -479,7 +393,7 @@ const dataList = {
     data: function() {
         return {
             // 搜索和筛选后的数据的集合
-            screenList: [],
+            list: [],
 
             // 搜索的关键词
             keywords: this.search.default ? this.search.default : '',
@@ -498,6 +412,9 @@ const dataList = {
 
             // 当前的筛选情况
             screenAllSelected: {},
+
+            // 取消axios
+            cancel: null,
 
             // 搜索的默认配置信息
             searchInside: {
@@ -679,6 +596,7 @@ const dataList = {
                 class: 'data-page',
                 pageSize: 10,
                 currentPage: 1,
+                total: 0
             },
 
             // 加载的默认配置信息
@@ -698,12 +616,22 @@ const dataList = {
         this.init();
     },
 
-    computed: {
-        // 获取当前页数据
-        currentList() {
-            return this.assign(this.screenList.slice((this.paginationInside.currentPage - 1) * this.paginationInside.pageSize, this.paginationInside.currentPage * this.paginationInside.pageSize));
+    watch: {
+        'paginationInside.currentPage': {
+            handler (newVal, oldVal) {
+                this.handleData();
+            },
+            deep: true
         },
+        'paginationInside.pageSize': {
+            handler (newVal, oldVal) {
+                this.handleData();
+            },
+            deep: true
+        }
+    },
 
+    computed: {
         // 全部已筛选项
         userSelectedList() {
             var list = [];
@@ -773,9 +701,6 @@ const dataList = {
             // 处理传进来的默认排序
             this.handleDefaultSort();
 
-            // 默认排序
-            this.sortChange(this.currentSort);
-
             // 注册设置了分组的筛选
             this.group();
 
@@ -787,7 +712,6 @@ const dataList = {
         handleComponentConfig() {
             // 处理搜索配置
             this.searchInside = this.configTemplateRecursion(this.search, this.searchInside);
-            if (this.searchInside.field === '*') this.searchInside.field = Object.keys(this.list[0]);
 
             // 处理筛选配置
             this.screenInside = this.configTemplateRecursion(this.screen, this.screenInside);
@@ -875,6 +799,8 @@ const dataList = {
                 this.currentSort.order = 'ascending';
             }
 
+            this.currentSort.order = this.currentSort.order.replace('ending', '');
+
             this.defaultSort = this.currentSort;
         },
 
@@ -882,25 +808,25 @@ const dataList = {
         group() {
             for (var i = 0; i < this.screenInside.list.length; i++) {
                 if (this.screenInside.list[i].type == 1) {
-                    this.screenRegister(this.screenInside.list[i], this.valueListByAttr(this.screenInside.list[i].field), this.screenInside.list[i].default !== null ? this.screenInside.list[i].default : 'All', 'All');
+                    this.screenRegister(this.screenInside.list[i], this.screenInside.list[i].default !== null ? this.screenInside.list[i].default : 'All', 'All');
                 }
                 if (this.screenInside.list[i].type == 2) {
-                    this.screenRegister(this.screenInside.list[i], this.valueListByAttr(this.screenInside.list[i].field), this.screenInside.list[i].default !== null ? this.screenInside.list[i].default : this.assign([]), []);
+                    this.screenRegister(this.screenInside.list[i], this.screenInside.list[i].default !== null ? this.screenInside.list[i].default : this.assign([]), []);
                 }
                 if (this.screenInside.list[i].type == 3) {
                     if (this.screenInside.list[i].config.range === true) {
                         let max = this.screenInside.list[i].config.max === undefined ? 100 : this.screenInside.list[i].config.max,
                             min = this.screenInside.list[i].config.min === undefined ? 0 : this.screenInside.list[i].config.min;
-                        this.screenRegister(this.screenInside.list[i], [], this.screenInside.list[i].default !== null ? this.screenInside.list[i].default : [min, max], [min, max]);
+                        this.screenRegister(this.screenInside.list[i], this.screenInside.list[i].default !== null ? this.screenInside.list[i].default : [min, max], [min, max]);
                     } else {
-                        this.screenRegister(this.screenInside.list[i], [], this.screenInside.list[i].default !== null ? this.screenInside.list[i].default : 0, 0);
+                        this.screenRegister(this.screenInside.list[i], this.screenInside.list[i].default !== null ? this.screenInside.list[i].default : 0, 0);
                     }
                 }
                 if (this.screenInside.list[i].type == 4) {
-                    this.screenRegister(this.screenInside.list[i], [], this.screenInside.list[i].default, null);
+                    this.screenRegister(this.screenInside.list[i], this.screenInside.list[i].default, null);
                 }
                 if (this.screenInside.list[i].type == 5) {
-                    this.screenRegister(this.screenInside.list[i], this.valueListByAttr(this.screenInside.list[i].field), this.screenInside.list[i].default !== null ? this.screenInside.list[i].default : '', '');
+                    this.screenRegister(this.screenInside.list[i], this.screenInside.list[i].default !== null ? this.screenInside.list[i].default : '', '');
                 }
             }
 
@@ -912,18 +838,12 @@ const dataList = {
         },
 
         // 注册筛选项
-        screenRegister(data, list, defaultValue, all) {
-            for (var i = 0; i < list.length; i++) list[i] = { name: list[i], count: 0 };
-
-            list = this.sort(list, 'name', 'asc', 2);
-
-            if (data.type == 1) list.unshift({ name: 'All', count: 0 });
-
+        screenRegister(data, defaultValue, all) {
             var config = data.config, configGroup = data.configGroup;
 
             if (data.type == 1 || data.type == 2) {
                 this.screenAllSelected[data.field] = { type: data.type, value: defaultValue, config: config };
-                this.screenAll[data.field] = { name: data.name, label: data.field, list: list, type: data.type, default: defaultValue, config: config, configGroup: configGroup, all: all };
+                this.screenAll[data.field] = { name: data.name, label: data.field, list: [], type: data.type, default: defaultValue, config: config, configGroup: configGroup, all: all };
                 return false;
             }
 
@@ -937,44 +857,68 @@ const dataList = {
             if (data.type == 5) {
                 if (config.multiple === true) {
                     all = [];
+                    if (defaultValue === '') defaultValue = [];
                 } else if (config.clearable === true) {
                     all = '';
                 } else {
                     all = 'All';
                     defaultValue = defaultValue.length == 0 ? 'All' : defaultValue;
-                    list.unshift({ name: 'All', count: 0 });
                 }
             }
 
             this.screenAllSelected[data.field] = { type: data.type, value: defaultValue, config: config };
-            this.screenAll[data.field] = { name: data.name, label: data.field, list: list, type: data.type, default: defaultValue, config: config, all: all };
+            this.screenAll[data.field] = { name: data.name, label: data.field, list: [], type: data.type, default: defaultValue, config: config, all: all };
         },
 
-        // 处理数据 先搜索 再筛选 再排序
-        // 每次搜索或筛选执行这里 排序直接执行sortChange
+        // 处理数据
         handleData(source = '') {
             if (source === 'searchInput' && this.searchInside.inputConfig.onInput !== true) return false;
             if (source === 'searchChange' && this.searchInside.inputConfig.onChange !== true) return false;
 
+            var data = {
+                search: this.keywords,
+                screen: {},
+                sort: this.currentSort,
+                page: [this.paginationInside.currentPage, this.paginationInside.pageSize]
+            };
+
+            if (this.screenInside.type == 3 && this.screenSort.length > 0) {
+                data.screenSort = this.screenSort;
+            }
+
+            for (let key in this.screenAllSelected) {
+                data.screen[key] = this.screenAllSelected[key].value;
+            }
+
+            this.send(data);
+        },
+
+        // 发送请求
+        send(data) {
+            if (this.cancel) this.cancel();
+
             const loading = this.loadingInside.status ? ElementPlus.ElLoading.service(this.loadingInside.config) : null;
 
-            setTimeout(() => {
-                setTimeout(() => {
-                    // 计算出每个筛选选项的数量
-                    if (this.screenInside.status) this.screenStatistics();
-                }, 500);
+            data.specs = this.name.split(',');
+            data.configUser = this.configUser;
 
-                // 先处理搜索 把结果赋值给screenList
-                this.searchFunc(this.assign(this.list));
+            axios.post('/specs/getlist', data, {
+                cancelToken: new axios.CancelToken((c) => {
+                    this.cancel = c;
+                })
+            }).then((data) => {
+                if (data.status == 200 && data.data.status > 0) {
+                    this.list = data.data.data.list;
+                    this.paginationInside.total = data.data.data.count;
 
-                // 再从screenList里筛选 把结果赋值给screenList
-                this.screenFunc();
-
-                // 再从screenList里根据currentSort排序 把结果赋值给screenList
-                this.sortChange(this.currentSort);
-
+                    for (let key in data.data.data.screen) {
+                        this.screenAll[key].list = data.data.data.screen[key];
+                    }
+                }
                 if (loading) loading.close();
-            }, 30);
+            }).catch((data) => {
+                if (loading) loading.close();
+            });
         },
 
         // 将传进来的html中的属性转换成对应的值
@@ -982,52 +926,6 @@ const dataList = {
             var html = this.listItem;
             for (let key in data) html = html.replaceAll('{ ' + key + ' }', data[key]);
             return html;
-        },
-
-        // 根据关键词对可搜索的字段筛选查询
-        searchFunc(list, value = false) {
-            if (this.keywords.length > 0 && this.searchInside.field.length == 0) {
-                if (value) return [];
-                this.screenList = [];
-                return false;
-            }
-
-            if (!this.searchInside.status || this.keywords.length == 0) {
-                if (value) return list;
-                this.screenList = list;
-                return false;
-            }
-
-            var screenList = [], keywords = this.searchInside.caseSensitive ? this.keywords : this.keywords.toLowerCase();
-            for (var i = 0; i < list.length; i++) {
-                let searchValue = [];
-
-                for (var j = 0; j < this.searchInside.field.length; j++) {
-                    if (list[i][this.searchInside.field[j]] === undefined || list[i][this.searchInside.field[j]] === null) continue;
-
-                    let value = this.searchInside.caseSensitive
-                    ? list[i][this.searchInside.field[j]].toString()
-                    : list[i][this.searchInside.field[j]].toString().toLowerCase();
-
-                    if (this.cuttingSymbol.length == 0) {
-                        searchValue.push(value);
-                    } else {
-                        value = value.split(this.cuttingSymbol);
-                        searchValue = this.merge(searchValue, value);
-                    }
-                }
-
-                for (var j = 0; j < searchValue.length; j++) {
-                    if (searchValue[j].indexOf(keywords) !== -1) {
-                        screenList.push(list[i]);
-                        break;
-                    }
-                }
-            }
-
-            if (value) return screenList;
-
-            this.screenList = screenList;
         },
 
         // 用户点击进行筛选
@@ -1057,182 +955,6 @@ const dataList = {
             this.handleData();
         },
 
-        // 筛选
-        screenFunc() {
-            var data = this.assign(this.screenAllSelected), list = this.assign(this.screenList), screenList = [], condition = {};
-
-            if (!this.screenInside.status) {
-                this.screenList = list;
-                return false;
-            }
-
-            for (var key in data) {
-                if (this.screenEffect(key, data[key].value)) condition[key] = data[key];
-            }
-
-            if (Object.keys(condition).length == 0) {
-                return false;
-            }
-
-            for (var i = 0; i < list.length; i++) {
-                if (this.check(list[i], condition)) screenList.push(list[i]);
-            }
-
-            this.screenList = screenList;
-        },
-
-        // 根据screenInside.type计算出每个筛选选项的数量
-        screenStatistics() {
-            // 显示数值或隐藏空都需要计算 否则不计算
-            if (!this.screenInside.countStatus && !this.screenInside.nullHidden) return false;
-
-            var list = this.searchFunc(this.assign(this.list), true);
-
-            if (this.screenInside.type == 1 || this.screenInside.type == 2) {
-                // 耗时0.5 - 0.6
-                for (let key in this.screenAll) {
-                    this.screenGroupCount(list, key);
-
-                    if (this.screenEffect(key, this.screenAllSelected[key].value)) {
-                        list = this.checkList(list, key, this.screenAllSelected[key]);
-                    }
-                }
-            }
-
-            if (this.screenInside.type == 3) {
-                for (var i = 0; i < this.screenSort.length; i++) {
-                    this.screenGroupCount(list, this.screenSort[i]);
-
-                    if (this.screenEffect(this.screenSort[i], this.screenAllSelected[this.screenSort[i]].value)) {
-                        list = this.checkList(list, this.screenSort[i], this.screenAllSelected[this.screenSort[i]]);
-                    }
-                }
-
-                for (let key in this.screenAll) {
-                    if (this.screenSort.indexOf(key) !== -1) continue;
-
-                    this.screenGroupCount(list, key);
-
-                    if (this.screenEffect(key, this.screenAllSelected[key].value)) {
-                        list = this.checkList(list, key, this.screenAllSelected[key]);
-                    }
-                }
-            }
-
-            if (this.screenInside.type == 4) {
-                for (let key in this.screenAll) {
-                    var list = this.searchFunc(this.assign(this.list), true);
-
-                    for (let key2 in this.screenAll) {
-                        if (key == key2) continue;
-
-                        if (this.screenEffect(key2, this.screenAllSelected[key2].value)) {
-                            list = this.checkList(list, key2, this.screenAllSelected[key2]);
-                        }
-                    }
-
-                    this.screenGroupCount(list, key);
-                }
-            }
-        },
-
-        // 判断一个筛选项的结果有没有生效
-        screenEffect(name, data) {
-            return JSON.stringify(this.screenAll[name].all) != JSON.stringify(data) && data !== null;
-        },
-
-        // 根据集合计算筛选组里每个筛选项对应的数据数量
-        screenGroupCount(list, name) {
-            if (this.screenInside.groupCountType.indexOf(this.screenAll[name].type) === -1) return false;
-
-            for (var i = 0; i < this.screenAll[name].list.length; i++) {
-                let value = { type: this.screenAll[name].type, value: this.screenAll[name].list[i].name };
-                if (value.type == 2 || this.screenAll[name].config.multiple === true) value.value = [value.value];
-                this.screenAll[name].list[i].count = this.checkList(list, name, value).length;
-            }
-        },
-
-        // 获取列表里某个属性符合某个值的集合
-        checkList(list, name, value) {
-            var list2 = [];
-
-            for (var i = 0; i < list.length; i++) {
-                if (this.check(list[i], { [name]: value })) list2.push(list[i]);
-            }
-
-            return list2;
-        },
-
-        // 获取list里某个属性存在的值
-        valueListByAttr(attr) {
-            let list = [];
-            for (var j = 0; j < this.list.length; j++) {
-                if (this.list[j][attr] === undefined) continue;
-
-                if (this.cuttingSymbol.length == 0 || this.list[j][attr].indexOf(this.cuttingSymbol) === -1) {
-                    if (list.indexOf(this.list[j][attr]) == -1) {
-                        list.push(this.list[j][attr]);
-                    }
-                } else {
-                    let list2 = this.list[j][attr].split(this.cuttingSymbol);
-                    for (var k = 0; k < list2.length; k++) {
-                        if (list.indexOf(list2[k]) == -1) {
-                            list.push(list2[k]);
-                        }
-                    }
-                }
-            }
-            return list;
-        },
-
-        // 判断一条数据符合不符合条件
-        check(data, condition) {
-            for (let key in condition) {
-                if (data[key] === undefined) continue;
-
-                if (condition[key].type == 1) {
-                    let value = this.cuttingSymbol.length == 0 ? [data[key]] : data[key].split(this.cuttingSymbol);
-                    if (condition[key].value !== 'All' && value.indexOf(condition[key].value) === -1) return false;
-                }
-                if (condition[key].type == 2) {
-                    let value = this.cuttingSymbol.length == 0 ? [data[key]] : data[key].split(this.cuttingSymbol);
-                    if (condition[key].value.length > 0 && this.intersect(value, condition[key].value).length == 0) return false;
-                }
-                if (condition[key].type == 3) {
-                    let value = parseInt(data[key]);
-                    if (this.screenAll[key].config.range === true) {
-                        if (value < condition[key].value[0] || value > condition[key].value[1]) return false;
-                    } else {
-                        if (value != condition[key].value) return false;
-                    }
-                }
-                if (condition[key].type == 4) {
-                    let value = typeof data[key] == 'number' ? data[key] : Date.parse(data[key]) / 1000;
-                    let date = this.dateRange(condition[key].value, condition[key].config.type);
-                    if (condition[key].config.type == 'dates') {
-                        var status = false;
-                        for (var i = 0; i < date.length; i++) {
-                            if (value >= date[i][0] && value <= date[i][1]) status = true;
-                        }
-                        return status;
-                    } else {
-                        if (value < date[0] || value > date[1]) return false;
-                    }
-                }
-                if (condition[key].type == 5) {
-                    let value = this.cuttingSymbol.length == 0 ? data[key] : data[key].split(this.cuttingSymbol);
-                    if (this.screenAll[key].config.multiple === true) {
-                        if (condition[key].value.length > 0 && this.intersect(value, condition[key].value).length == 0) return false;
-                    } else if (this.screenAll[key].config.clearable === true) {
-                        if (value.indexOf(condition[key].value) === -1) return false;
-                    } else {
-                        if (condition[key].value !== 'All' && value.indexOf(condition[key].value) === -1) return false;
-                    }
-                }
-            }
-            return true;
-        },
-
         // 取消筛选
         screenClear(name = null, value = null) {
             if (name === null && value === null) {
@@ -1254,6 +976,11 @@ const dataList = {
             this.handleData();
         },
 
+        // 判断一个筛选项的结果有没有生效
+        screenEffect(name, data) {
+            return JSON.stringify(this.screenAll[name].all) != JSON.stringify(data) && data !== null;
+        },
+
         // 根据筛选结果的类型返回重置结果
         screenReset(name) {
             return { type: this.screenAll[name].type, value: this.screenAll[name].all, config: this.screenAll[name].config };
@@ -1263,105 +990,11 @@ const dataList = {
         sortChange(data) {
             if (data.order === null) data = this.defaultSort;
 
+            data.order = data.order.replace('ending', '');
+
             this.currentSort = data;
 
-            var number = true;
-            for (var i = 0; i < this.list.length; i++) {
-                if (isNaN(Number(this.list[i][data.prop]))) {
-                    number = false;
-                    break;
-                }
-            }
-
-            if (data.order === 'ascending') {
-                this.screenList = this.sort(this.screenList, data.prop, 'asc', number ? 1 : 2);
-            }
-            if (data.order === 'descending') {
-                this.screenList = this.sort(this.screenList, data.prop, 'desc', number ? 1 : 2);
-            }
-        },
-
-        // 数组根据属性值排序，数字、字母和汉字
-        sort(list, field, order, type) {
-            const _this = this;
-            list = this.assign(list);
-
-            if (type == 1 && order == 'asc') {
-                var func = function (a, b) {
-                    return _this.sortFunc(a[field], b[field], 1);
-                }
-            }
-            if (type == 1 && order == 'desc') {
-                var func = function (a, b) {
-                    return _this.sortFunc(b[field], a[field], 1);
-                }
-            }
-            if (type == 2 && order == 'asc') {
-                var func = function (a, b) {
-                    if (a[field] === undefined && b[field] === undefined) {
-                        return 0;
-                    } else if (a[field] === undefined) {
-                        return 1;
-                    } else if (b[field] === undefined) {
-                        return -1;
-                    }
-
-                    a = _this.sortCaseSensitive ? a[field] : a[field].toLowerCase();
-                    b = _this.sortCaseSensitive ? b[field] : b[field].toLowerCase();
-
-                    return _this.sortFunc(a, b, 2);
-                }
-            }
-            if (type == 2 && order == 'desc') {
-                var func = function (a, b) {
-                    if (a[field] === undefined && b[field] === undefined) {
-                        return 0;
-                    } else if (a[field] === undefined) {
-                        return -1;
-                    } else if (b[field] === undefined) {
-                        return 1;
-                    }
-
-                    a = _this.sortCaseSensitive ? a[field] : a[field].toLowerCase();
-                    b = _this.sortCaseSensitive ? b[field] : b[field].toLowerCase();
-
-                    return _this.sortFunc(b, a, 2);
-                }
-            }
-            if (type == 3 && order == 'asc') {
-                var func = function (a, b) {
-                    if (a[field] === undefined && b[field] === undefined) {
-                        return 0;
-                    } else if (a[field] === undefined) {
-                        return 1;
-                    } else if (b[field] === undefined) {
-                        return -1;
-                    }
-
-                    a = _this.sortCaseSensitive ? a[field] : a[field].toLowerCase();
-                    b = _this.sortCaseSensitive ? b[field] : b[field].toLowerCase();
-
-                    return a.localeCompare(b, 'zh');
-                }
-            }
-            if (type == 3 && order == 'desc') {
-                var func = function (a, b) {
-                    if (a[field] === undefined && b[field] === undefined) {
-                        return 0;
-                    } else if (a[field] === undefined) {
-                        return -1;
-                    } else if (b[field] === undefined) {
-                        return 1;
-                    }
-
-                    a = _this.sortCaseSensitive ? a[field] : a[field].toLowerCase();
-                    b = _this.sortCaseSensitive ? b[field] : b[field].toLowerCase();
-
-                    return b.localeCompare(a, 'zh');
-                }
-            }
-
-            return list.sort(func);
+            this.handleData();
         },
 
         // 日期格式化
@@ -1481,42 +1114,9 @@ const dataList = {
             return tpl;
         },
 
-        // 排序函数
-        sortFunc(a, b, n, i = 0) {
-            if (n == 1) return a - b;
-
-            if (n == 2) {
-                if (isNaN(a.charCodeAt(i)) && isNaN(b.charCodeAt(i))) return 0;
-                if (isNaN(a.charCodeAt(i))) return -1;
-                if (isNaN(b.charCodeAt(i))) return 1;
-
-                if (a.charCodeAt(i) == b.charCodeAt(i)) {
-                    return this.sortFunc(a, b, n, i + 1);
-                } else {
-                    return a.charCodeAt(i) - b.charCodeAt(i);
-                }
-            }
-        },
-
         // 获取变量的数据
         assign(a) {
             return JSON.parse(JSON.stringify(a));
-        },
-
-        // 取数组交集
-        intersect(a, b) {
-            return a.filter(item => new Set(b).has(item))
-        },
-
-        // 合并数组
-        merge(a, b) {
-            a.push.apply(a, b);
-            return a;
-        },
-
-        // 数组去重
-        unique(a) {
-            return [...new Set(a)];
         }
     }
 };

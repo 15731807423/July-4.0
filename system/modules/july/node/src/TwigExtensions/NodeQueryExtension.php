@@ -10,6 +10,7 @@ use July\Node\NodeSet;
 use July\Node\NodeTypeSet;
 use July\Taxonomy\TermSet;
 use Specs\Spec;
+use Specs\Controllers\ListController as SpecList;
 use Twig\TwigFunction;
 use Twig\TwigFilter;
 use Twig\Extension\AbstractExtension;
@@ -72,6 +73,11 @@ class NodeQueryExtension extends AbstractExtension implements GlobalsInterface
             new TwigFunction('current_lang_code', function ($url) {
                 return current_lang_code($url);
             }),
+
+            // 规格
+            new TwigFunction('specs', function ($specs = null, $config = []) {
+                return (new SpecList($config))->setSpecs($specs)->tplList();
+            })
         ];
     }
 

@@ -1,111 +1,94 @@
-{% extends "_layout.twig" %}
-{% use "_blocks.twig" %}
+<link rel="stylesheet" type="text/css" href="/themes/backend/vue/node_modules/element-plus/dist/index.css">
 
-{% block headAssets -%}
-	<link rel="stylesheet" type="text/css" href="/themes/backend/vue/node_modules/element-plus/dist/index.css">
-{% endblock -%}
+<div id="specs{{ number }}">
+	{# 列表组件 #}
+	<data-list
+		{# 属性前面的冒号的作用
+		不加冒号，属性值被当做文本处理，数据类型为String。
+		加了冒号，属性值被当做js表达式处理，可以传数字、字符串、布尔、变量、函数、js语法等。 #}
 
-{% block lang_multiple -%}{% endblock -%}
+		{# 全部数据的集合 #}
+		:list="list"
 
-{% block main %}
-	<div class="region" id="data_panel">
-		<div class="stage">
-			<div class="data-panel-1">
-				{# 列表组件 #}
-				<data-list
-					{# 属性前面的冒号的作用
-					不加冒号，属性值被当做文本处理，数据类型为String。
-					加了冒号，属性值被当做js表达式处理，可以传数字、字符串、布尔、变量、函数、js语法等。 #}
+		{# 搜索的配置信息 #}
+		:search="config.search"
 
-					{# 全部数据的集合 #}
-					:list="list"
+		{# 筛选的配置信息 #}
+		:screen="config.screen"
 
-					{# 搜索的配置信息 #}
-					:search="config.search"
+		{# 模式选择器的配置信息 #}
+		:selector="config.selector"
 
-					{# 筛选的配置信息 #}
-					:screen="config.screen"
+		{# 表格的配置信息 #}
+		:table="table"
 
-					{# 模式选择器的配置信息 #}
-					:selector="config.selector"
+		{# 如果列表是列表 传一项的html 目前 html不会被vue解析 需要手动替换标签的值 不支持任何js事件 #}
+		:list-item="listItem"
 
-					{# 表格的配置信息 #}
-					:table="table"
+		{# 分页的配置信息 #}
+		:pagination="config.pagination"
 
-					{# 如果列表是列表 传一项的html 目前 html不会被vue解析 需要手动替换标签的值 不支持任何js事件 #}
-					:list-item="listItem"
+		{# 加载的配置信息 #}
+		:loading="config.loading"
 
-					{# 分页的配置信息 #}
-					:pagination="config.pagination"
+		{# 数据里多个数据放在一个属性里时的切割符号 空字符串表示不存在多个数据 #}
+		:cutting-symbol="config.cuttingSymbol || undefined"
 
-					{# 加载的配置信息 #}
-					:loading="config.loading"
+		{# 数据为空时的提示 #}
+		:data-empty-text="config.dataEmptyText || undefined"
 
-					{# 数据里多个数据放在一个属性里时的切割符号 空字符串表示不存在多个数据 #}
-					:cutting-symbol="config.cuttingSymbol || undefined"
+		{# 排序大小写敏感 #}
+		:sort-case-sensitive="config.sortCaseSensitive"
 
-					{# 数据为空时的提示 #}
-					:data-empty-text="config.dataEmptyText || undefined"
+		{# 一些class #}
+		{# class-name="" #}
+		{# content-class="" #}
+		{# data-class="" #}
+		{# list-class="" #}
+		{# listItem-class="" #}
+	/></data-list>
+</div>
 
-					{# 排序大小写敏感 #}
-					:sort-case-sensitive="config.sortCaseSensitive"
+<script src="/themes/frontend/js/list-static.js"></script>
+<script src="/themes/frontend/vue/node_modules/vue/dist/vue.global.prod.js"></script>
+<script src="/themes/frontend/vue/node_modules/element-plus/dist/index.full.js"></script>
 
-					{# 一些class #}
-					{# class-name="" #}
-					{# content-class="" #}
-					{# data-class="" #}
-					{# list-class="" #}
-					{# listItem-class="" #}
-				/></data-list>
-			</div>
-		</div>
-	</div>
-{% endblock %}
+<script type="text/javascript">
+	var dataPanel = Vue.createApp({
+		data() {
+			return {
+				// 全部数据
+				list: {{ list|json_encode(constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_UNESCAPED_UNICODE'))|raw }},
 
-{% block js %}
-	<script src="/js/lazyscript.jquery.min.js" id="lazyscript"></script>
-	<script src="/js/custom.js"></script>
-	<script src="/themes/backend/js/list-static.js"></script>
-	<script src="/themes/backend/vue/node_modules/vue/dist/vue.global.prod.js"></script>
-	<script src="/themes/backend/vue/node_modules/element-plus/dist/index.full.js"></script>
+				// 组件的配置信息
+				config: {{ config|json_encode(constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_UNESCAPED_UNICODE'))|raw }},
 
-	<script type="text/javascript">
-		var dataPanel = Vue.createApp({
-			data() {
-				return {
-					// 全部数据
-					list: {{ list|json_encode(constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_UNESCAPED_UNICODE'))|raw }},
+				// 表格的配置信息
+				table: {{ table|json_encode(constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_UNESCAPED_UNICODE'))|raw }},
 
-					// 组件的配置信息
-					config: {{ config|json_encode(constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_UNESCAPED_UNICODE'))|raw }},
+				// 列表的html
+				listItem: {{ listItem|json_encode(constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_UNESCAPED_UNICODE'))|raw }},
+			};
+		},
 
-					// 表格的配置信息
-					table: {{ table|json_encode(constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_UNESCAPED_UNICODE'))|raw }},
+		mounted() {
 
-					// 列表的html
-					listItem: {{ listItem|json_encode(constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_UNESCAPED_UNICODE'))|raw }},
-				};
-			},
+		},
 
-			mounted() {
+		methods: {
 
-			},
-
-			methods: {
-
-			}
-		})
-		.use(ElementPlus.ElInput)
-		.use(ElementPlus.ElButton)
-		.use(ElementPlus.ElRadio)
-		.use(ElementPlus.ElCheckbox)
-		.use(ElementPlus.ElSlider)
-		.use(ElementPlus.ElDatePicker)
-		.use(ElementPlus.ElSelect)
-		.use(ElementPlus.ElTable)
-		.use(ElementPlus.ElLoading)
-		.use(ElementPlus.ElPagination)
-		.component('data-list', dataList)
-		.mount('#data_panel');
-	</script>
-{% endblock %}
+		}
+	})
+	.use(ElementPlus.ElInput)
+	.use(ElementPlus.ElButton)
+	.use(ElementPlus.ElRadio)
+	.use(ElementPlus.ElCheckbox)
+	.use(ElementPlus.ElSlider)
+	.use(ElementPlus.ElDatePicker)
+	.use(ElementPlus.ElSelect)
+	.use(ElementPlus.ElTable)
+	.use(ElementPlus.ElLoading)
+	.use(ElementPlus.ElPagination)
+	.component('data-list', dataListStatic)
+	.mount('#specs{{ number }}');
+</script>

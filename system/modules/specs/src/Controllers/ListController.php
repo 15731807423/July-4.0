@@ -13,94 +13,148 @@ use App\Http\Controllers\Controller;
  */
 class ListController extends Controller
 {
-    private $cuttingSymbol = '';
+    /**
+     * 全部配置信息 先从后台获取 再用参数覆盖
+     */
+    private $config;
+
+    private $configUser;
 
     /**
-     * 规格列表
-     *
-     * @param  \Specs\Spec                  $spec       规格信息
-     * @param  \Illuminate\Http\Request     $request    请求信息
-     * @return string
+     * 展示的规格的名字 一维数组
      */
-    public function list(Spec $spec, Request $request): string
-    {
-        if ($spec->getKey()) {
-            return $this->{config('specList.model', 'static') . 'Spec'}($spec, $request);
-        } else {
-            return $this->staticSpecs($spec, $request);
-        }
-    }
+    private $specs;
 
     /**
-     * JS处理单规格列表
-     *
-     * @param  \Specs\Spec                  $spec       规格信息
-     * @param  \Illuminate\Http\Request     $request    请求信息
-     * @return string
+     * 使用配置的规格的模型
      */
-    private function staticSpec($spec, $request): string
-    {
-        $data = Engine::make()->specs($spec->getKey())->search()[$spec->getKey()]['records'];
-
-        foreach ($data as $key => $value) $data[$key]['id'] = intval($value['id']);
-
-        $data = $this->staticData($spec, $data);
-
-        if ($keywords = $request->input('keywords')) {
-            $data['config']['search']['default'] = $keywords;
-        }
-
-        // exit(htmlentities(json_encode($data)));
-
-        // 用js组件 页面路径 themes/frontend/template/specs/list-static.twig 组件路径 themes/backend/js/list-static.js
-        return html_compress(app('twig')->render('specs/list-static.twig', $data));
-
-        // 直接写在页面里 页面路径 themes/frontend/template/specs/list-static2.twig
-        // return html_compress(app('twig')->render('specs/list-static2.twig', $data));
-    }
+    private $attrSpec;
 
     /**
-     * JS处理全部规格列表
-     *
-     * @param  \Specs\Spec                  $spec       规格信息
-     * @param  \Illuminate\Http\Request     $request    请求信息
-     * @return string
+     * 自定义的规格的配置
      */
-    private function staticSpecs($spec, $request): string
+    private $attrData = [];
+
+    /**
+     * 允许配置的规格字段的属性
+     */
+    private $updateSpecFieldAttr = ['label', 'is_groupable', 'screen_type', 'screen_default', 'screen_config', 'screen_config_group', 'is_searchable', 'is_sortable', 'is_hiddenable'];
+
+    /**
+     * 允许配置的规格的属性
+     */
+    private $updateSpecAttr = ['table_status', 'default_sort_field', 'default_sort_mode', 'table_config', 'list_status', 'list_item'];
+
+    /**
+     * 构造函数 允许自定义配置信息 定义的配置信息会覆盖后台的配置信息 未定的配置信息不变
+     * 
+     * @param  array $config 使用的配置信息 会覆盖后台的配置
+     */
+    function __construct(array $config = [])
     {
-        $specs = Spec::all()->map(function(Spec $spec) {
-            return $spec;
+        // 初始化一批成员属性
+
+        // 设置后台的配置信息 用传进来的配置信息覆盖后台的配置信息
+        $this->setConfig($config);
+
+        // 设置要显示的规格
+        $this->specs = Spec::all()->map(function(Spec $spec) {
+            return $spec->getKey();
         })->all();
 
-        if (count($specs) == 0) abort(404);
+        // 显示多个规格时使用的配置
+        $this->attrSpec = Spec::find($this->config['specAll']['specConfig'] ?: $this->specs[0]);
+    }
 
-        if ($spec = config('specList.static.specAll.specConfig')) {
-            foreach ($specs as $key => $value) {
-                if ($spec == $value->attributesToArray()['id']) {
-                    $spec = $value;
-                }
-            }
-        } else {
-            $spec = $specs[0];
+    /**
+     * 设置显示的规格
+     * 
+     * @param  string|array 字符串表示规格的名字 数组表示多个规格名字的集合
+     * @return this
+     */
+    public function setSpecs($specs = null)
+    {
+        // 如果是字符串 并且这个规格确实存在 表示只有这一个规格
+        if (is_string($specs) && in_array($specs, $this->specs)) {
+            $this->specs = [$specs];
         }
 
-        $data = Engine::make($request)->search();
+        // 如果是数组 获取数组里合法的规格名字（取交集）
+        elseif (is_array($specs)) {
+            $this->specs = array_intersect($specs, $this->specs) ?: $this->specs;
+        }
 
+        if (count($this->specs) == 1) {
+            $this->attrSpec = Spec::find($this->specs[0]);
+        }
+
+        return $this;
+    }
+
+    /**
+     * 获取规格功能的html
+     * 
+     * @return string
+     */
+    public function tplList()
+    {
+        // 根据模式调用对应的函数
+        switch ($this->config['model']) {
+            case 'static':
+                return $this->staticSpec();
+                break;
+
+            case 'dynamic':
+                return $this->dynamicSpec();
+                break;
+            
+            default:
+                return '';
+                break;
+        }
+    }
+
+    /**
+     * 规格列表 用规格的名称和url里的关键词获取html
+     *
+     * @param  \Specs\Spec                  $spec       规格信息
+     * @return string
+     */
+    public function list(Spec $spec): string
+    {
+        if ($spec->getKey()) $this->specs = [$spec->getKey()];
+
+        return $this->tplList();
+    }
+
+    /**
+     * JS处理规格列表
+     *
+     * @return string
+     */
+    private function staticSpec(): string
+    {
+        // 全部数据
         $list = [];
 
-        foreach ($data as $key => $value) {
-            foreach ($value['records'] as $k => $val) {
-                $value['records'][$k]['spec'] = $value['attributes']['id'];
-                $value['records'][$k]['id'] = intval($val['id']);
+        // 循环获取指定的规格
+        foreach ($this->specs as $key => $value) {
+            $data = Engine::make()->specs($value)->get()[$value];
+            foreach ($data['records'] as $k => $val) {
+                $data['records'][$k]['spec'] = $data['attributes']['id'];
+                $data['records'][$k]['id'] = intval($val['id']);
             }
-            $list = array_merge($list, $value['records']);
+            $list = array_merge($list, $data['records']);
         }
 
-        $data = $this->staticData($spec, $list);
+        // 其他数据
+        $data = $this->staticData($this->attrSpec, $list);
 
-        if ($keywords = $request->input('keywords')) {
-            $data['config']['search']['default'] = $keywords;
-        }
+        // if ($keywords = $request->input('keywords')) {
+        //     $data['config']['search']['default'] = $keywords;
+        // }
+
+        $data['number'] = mt_rand(10000, 99999);
 
         // exit(htmlentities(json_encode($data)));
 
@@ -120,18 +174,58 @@ class ListController extends Controller
      */
     private function staticData($spec, $list): array
     {
+        // 使用配置信息的规格的名称
         $specName = $spec->getKey();
 
+        // 使用配置信息的规格的字段
         $fields = $spec->getFields()->values()->all();
 
+        // 允许修改的规格字段的属性
+        $keys = $this->updateSpecFieldAttr;
+
+        // 循环覆盖每个字段
+        foreach ($fields as $key => $value) {
+            // 自定义信息里没有配置这个字段或者配置信息不是数组或者配置信息是假 则跳过
+            if (!array_key_exists($value['field_id'], $this->attrData) || !is_array($this->attrData[$value['field_id']]) || !$this->attrData[$value['field_id']]) continue;
+
+            // 循环自定义信息
+            foreach ($this->attrData[$value['field_id']] as $name => $data) {
+                // 如果设置的信息属性不合法 则跳过
+                if (!in_array($name, $keys)) continue;
+
+                // 覆盖配置信息
+                $fields[$key][$name] = $data;
+            }
+        }
+
+        // 循环每个自定义属性
+        foreach ($this->attrData as $name => $data) {
+            foreach ($fields as $key => $value) {
+                if (in_array($name, $keys) && $value['field_id'] == $name) {
+                    $fields[$key] = array_merge($value, $data);
+                }
+            }
+        }
+
         $data = $spec->attributesToArray();
+
+        $keys = $this->updateSpecAttr;
+        foreach ($this->attrData as $key => $value) {
+            if (in_array($key, $keys)) {
+                $data[$key] = $value;
+            }
+        }
 
         $hidden = [];
         foreach ($fields as $key => $value) {
             if ($value['is_hiddenable']) $hidden[] = $value['field_id'];
         }
 
-        ['searchable' => $search, 'groupable' => $screen] = Engine::make()->specs($specName)->resolveSpecFields()[$specName];
+        $search = $screen = [];
+        foreach ($fields as $key => $value) {
+            if ($value['is_searchable'] && !$value['is_hiddenable']) $search[] = $value['field_id'];
+            if ($value['is_groupable'] && !$value['is_hiddenable']) $screen[] = $value['field_id'];
+        }
 
         $search = array_values(array_diff($search, $hidden));
         $screen = array_values(array_diff($screen, $hidden));
@@ -200,7 +294,7 @@ class ListController extends Controller
             'list'          => $list,
             'table'         => $table,
             'listItem'      => $listItem,
-            'config'        => $this->getListConfig()
+            'config'        => $this->config
         ];
 
         if (isset($list[0]) && isset($list[0]['spec']) && $data['config']['specAll']['status']) {
@@ -244,19 +338,15 @@ class ListController extends Controller
     }
 
     /**
-     * PHP处理单规格列表
+     * PHP处理规格列表
      *
-     * @param  \Specs\Spec                  $spec       规格信息
-     * @param  \Illuminate\Http\Request     $request    请求信息
      * @return string
      */
-    private function dynamicSpec($spec, $request): string
+    private function dynamicSpec(): string
     {
-        $data = $this->dynamicData($spec);
+        $data = $this->dynamicData($this->attrSpec);
 
-        if ($keywords = $request->input('keywords')) {
-            $data['config']['search']['default'] = $keywords;
-        }
+        $data['number'] = mt_rand(10000, 99999);
 
         // exit(htmlentities(json_encode($data)));
 
@@ -268,19 +358,6 @@ class ListController extends Controller
     }
 
     /**
-     * PHP处理全部规格列表
-     *
-     * @param  \Specs\Spec                  $spec       规格信息
-     * @param  \Illuminate\Http\Request     $request    请求信息
-     * @return string
-     */
-    private function dynamicSpecs($spec, $request)
-    {
-        // 无法从多个数据表里同时查询数据
-        // 全部规格列表一律用JS处理
-    }
-
-    /**
      * 获取PHP处理时需要用到的配置信息
      *
      * @param  \Specs\Spec      $spec       规格信息
@@ -288,18 +365,58 @@ class ListController extends Controller
      */
     private function dynamicData($spec): array
     {
+        // 使用配置信息的规格的名称
         $specName = $spec->getKey();
 
+        // 使用配置信息的规格的字段
         $fields = $spec->getFields()->values()->all();
 
+        // 允许修改的规格字段的属性
+        $keys = $this->updateSpecFieldAttr;
+
+        // 循环覆盖每个字段
+        foreach ($fields as $key => $value) {
+            // 自定义信息里没有配置这个字段或者配置信息不是数组或者配置信息是假 则跳过
+            if (!array_key_exists($value['field_id'], $this->attrData) || !is_array($this->attrData[$value['field_id']]) || !$this->attrData[$value['field_id']]) continue;
+
+            // 循环自定义信息
+            foreach ($this->attrData[$value['field_id']] as $name => $data) {
+                // 如果设置的信息属性不合法 则跳过
+                if (!in_array($name, $keys)) continue;
+
+                // 覆盖配置信息
+                $fields[$key][$name] = $data;
+            }
+        }
+
+        // 循环每个自定义属性
+        foreach ($this->attrData as $name => $data) {
+            foreach ($fields as $key => $value) {
+                if (in_array($name, $keys) && $value['field_id'] == $name) {
+                    $fields[$key] = array_merge($value, $data);
+                }
+            }
+        }
+
         $data = $spec->attributesToArray();
+
+        $keys = $this->updateSpecAttr;
+        foreach ($this->attrData as $key => $value) {
+            if (in_array($key, $keys)) {
+                $data[$key] = $value;
+            }
+        }
 
         $hidden = [];
         foreach ($fields as $key => $value) {
             if ($value['is_hiddenable']) $hidden[] = $value['field_id'];
         }
 
-        ['searchable' => $search, 'groupable' => $screen] = Engine::make()->specs($specName)->resolveSpecFields()[$specName];
+        $search = $screen = [];
+        foreach ($fields as $key => $value) {
+            if ($value['is_searchable'] && !$value['is_hiddenable']) $search[] = $value['field_id'];
+            if ($value['is_groupable'] && !$value['is_hiddenable']) $screen[] = $value['field_id'];
+        }
 
         $search = array_values(array_diff($search, $hidden));
         $screen = array_values(array_diff($screen, $hidden));
@@ -373,7 +490,7 @@ class ListController extends Controller
         $data = [
             'table'         => $table,
             'listItem'      => $listItem,
-            'config'        => $this->getListConfig()
+            'config'        => $this->config
         ];
 
         unset($data['config']['specAll']);
@@ -381,7 +498,8 @@ class ListController extends Controller
         $data['config']['search']['field'] = $search;
         $data['config']['screen']['list'] = $screen;
 
-        $data['name'] = $specName;
+        $data['name'] = $this->specs;
+        $data['configUser'] = json_encode($this->configUser);
 
         return $data;
     }
@@ -393,20 +511,59 @@ class ListController extends Controller
      * @param  \Illuminate\Http\Request     $request    请求信息
      * @return string
      */
-    public function getlist(Spec $spec, Request $request): array
+    public function getlist(Request $request): array
+    {
+        $specs = $request->input('specs', null);
+        $configUser = $request->input('configUser', '');
+        $page = $request->input('page', [1, 10]);
+        $sort = $request->input('sort', null);
+        $configUser = json_decode($configUser, true) ?: [];
+        $this->setConfig($configUser);
+
+        // 配置信息
+        $config = $this->dynamicData($this->attrSpec)['config'];
+
+        $queries = collect();
+        $screenList = [];
+
+        foreach ($specs as $key => $value) {
+            $data = $this->getTableData(Spec::find($value)->getRecordsTable(), $config, $request);
+            $queries->push($data[0]);
+            $screenList = array_merge($screenList, $data[1]);
+        }
+
+        $list = $queries->shift();
+
+        //循环剩下的表添加unnion
+        $queries->each(function($item, $key) use ($list) {
+            $list->unionAll($item);
+        });
+
+        // 排序
+        if ($sort) {
+            if ($config['sortCaseSensitive']) {
+                $list->orderByRaw($sort['prop'] . ' ' . $sort['order']);
+            } else {
+                $list->orderByRaw('lower(' . $sort['prop'] . ')' . ' ' . $sort['order']);
+            }
+        }
+
+        $count = $list->count();
+
+        $list = $list->offset(($page[0] - 1) * $page[1])->limit($page[1])->get()->toArray();
+
+        return ['status' => 1, 'data' => ['screen' => $screenList, 'list' => $list, 'count' => $count]];
+    }
+
+    private function getTableData(string $table, array $data, Request $request)
     {
         // 获取参数
         $search = $request->input('search', null);
         $screen = $request->input('screen', null);
-        $sort = $request->input('sort', null);
-        $page = $request->input('page', [1, 10]);
         $screenSort = $request->input('screenSort', []);
 
-        // 配置信息
-        $data = $this->dynamicData($spec)['config'];
-
         // 初始化数据库
-        $list = Db::table($spec->getRecordsTable());
+        $list = Db::table($table);
 
         // 如果搜索区分大小写 执行一下sql 最后再恢复回来
         if ($data['search']['caseSensitive']) DB::statement('PRAGMA case_sensitive_like = 1');
@@ -415,7 +572,7 @@ class ListController extends Controller
         if ($data['search']['status'] && $search) {
             $where = [];
             foreach ($data['search']['field'] as $key => $value) {
-                $where[] = '"' . $value . '" like \'%' . $search . '%\'';
+                $where[] = '`' . $value . '` like \'%' . $search . '%\'';
             }
             $list->whereRaw('(' . implode(' or ', $where) . ')');
         }
@@ -445,7 +602,7 @@ class ListController extends Controller
 
             // 获取字段出现过的全部值
             $screenItem = [];
-            $list2 = Db::table($spec->getRecordsTable())->groupBy($value['field'])->pluck($value['field'])->toArray();
+            $list2 = Db::table($this->attrSpec->getRecordsTable())->groupBy($value['field'])->pluck($value['field'])->toArray();
 
             // 根据切割符号切割后放进数组再次去重并排序
             foreach ($list2 as $k => $val) {
@@ -558,23 +715,10 @@ class ListController extends Controller
             }
         }
 
-        // 排序
-        if ($sort) {
-            if ($data['sortCaseSensitive']) {
-                $list->orderBy($sort['prop'], $sort['order']);
-            } else {
-                $list->orderBy('lower(' . $sort['prop'] . ')', $sort['order']);
-            }
-        }
-
-        $count = $list->count();
-
-        $list = $list->offset(($page[0] - 1) * $page[1])->limit($page[1])->get()->toArray();
-
         // 恢复数据库对大小写敏感的设置
         if ($data['search']['caseSensitive']) DB::statement('PRAGMA case_sensitive_like = 0');
 
-        return ['status' => 1, 'data' => ['screen' => $screenList, 'list' => $list, 'count' => $count]];
+        return [$list, $screenList];
     }
 
     /**
@@ -682,17 +826,51 @@ class ListController extends Controller
      */
     private function cuttingSymbolWhere(string $field, string $value): string
     {
-        return $this->cuttingSymbol ? '("' . $field . '" = \'' . $value . '\' or "' . $field . '" like \'' . $value . $this->cuttingSymbol . '%\' or "' . $field . '" like \'%' . $this->cuttingSymbol . $value . '\' or "' . $field . '" like \'%' . $this->cuttingSymbol . $value . $this->cuttingSymbol . '%\')' : '("' . $field . '" = \'' . $value . '\')';
+        return $this->config['cuttingSymbol'] ? '("' . $field . '" = \'' . $value . '\' or "' . $field . '" like \'' . $value . $this->config['cuttingSymbol'] . '%\' or "' . $field . '" like \'%' . $this->config['cuttingSymbol'] . $value . '\' or "' . $field . '" like \'%' . $this->config['cuttingSymbol'] . $value . $this->config['cuttingSymbol'] . '%\')' : '("' . $field . '" = \'' . $value . '\')';
     }
 
     /**
-     * 获取‘后台-配置-规格列表’的配置信息
+     * 设置‘后台-配置-规格列表’的配置信息
      * 
-     * @return array
+     * @param  array $config 自定义配置信息
      */
-    private function getListConfig(): array
+    private function setConfig(array $config)
     {
+        // 获取后台的配置信息
         $data = config('specList', []);
+
+        // 覆盖
+        foreach ($config as $key => $value) {
+            if (strpos($key, 'specList.') !== 0) continue;
+
+            $key = explode('.', str_replace('specList.', '', $key));
+            $last = array_splice($key, count($key) - 1, 1)[0];
+            foreach ($key as $k => $val) $key[$k] = '[\'' . $val . '\']';
+            $key = implode('', $key);
+
+            $attr = '$data' . $key;
+
+            if (is_int($value)) {
+                $value = strval($value);
+                $string = false;
+            } elseif (is_bool($value)) {
+                $value = $value ? 'true' : 'false';
+                $string = false;
+            } elseif (is_null($value)) {
+                $value = 'null';
+                $string = false;
+            } else {
+                $string = true;
+            }
+
+            if (eval('return array_key_exists("' . $last . '", ' . $attr . ');')) {
+                eval($attr . '["' . $last . '"]' . ' = ' . ($string ? '"' . $value . '"' : $value) . ';');
+            }
+        }
+
+        if (isset($config['spec'])) {
+            $this->attrData = $config['spec'];
+        }
 
         if (is_null($data['search']['inputConfig']['componentConfig'])) {
             unset($data['search']['inputConfig']['componentConfig']);
@@ -746,9 +924,8 @@ class ListController extends Controller
             $data['specAll']['screenGroupConfig'] = $this->formatConfigValue($data['specAll']['screenGroupConfig']);
         }
 
-        $this->cuttingSymbol = $data['cuttingSymbol'];
-
-        return $data;
+        $this->config = $data;
+        $this->configUser = $config;
     }
 
     /**
