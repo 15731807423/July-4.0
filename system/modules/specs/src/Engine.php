@@ -317,6 +317,11 @@ class Engine
             }
         }
 
+        foreach ($fields as $key => $value) {
+            $fields[$key]['searchable'] = $value['searchable'] ?? [];
+            $fields[$key]['groupable'] = $value['groupable'] ?? [];
+        }
+
         if (! empty($this->specs)) {
             $fields = Arr::only($fields, array_values($this->specs));
         }

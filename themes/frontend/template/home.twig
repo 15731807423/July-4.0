@@ -4,6 +4,28 @@
 
 {% block main %}
 
+	<div>{{ specs()|raw }}</div>
+
 	{{ content|raw }}
+
+	<div>
+		{{ specs(['pro_1', 'pro_3'], {
+			'specList.model': 'dynamic',
+			'specList.sortCaseSensitive': true,
+			'specList.search.status': true,
+			'specList.search.buttonConfig.status': true,
+			'specList.search.buttonConfig.text': 'aaaaaaaaaa',
+			'spec': {
+				'image': {
+					'is_searchable': false
+				},
+				'manufacture_oe': {
+					'is_sortable': true
+				},
+				'table_status': 1,
+				'list_item': '<b>{ image }</b>'
+			}
+		})|raw }}
+	</div>
 
 {% endblock %}
