@@ -85,7 +85,7 @@ class JsRule extends FormatBase
     {
         $message = $rule->resolveMessage() ?? '网址格式不正确';
 
-        return "{pattern:/^(\\/[a-z0-9\\-_]+)+(\\.html)?$/,message:'{$message}',trigger:'blur'}";
+        return "{pattern:/^(\\/[a-z0-9\\-_]+)+(\\.html|\\.xml)?$/,message:'{$message}',trigger:'blur'}";
     }
 
     /**
