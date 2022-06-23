@@ -249,7 +249,8 @@ return [
         \App\Support\Settings\SiteInformation::class,
         \App\Support\Settings\Redirections::class,
         \App\Support\Settings\SpecList::class,
-        \App\Support\Settings\Db::class
+        \App\Support\Settings\Db::class,
+        \App\Support\Settings\Translate::class
     ],
 
     'twig_extensions' => [
