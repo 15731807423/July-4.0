@@ -4,28 +4,144 @@
 
 {% block main %}
 
-	<div>{{ specs()|raw }}</div>
+{# 	<div>
+		{{ specs(0, {
+            'specList.model': 'static',
+            'specList.cuttingSymbol': ',',
+            'specList.dataEmptyText': 'specList.dataEmptyText',
+
+            'specList.search.default': '',
+            'specList.search.class': 'specList.search.class',
+            'specList.search.status': true,
+            'specList.search.inputConfig.onChange': true,
+            'specList.search.inputConfig.class': 'specList.search.inputConfig.class',
+            'specList.search.inputConfig.componentConfig': 'maxlength:10|showWordLimit:true|placeholder:a b c|clearable:true|showPassword:true|size:default',
+            'specList.search.buttonConfig.status': true,
+            'specList.search.buttonConfig.text': 'specList.search.buttonConfig.text',
+            'specList.search.buttonConfig.class': 'specList.search.buttonConfig.class',
+            'specList.search.buttonConfig.componentConfig': 'size:small|type:success|plain:true|text:true',
+
+            'specList.screen.status': true,
+            'specList.screen.userStatus': true,
+            'specList.screen.countStatus': true,
+            'specList.screen.type': 4,
+
+            'specList.selector.class': 'specList.selector.class',
+            'specList.selector.list.table.text': 'specList.selector.list.table.text',
+            'specList.selector.list.list.text': 'specList.selector.list.list.text',
+            'specList.selector.config.componentConfig': 'size:large|disabled:false',
+
+            'specList.pagination.class': 'specList.pagination.class',
+            'specList.pagination.pageSize': 5,
+            'specList.pagination.currentPage': 2,
+            'specList.pagination.componentConfig': 'small:true|background:true|layout:total, sizes, prev, pager, next, jumper',
+
+            'specList.loading.status': true,
+
+            'specList.specAll.status': true,
+            'specList.specAll.title': 'specList.specAll.title',
+            'specList.specAll.order': 2,
+            'specList.specAll.sortable': true,
+            'specList.specAll.searchable': true,
+            'specList.specAll.screenable': true,
+
+            'spec': {
+                'manufacturer': {
+                    'is_groupable': true,
+                    'screen_type': 2
+                },
+                'manufacture_oe': {
+                    'is_groupable': true,
+                    'screen_type': 2
+                }
+            }
+		})|raw }}
+	</div>
 
 	{{ content|raw }}
 
 	<div>
-		{{ specs(['pro_1', 'pro_3'], {
-			'specList.model': 'dynamic',
-			'specList.sortCaseSensitive': true,
-			'specList.search.status': true,
-			'specList.search.buttonConfig.status': true,
-			'specList.search.buttonConfig.text': 'aaaaaaaaaa',
-			'spec': {
-				'image': {
-					'is_searchable': false
-				},
-				'manufacture_oe': {
-					'is_sortable': true
-				},
-				'table_status': 1,
-				'list_item': '<b>{ image }</b>'
-			}
-		})|raw }}
+		{{ specs()|raw }}
+	</div> #}
+
+	<div id="spec">
+		{{ specsTpl('searchButton')|raw }}
+		{{ specsTpl('screenUser')|raw }}
+		{{ specsTpl('screen')|raw }}
+		{{ specsTpl('searchInput')|raw }}
+		{{ specsTpl('selector')|raw }}
+		{{ specsTpl('table')|raw }}
+		{{ specsTpl('list')|raw }}
+		{{ specsTpl('page')|raw }}
 	</div>
+
+	{{ specsTpl('js', 0, {
+		'id': 'spec',
+
+		'specList.model': 'static',
+        'specList.cuttingSymbol': ',',
+        'specList.dataEmptyText': 'specList.dataEmptyText',
+
+        'specList.search.default': '',
+        'specList.search.class': 'specList.search.class',
+        'specList.search.status': true,
+        'specList.search.inputConfig.onChange': true,
+        'specList.search.inputConfig.class': 'specList.search.inputConfig.class',
+        'specList.search.inputConfig.componentConfig': 'maxlength:10|showWordLimit:true|placeholder:a b c|clearable:true|showPassword:true|size:default',
+        'specList.search.buttonConfig.status': true,
+        'specList.search.buttonConfig.text': 'specList.search.buttonConfig.text',
+        'specList.search.buttonConfig.class': 'specList.search.buttonConfig.class',
+        'specList.search.buttonConfig.componentConfig': 'size:small|type:success|plain:true|text:true',
+
+        'specList.screen.status': true,
+        'specList.screen.userStatus': true,
+        'specList.screen.countStatus': true,
+        'specList.screen.type': 4,
+
+        'specList.selector.class': 'specList.selector.class',
+        'specList.selector.list.table.text': 'specList.selector.list.table.text',
+        'specList.selector.list.list.text': 'specList.selector.list.list.text',
+        'specList.selector.config.componentConfig': 'size:large|disabled:false',
+
+        'specList.pagination.class': 'specList.pagination.class',
+        'specList.pagination.pageSize': 5,
+        'specList.pagination.currentPage': 2,
+        'specList.pagination.componentConfig': 'small:true|background:true|layout:total, sizes, prev, pager, next, jumper',
+
+        'specList.loading.status': true,
+
+        'specList.specAll.status': true,
+        'specList.specAll.title': 'specList.specAll.title',
+        'specList.specAll.order': 2,
+        'specList.specAll.sortable': true,
+        'specList.specAll.searchable': true,
+        'specList.specAll.screenable': true,
+
+        'spec': {
+            'manufacturer': {
+                'is_groupable': true,
+                'screen_type': 2,
+                'screen_default': '["3R"]'
+            },
+            'manufacture_oe': {
+                'is_groupable': true,
+                'screen_type': 2
+            }
+        }
+	})|raw }}
+
+    <script type="text/javascript">
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                // Registration was successful
+                console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            }).catch(function(err) {
+                // registration failed :(
+                console.log('ServiceWorker registration failed: ', err);
+            });
+        });
+        }
+    </script>
 
 {% endblock %}

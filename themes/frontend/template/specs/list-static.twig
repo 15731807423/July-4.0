@@ -1,4 +1,4 @@
-<link rel="stylesheet" type="text/css" href="/themes/backend/vue/node_modules/element-plus/dist/index.css">
+<link rel="stylesheet" type="text/css" href="/themes/frontend/vue/node_modules/element-plus/dist/index.css">
 
 <div id="specs{{ number }}">
 	{# 列表组件 #}
@@ -46,7 +46,9 @@
 		{# data-class="" #}
 		{# list-class="" #}
 		{# listItem-class="" #}
-	/></data-list>
+	>
+		{{ slot }}
+	</data-list>
 </div>
 
 <script src="/themes/frontend/js/list-static.js"></script>
@@ -68,6 +70,8 @@
 
 				// 列表的html
 				listItem: {{ listItem|json_encode(constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_UNESCAPED_UNICODE'))|raw }},
+
+				slot: '<template v-slot:screen-name-manufacturer>Manufacturer new</template>'
 			};
 		},
 

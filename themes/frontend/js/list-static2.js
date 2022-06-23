@@ -1,488 +1,63 @@
-// 计算数量的详细过程 待优化
-// 循环单选组和多选组 循环每个组里的选项 循环全部数据判断是否符合 符合的放到一个集合里计算总量
+// 全部数据
+const list = {{ list }};
 
-// 筛选类型
-// 筛选项传参格式 ['name' => $value, 'field' => $value, 'type' => 1]
-// 插件的配置详细信息见https://element-plus.gitee.io/zh-CN/
-// 1 单选 选项从数据里获取 config属性配置‘Radio 属性’ configGroup属性配置‘Radio-group 属性’ 单选选项前面自动添加‘All’ 默认值‘All’ button为true设置为按钮 例：
-// 单选的值是‘All’时表示没有筛选
-// {
-//     name: 'name',       筛选组前面的名字
-//     field: 'field',     筛选的字段
-//     type: 1,            筛选类型
-//     default: 'apple',   默认值
-//     config: {           Radio属性
-//                         属性详见官网
-//     },
-//     configGroup: {      RadioGroup属性
-//                         属性详见官网
-//     }
-// }
-// 2 多选 选项从数据里获取 config属性配置‘Checkbox 属性’ configGroup属性配置‘Checkbox-group 属性’ 默认值‘[]’ button为true设置为按钮 例：
-// 多选的值是‘[]’时表示没有筛选
-// {
-//     name: 'name',       筛选组前面的名字
-//     field: 'field',     筛选的字段
-//     type: 2,            筛选类型
-//     default: ['apple'], 默认值
-//     config: {           Checkbox属性
-//                         属性详见官网
-//     },
-//     configGroup: {      CheckboxGroup属性
-//                         属性详见官网
-//     }
-// }
-// 3 滑块 最大值和最小值必传 如果是范围选择 默认值为‘[最大值, 最小值]’ 如果不是范围选择 默认值为‘0’ 例：
-// {
-//     name: 'age',        筛选组前面的名字
-//     field: 'field',     筛选的字段
-//     type: 3,            筛选类型
-//     default: 5,         默认的默认值
-//     default: [5, 10],   范围选择的默认值
-//     config: {           Slider属性
-//                         属性详见官网
-//     }
-// }
-// 4 日期范围 根据组件配置传值 例：
-// {
-//     name: 'time',       筛选组前面的名字
-//     field: 'field',     筛选的字段
-//     type: 4,            筛选类型
-//     default: '',        默认值
-//     config: {           DateTimePicker属性
-//                         属性详见官网
-//     }
-// }
-// 5 下拉菜单 根据组件配置传值 如果是多选 默认值必须是一维数组 例：
-// {
-//     name: 'name',       筛选组前面的名字
-//     field: 'field',     筛选的字段
-//     type: 5,            筛选类型
-//     default: 'apple',   单选的默认值
-//     default: ['apple'], 多选的默认值
-//     config: {           Select属性
-//                         属性详见官网
-//     }
-// }
+// 组件的配置信息
+const config = {{ config }};
 
-// 筛选组之间关联的类型
-// 1 根据screenAll的内容排序 逐级计算数量 0.5
-// 2 根据screenAll的内容排序 逐级计算数量 且点击高级的筛选组时会重置低级的筛选组 0.5
-// 3 根据点击筛选组的顺序排序 逐级计算数量 0.4
-// 4 根据其他筛选组筛选的结果计算当前筛选组每个筛选项的数量 1
+// 表格的配置信息
+const table = {{ table }};
 
-// 默认值的选择 比如数组里五个对象 可以指定其中一个为当前对象 但是指定了多个 系统在找到一个之后就会终止进程 所以设置了多个的时候用设置了的第一个 如果没设置但是必须设置则用第一个
-// element组件的参数默认为undefined 因为传undefined不会影响组件本身的默认值 传'', 0, null, [], false等都达不到这个效果
+// 列表的html
+const listItem = {{ listItem }};
 
-// 需要用到的element-plus
-// 搜索框     ElInput
-// 搜索按钮   ElButton
-// 筛选单选   ElRadioGroup ElRadio ElRadioButton
-// 筛选多选   ElCheckboxGroup ElCheckbox ElCheckboxButton
-// 滑块       ElSlider
-// 日期范围   ElDatePicker
-// 下拉菜单   ElSelect ElOption
-// 模式选择器 ElRadioGroup ElRadio ElRadioButton
-// 表格       ElTable ElTableColumn
-// 分页       ElPagination
-
-
-var dataListStatic = {
-    template: `
-        <div :class="className">
-            <div v-if="searchInside.status" :class="searchInside.class">
-                <el-input
-                    v-if="searchInside.status"
-                    v-model="keywords"
-                    :class="searchInside.inputConfig.class"
-                    :type="searchInside.inputConfig.type"
-                    :maxlength="searchInside.inputConfig.maxlength"
-                    :minlength="searchInside.inputConfig.minlength"
-                    :show-word-limit="searchInside.inputConfig.showWordLimit"
-                    :placeholder="searchInside.inputConfig.placeholder"
-                    :clearable="searchInside.inputConfig.clearable"
-                    :show-password="searchInside.inputConfig.showPassword"
-                    :disabled="searchInside.inputConfig.disabled"
-                    :size="searchInside.inputConfig.size"
-                    :prefix-icon="searchInside.inputConfig.prefixIcon"
-                    :suffix-icon="searchInside.inputConfig.suffixIcon"
-                    :rows="searchInside.inputConfig.rows"
-                    :autosize="searchInside.inputConfig.autosize"
-                    :autocomplete="searchInside.inputConfig.autocomplete"
-                    :name="searchInside.inputConfig.name"
-                    :readonly="searchInside.inputConfig.readonly"
-                    :max="searchInside.inputConfig.max"
-                    :min="searchInside.inputConfig.min"
-                    :step="searchInside.inputConfig.step"
-                    :resize="searchInside.inputConfig.resize"
-                    :autofocus="searchInside.inputConfig.autofocus"
-                    :form="searchInside.inputConfig.form"
-                    :label="searchInside.inputConfig.label"
-                    :tabindex="searchInside.inputConfig.tabindex"
-                    :validate-event="searchInside.inputConfig.validateEvent"
-                    :input-style="searchInside.inputConfig.inputStyle"
-                    @input="handleData('searchInput')"
-                    @change="handleData('searchChange')"
-                ></el-input>
-                <el-button
-                    v-if="searchInside.status && searchInside.buttonConfig.status"
-                    :class="searchInside.buttonConfig.class"
-                    :size="searchInside.buttonConfig.size"
-                    :type="searchInside.buttonConfig.type"
-                    :plain="searchInside.buttonConfig.plain"
-                    :round="searchInside.buttonConfig.round"
-                    :circle="searchInside.buttonConfig.circle"
-                    :loading="searchInside.buttonConfig.loading"
-                    :loading-icon="searchInside.buttonConfig.loadingIcon"
-                    :disabled="searchInside.buttonConfig.disabled"
-                    :icon="searchInside.buttonConfig.icon"
-                    :autofocus="searchInside.buttonConfig.autofocus"
-                    :native-type="searchInside.buttonConfig.nativeType"
-                    :auto-insert-space="searchInside.buttonConfig.autoInsertSpace"
-                    @click="handleData"
-                >{{ searchInside.buttonConfig.text }}</el-button>
-            </div>
-
-            <div :class="contentClass">
-                <div v-if="screenInside.status" :class="screenInside.class">
-                    <div v-if="screenInside.status && screenInside.userStatus && userSelectedList.length > 0" :class="screenInside.selectedClass">
-                        <span v-for="item in userSelectedList" @click="screenClear(item.field, item.value)">{{ item.value }}</span>
-                        <span @click="screenClear()">{{ screenInside.clearText }}</span>
-                    </div>
-
-                    <div v-if="screenInside.status" :class="screenInside.allClass">
-                        <div v-for="(item, key) in screenAll">
-                            <span><slot :name="'screen-name-' + key.toString()">{{ item.name }}</slot></span>
-
-                            <el-radio-group
-                                v-if="item.type == 1"
-                                v-model="screenAllSelected[key].value"
-                                :size="item.configGroup.size"
-                                :disabled="item.configGroup.disabled"
-                                :text-color="item.configGroup.textColor"
-                                :fill="item.configGroup.fill"
-                                @change="screenChange(key)"
-                            >
-                                <template v-for="it in item.list">
-                                    <el-radio-button
-                                        v-if="(it.count > 0 || !screenInside.nullHidden) && item.config.button"
-                                        :label="it.name"
-                                        :border="item.config.border"
-                                        :size="item.config.size"
-                                        :name="item.config.name"
-                                    >{{ it.name }}{{ screenInside.countStatus && screenInside.groupCountType.indexOf(1) != -1 ? '(' + it.count + ')' : '' }}</el-radio-button>
-                                    <el-radio
-                                        v-if="(it.count > 0 || !screenInside.nullHidden) && !item.config.button"
-                                        :label="it.name"
-                                        :border="item.config.border"
-                                        :size="item.config.size"
-                                        :name="item.config.name"
-                                    >{{ it.name }}{{ screenInside.countStatus && screenInside.groupCountType.indexOf(1) != -1 ? '(' + it.count + ')' : '' }}</el-radio>
-                                </template>
-                            </el-radio-group>
-
-                            <el-checkbox-group
-                                v-if="item.type == 2"
-                                v-model="screenAllSelected[key].value"
-                                :size="item.configGroup.size"
-                                :disabled="item.configGroup.disabled"
-                                :min="item.configGroup.min"
-                                :max="item.configGroup.max"
-                                :text-color="item.configGroup.textColor"
-                                :fill="item.configGroup.fill"
-                                @change="screenChange(key)"
-                            >
-                                <template v-for="it in item.list">
-                                    <el-checkbox-button
-                                        v-if="(it.count > 0 || !screenInside.nullHidden) && item.config.button"
-                                        :label="it.name"
-                                        :border="item.config.border"
-                                        :size="item.config.size"
-                                        :name="item.config.name"
-                                        :indeterminate="item.config.indeterminate"
-                                    >{{ it.name }}{{ screenInside.countStatus && screenInside.groupCountType.indexOf(2) != -1 ? '(' + it.count + ')' : '' }}</el-checkbox-button>
-                                    <el-checkbox
-                                        v-if="(it.count > 0 || !screenInside.nullHidden) && !item.config.button"
-                                        :label="it.name"
-                                        :border="item.config.border"
-                                        :size="item.config.size"
-                                        :name="item.config.name"
-                                        :indeterminate="item.config.indeterminate"
-                                    >{{ it.name }}{{ screenInside.countStatus && screenInside.groupCountType.indexOf(2) != -1 ? '(' + it.count + ')' : '' }}</el-checkbox>
-                                </template>
-                            </el-checkbox-group>
-
-                            <el-slider
-                                v-if="item.type == 3"
-                                v-model="screenAllSelected[key].value"
-                                :min="item.config.min"
-                                :max="item.config.max"
-                                :disabled="item.config.disabled"
-                                :step="item.config.step"
-                                :show-input="item.config.showInput"
-                                :show-input-controls="item.config.showInputControls"
-                                :size="item.config.size"
-                                :input-size="item.config.inputSize"
-                                :show-stops="item.config.showStops"
-                                :show-tooltip="item.config.showTooltip"
-                                :format-tooltip="item.config.formatTooltip"
-                                :range="item.config.range"
-                                :vertical="item.config.vertical"
-                                :height="item.config.height"
-                                :label="item.config.label"
-                                :debounce="item.config.debounce"
-                                :tooltip-class="item.config.tooltipClass"
-                                :marks="item.config.marks"
-                                @change="screenChange(key)"
-                            ></el-slider>
-
-                            <el-date-picker
-                                v-if="item.type == 4"
-                                v-model="screenAllSelected[key].value"
-                                value-format="X"
-                                :type="item.config.type"
-                                :disabled="item.config.disabled"
-                                :editable="item.config.editable"
-                                :clearable="item.config.clearable"
-                                :size="item.config.size"
-                                :placeholder="item.config.placeholder"
-                                :start-placeholder="item.config.startPlaceholder"
-                                :end-placeholder="item.config.endPlaceholder"
-                                :time-arrow-control="item.config.timeArrowControl"
-                                :format="item.config.format"
-                                :popper-class="item.config.popperClass"
-                                :range-separator="item.config.rangeSeparator"
-                                :default-value="item.config.defaultValue"
-                                :default-time="item.config.defaultTime"
-                                :id="item.config.id"
-                                :name="item.config.name"
-                                :unlink-panels="item.config.unlinkPanels"
-                                :prefix-icon="item.config.prefixIcon"
-                                :clear-icon="item.config.clearIcon"
-                                :shortcuts="item.config.shortcuts"
-                                :disabledDate="item.config.disabledDate"
-                                :cellClassName="item.config.cellClassName"
-                                :teleported="item.config.teleported"
-                                @change="screenChange(key)"
-                            ></el-date-picker>
-
-                            <el-select
-                                v-if="item.type == 5"
-                                v-model="screenAllSelected[key].value"
-                                class="m-2"
-                                :multiple="item.config.multiple"
-                                :disabled="item.config.disabled"
-                                :value-key="item.config.valueKey"
-                                :size="item.config.size"
-                                :clearable="item.config.clearable"
-                                :collapse-tags="item.config.collapseTags"
-                                :collapse-tags-tooltip="item.config.collapseTagsTooltip"
-                                :multiple-limit="item.config.multipleLimit"
-                                :name="item.config.name"
-                                :effect="item.config.effect"
-                                :autocomplete="item.config.autocomplete"
-                                :placeholder="item.config.placeholder"
-                                :filterable="item.config.filterable"
-                                :allow-create="item.config.allowCreate"
-                                :filter-method="item.config.filterMethod"
-                                :remote="item.config.remote"
-                                :remote-method="item.config.remoteMethod"
-                                :loading="item.config.loading"
-                                :loading-text="item.config.loadingText"
-                                :no-match-text="item.config.noMatchText"
-                                :no-data-text="item.config.noDataText"
-                                :popper-class="item.config.popperClass"
-                                :reserve-keyword="item.config.reserveKeyword"
-                                :default-first-option="item.config.defaultFirstOption"
-                                :teleported="item.config.teleported"
-                                :persistent="item.config.persistent"
-                                :automatic-dropdown="item.config.automaticDropdown"
-                                :clear-icon="item.config.clearIcon"
-                                :fit-input-width="item.config.fitInputWidth"
-                                :suffix-icon="item.config.suffixIcon"
-                                :tag-type="item.config.tagType"
-                                @change="screenChange(key)"
-                            >
-                                <el-option v-for="item in screenAll[key].list" :key="item.name" :label="item.name" :value="item.name">{{ item.name }}{{ screenInside.countStatus && screenInside.groupCountType.indexOf(5) != -1 ? '(' + item.count + ')' : '' }}</el-option>
-                            </el-select>
-                        </div>
-                    </div>
-                </div>
-
-                <div :class="dataClass">
-                    <div v-if="tableInside.status && listItem.length > 0" :class="selectorInside.class">
-                        <el-radio-group
-                            v-if="selectorInside"
-                            v-model="selectorInside.value"
-                            :size="selectorInside.config.size"
-                            :disabled="selectorInside.config.disabled"
-                            :text-color="selectorInside.config.textColor"
-                            :fill="selectorInside.config.fill"
-                        >
-                            <el-radio-button
-                                v-for="(item, key) in selectorInside.list"
-                                :label="key"
-                                :disabled="item.disabled"
-                                :border="item.border"
-                                :size="item.size"
-                                :name="item.name"
-                            >{{ item.text }}</el-radio-button>
-                        </el-radio-group>
-                    </div>
-
-                    <div :class="listClass">
-                        <el-table
-                            v-if="tableInside.status && (!selectorInside || selectorInside.value == 'table')"
-                            :data="currentList"
-                            :height="tableInside.config.height"
-                            :max-height="tableInside.config.maxHeight"
-                            :stripe="tableInside.config.stripe"
-                            :border="tableInside.config.border"
-                            :size="tableInside.config.size"
-                            :fit="tableInside.config.fit"
-                            :show-header="tableInside.config.showHeader"
-                            :highlight-current-row="tableInside.config.highlightCurrentRow"
-                            :current-row-key="tableInside.config.currentRowKey"
-                            :row-class-name="tableInside.config.rowClassName"
-                            :row-style="tableInside.config.rowStyle"
-                            :cell-class-name="tableInside.config.cellClassName"
-                            :cell-style="tableInside.config.cellStyle"
-                            :header-row-class-name="tableInside.config.headerRowClassName"
-                            :header-row-style="tableInside.config.headerRowStyle"
-                            :header-cell-class-name="tableInside.config.headerCellClassName"
-                            :header-cell-style="tableInside.config.headerCellStyle"
-                            :row-key="tableInside.config.rowKey"
-                            :empty-text="tableInside.config.emptyText"
-                            :default-expand-all="tableInside.config.defaultExpandAll"
-                            :expand-row-keys="tableInside.config.expandRowKeys"
-                            :tooltip-effect="tableInside.config.tooltipEffect"
-                            :show-summary="tableInside.config.showSummary"
-                            :sum-text="tableInside.config.sumText"
-                            :summary-method="tableInside.config.summaryMethod"
-                            :span-method="tableInside.config.spanMethod"
-                            :select-on-indeterminate="tableInside.config.selectOnIndeterminate"
-                            :indent="tableInside.config.indent"
-                            :lazy="tableInside.config.lazy"
-                            :load="tableInside.config.load"
-                            :tree-props="tableInside.config.treeProps"
-                            :table-layout="tableInside.config.tableLayout"
-                            :scrollbar-always-on="tableInside.config.scrollbarAlwaysOn"
-                            @sort-change="sortChange"
-                            style="width: 100%"
-                        >
-                            <el-table-column
-                                v-for="item in tableInside.column"
-                                :prop="item.field"
-                                :label="item.title || item.field"
-                                :sortable="item.sortable === true ? 'custom' : false"
-                                :formatter="item.formatter"
-                                :type="item.type"
-                                :index="item.index"
-                                :column-key="item.columnKey"
-                                :width="item.width"
-                                :min-width="item.minWidth"
-                                :fixed="item.fixed"
-                                :render-header="item.renderHeader"
-                                :sort-method="item.sortMethod"
-                                :sort-by="item.sortBy"
-                                :sort-orders="item.sortOrders"
-                                :resizable="item.resizable"
-                                :show-overflow-tooltip="item.showOverflowTooltip"
-                                :align="item.align"
-                                :header-align="item.headerAlign"
-                                :class-name="item.className"
-                                :label-class-name="item.labelClassName"
-                                :selectable="item.selectable"
-                                :reserve-selection="item.reserveSelection"
-                                :filters="item.filters"
-                                :filter-placement="item.filterPlacement"
-                                :filter-multiple="item.filterMultiple"
-                                :filter-method="item.filterMethod"
-                                :filtered-value="item.filteredValue"
-                            ></el-table-column>
-                        </el-table>
-
-                        <template v-if="listItem.length > 0 && (!selectorInside || selectorInside.value == 'list')">
-                            <p class="empty" v-if="currentList.length == 0">{{ dataEmptyText }}</p>
-
-                            <div v-else v-for="item in currentList" :class="listItemClass" v-html="handleHtml(item)"></div>
-                        </template>
-                    </div>
-
-                    <div :class="paginationInside.class">
-                        <el-pagination
-                            v-model:current-page="paginationInside.currentPage"
-                            v-model:page-size="paginationInside.pageSize"
-                            :small="paginationInside.small"
-                            :background="paginationInside.background"
-                            :default-page-size="paginationInside.defaultPageSize"
-                            :total="paginationInside.total ? paginationInside.total : screenList.length"
-                            :page-count="paginationInside.pageCount"
-                            :pager-count="paginationInside.pagerCount"
-                            :default-current-page="paginationInside.defaultCurrentPage"
-                            :layout="paginationInside.layout"
-                            :page-sizes="paginationInside.pageSizes"
-                            :popper-class="paginationInside.popperClass"
-                            :prev-text="paginationInside.prevText"
-                            :next-text="paginationInside.nextText"
-                            :disabled="paginationInside.disabled"
-                            :hide-on-single-page="paginationInside.hideOnSinglePage"
-                        />
-                    </div>
-                </div>
-            </div>
-        </div>
-    `,
-
-    props: {
-        // 全部数据的集合 对象数组
-        list: { type: Array, default: [] },
-
-        // 搜索的配置信息 默认searchInside
-        search: { type: Object, default: {} },
-
-        // 筛选的配置信息 默认screenInside
-        screen: { type: Object, default: {} },
-
-        // 模式选择器的配置信息 默认selectorInside
-        selector: { type: Object, default: {} },
-
-        // 表格的配置信息
-        table: { type: Object, default: {} },
-
-        // 列表的布局html
-        listItem: { type: String, default: '' },
-
-        // 分页的配置信息
-        pagination: { type: Object, default: {} },
-
-        // 加载的配置信息
-        loading: { type: Object, default: {} },
-
-        // 数据里多个数据放在一个属性里时的切割符号 空字符串表示不存在多个数据 暂不支持多个切割符号
-        cuttingSymbol: { type: String, default: '' },
-
-        // 数据为空时的提示
-        dataEmptyText: { type: String, default: 'No Data' },
-
-        // 排序大小写敏感
-        sortCaseSensitive: { type: Boolean, default: false },
-
-        // 一些元素的class
-        className: { type: String, default: 'data' },
-        contentClass: { type: String, default: 'data-content' },
-        dataClass: { type: String, default: 'data-data' },
-        listClass: { type: String, default: 'data-list' },
-        listItemClass: { type: String, default: 'data-list-item' }
-    },
-
-    data: function() {
+var dataPanel = Vue.createApp({
+    data() {
         return {
+            // 全部数据的集合 对象数组
+            list: [],
+
+            // 搜索的配置信息 默认searchInside
+            search: {},
+
+            // 筛选的配置信息 默认screenInside
+            screen: {},
+
+            // 模式选择器的配置信息 默认selectorInside
+            selector: {},
+
+            // 表格的配置信息
+            table: {},
+
+            // 列表的布局html
+            listItem: '',
+
+            // 分页的配置信息
+            pagination: {},
+
+            // 加载的配置信息
+            loading: {},
+
+            // 数据里多个数据放在一个属性里时的切割符号 空字符串表示不存在多个数据 暂不支持多个切割符号
+            cuttingSymbol: '',
+
+            // 数据为空时的提示
+            dataEmptyText: '',
+
+            // 排序大小写敏感
+            sortCaseSensitive: false,
+
+            // 一些元素的class
+            className: 'data',
+            contentClass: 'data-content',
+            dataClass: 'data-data',
+            listClass: 'data-list',
+            listItemClass: 'data-list-item',
+
             // 搜索和筛选后的数据的集合
             screenList: [],
 
             // 搜索的关键词
-            keywords: this.search.default ? this.search.default : '',
+            keywords: '',
 
             // screenInside.type = 3 时储存点击顺序的数组
             screenSort: [],
@@ -650,7 +225,7 @@ var dataListStatic = {
 
                 // 组件配置
                 config: {
-                    emptyText: this.dataEmptyText
+                    emptyText: ''
                 }
             },
 
@@ -694,7 +269,7 @@ var dataListStatic = {
         };
     },
 
-    mounted: function() {
+    mounted() {
         this.init();
     },
 
@@ -765,8 +340,22 @@ var dataListStatic = {
     },
 
     methods: {
-        // 初始化组件
         init() {
+            this.list = list;
+            this.search = config.search;
+            this.screen = config.screen;
+            this.selector = config.selector;
+            this.table = table;
+            this.listItem = listItem;
+            this.pagination = config.pagination;
+            this.loading = config.loading;
+            this.cuttingSymbol = config.cuttingSymbol || '';
+            this.dataEmptyText = config.dataEmptyText || 'No Data';
+            this.sortCaseSensitive = config.sortCaseSensitive;
+
+            this.keywords = this.search.default ? this.search.default : '';
+            this.tableInside.config.emptyText = this.dataEmptyText;
+
             // 处理组件配置
             this.handleComponentConfig();
 
@@ -952,7 +541,7 @@ var dataListStatic = {
 
         // 处理数据 先搜索 再筛选 再排序
         // 每次搜索或筛选执行这里 排序直接执行sortChange
-        handleData(source = '') {
+        handleData(index = -1, source = '') {
             if (source === 'searchInput' && this.searchInside.inputConfig.onInput !== true) return false;
             if (source === 'searchChange' && this.searchInside.inputConfig.onChange !== true) return false;
 
@@ -961,7 +550,7 @@ var dataListStatic = {
             setTimeout(() => {
                 setTimeout(() => {
                     // 计算出每个筛选选项的数量
-                    if (this.screenInside.status) this.screenStatistics();
+                    if (this.screenInside.status) this.screenStatistics(index);
                 }, 500);
 
                 // 先处理搜索 把结果赋值给screenList
@@ -985,15 +574,13 @@ var dataListStatic = {
         },
 
         // 根据关键词对可搜索的字段筛选查询
-        searchFunc(list, value = false) {
+        searchFunc(list) {
             if (this.keywords.length > 0 && this.searchInside.field.length == 0) {
-                if (value) return [];
                 this.screenList = [];
                 return false;
             }
 
             if (!this.searchInside.status || this.keywords.length == 0) {
-                if (value) return list;
                 this.screenList = list;
                 return false;
             }
@@ -1003,7 +590,7 @@ var dataListStatic = {
                 let searchValue = [];
 
                 for (var j = 0; j < this.searchInside.field.length; j++) {
-                    if (list[i][this.searchInside.field[j]] === undefined || list[i][this.searchInside.field[j]] === null) continue;
+                    if (list[i][this.searchInside.field[j]] === undefined) continue;
 
                     let value = this.searchInside.caseSensitive
                     ? list[i][this.searchInside.field[j]].toString()
@@ -1024,8 +611,6 @@ var dataListStatic = {
                     }
                 }
             }
-
-            if (value) return screenList;
 
             this.screenList = screenList;
         },
@@ -1054,7 +639,7 @@ var dataListStatic = {
                 }
             }
 
-            this.handleData();
+            this.handleData(index);
         },
 
         // 筛选
@@ -1082,11 +667,11 @@ var dataListStatic = {
         },
 
         // 根据screenInside.type计算出每个筛选选项的数量
-        screenStatistics() {
+        screenStatistics(index) {
             // 显示数值或隐藏空都需要计算 否则不计算
             if (!this.screenInside.countStatus && !this.screenInside.nullHidden) return false;
 
-            var list = this.searchFunc(this.assign(this.list), true);
+            var list = this.assign(this.list);
 
             if (this.screenInside.type == 1 || this.screenInside.type == 2) {
                 // 耗时0.5 - 0.6
@@ -1121,7 +706,7 @@ var dataListStatic = {
 
             if (this.screenInside.type == 4) {
                 for (let key in this.screenAll) {
-                    var list = this.searchFunc(this.assign(this.list), true);
+                    var list = this.assign(this.list);
 
                     for (let key2 in this.screenAll) {
                         if (key == key2) continue;
@@ -1259,7 +844,7 @@ var dataListStatic = {
             return { type: this.screenAll[name].type, value: this.screenAll[name].all, config: this.screenAll[name].config };
         },
 
-        // 排序时对整个筛选后的数组排序
+        // 排序时对整个筛选后的数组排序，默认某个字段正序
         sortChange(data) {
             if (data.order === null) data = this.defaultSort;
 
@@ -1481,7 +1066,7 @@ var dataListStatic = {
             return tpl;
         },
 
-        // 排序函数
+        // 筛选函数
         sortFunc(a, b, n, i = 0) {
             if (n == 1) return a - b;
 
@@ -1519,4 +1104,15 @@ var dataListStatic = {
             return [...new Set(a)];
         }
     }
-};
+})
+.use(ElementPlus.ElInput)
+.use(ElementPlus.ElButton)
+.use(ElementPlus.ElRadio)
+.use(ElementPlus.ElCheckbox)
+.use(ElementPlus.ElSlider)
+.use(ElementPlus.ElDatePicker)
+.use(ElementPlus.ElSelect)
+.use(ElementPlus.ElTable)
+.use(ElementPlus.ElLoading)
+.use(ElementPlus.ElPagination)
+.mount('#{{ id }}');
