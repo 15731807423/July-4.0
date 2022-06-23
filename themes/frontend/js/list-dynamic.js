@@ -1,4 +1,4 @@
-const dataListDynamic = {
+var dataListDynamic = {
     template: `
         <div :class="className">
             <div v-if="searchInside.status" :class="searchInside.class">
@@ -758,6 +758,8 @@ const dataListDynamic = {
                 if (this.selectorInside.value.length == 0) {
                     this.selectorInside.value = Object.keys(this.selectorInside.list)[0];
                 }
+
+                this.selectorInside.class = this.selector.class || this.selectorInside.class;
             }
 
             // 处理分页组件配置
