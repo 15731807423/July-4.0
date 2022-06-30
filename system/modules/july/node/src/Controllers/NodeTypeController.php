@@ -66,11 +66,14 @@ class NodeTypeController extends Controller
     protected function getCreationContext()
     {
         $fields = NodeField::bisect();
+        $preseted = $fields->get('preseted')->keyBy('id')->all();
+        krsort($preseted);
+
         return [
             'model' => NodeType::template(),
             'context' => [
                 'entity_name' => Node::getEntityName(),
-                'fields' => $fields->get('preseted')->keyBy('id')->all(),
+                'fields' => $preseted,
                 'optional_fields' => $fields->get('optional')->keyBy('id')->all(),
                 'field_template' => NodeField::template(),
                 'langcode' => langcode('content'),
