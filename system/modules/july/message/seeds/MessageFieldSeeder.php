@@ -47,7 +47,7 @@ class MessageFieldSeeder extends SeederBase
                 'field_type' => FieldTypes\Input::class,
                 'label' => 'Phone',
                 'field_meta' => [
-                    'rules' => 'max:35',
+                    'rules' => 'max:40',
                 ],
             ],
             [
