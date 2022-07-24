@@ -1,0 +1,23 @@
+<form id="form_request" class="report_trace send-mail-open-pdf-form" action="{{ action }}" method="post" onsubmit="return false;">
+    <div class="item">
+        <i class="iconfont icon-user"></i>
+        <input type="text" name="name" placeholder="Full name *" value="test" required>
+    </div>
+    <div class="item">
+        <i class="iconfont icon-email"></i>
+        <input type="email" name="email" placeholder="E-mail Address *" value="test@test.com" required>
+    </div>
+    <div class="item">
+        <i class="iconfont icon-phone"></i>
+        <input type="text" name="phone" placeholder="Country Code + Phone Number *" value="test">
+    </div>
+    <div class="item">
+        <i class="iconfont icon-edit"></i>
+        <textarea name="message" placeholder="Message *" rows="4" required>test</textarea>
+    </div>
+    <div class="item">
+        <input type="hidden" name="form_required">
+        <input type="hidden" name="pdf">
+        <button>Submit</button>
+    </div>
+</form>
