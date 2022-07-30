@@ -229,10 +229,10 @@ class NodeController extends Controller
         $fields = Db::table('node_fields')->where('id', '<>', 'url')->pluck('id')->toArray();
         foreach ($fields as $key => $value) $fields[$key] = 'node__' . $value;
         $fields[] = 'node_translations';
+        $fields[] = 'entity_path_aliases';
         foreach ($fields as $field) {
             Db::table($field)->whereIn('entity_id', $id)->delete();
         }
-        Db::table('entity_path_aliases')->whereIn('entity_id', $id)->delete();
 
         return response('');
     }
