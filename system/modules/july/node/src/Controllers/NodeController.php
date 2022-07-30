@@ -232,6 +232,7 @@ class NodeController extends Controller
         foreach ($fields as $field) {
             Db::table($field)->whereIn('entity_id', $id)->delete();
         }
+        Db::table('entity_path_aliases')->whereIn('entity_id', $id)->delete();
 
         return response('');
     }
