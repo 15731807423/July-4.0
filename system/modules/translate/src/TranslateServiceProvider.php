@@ -19,9 +19,7 @@ class TranslateServiceProvider extends ModuleServiceProviderBase
 
     protected function discoverActions()
     {
-        return [
-            // \Translate\Actions\OneClickTranslate::class,
-        ];
+        return [];
     }
 
     /**
