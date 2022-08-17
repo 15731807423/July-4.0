@@ -2,6 +2,7 @@
 
 namespace App\EntityField;
 
+use App\Casts\Serialized;
 use App\Entity\EntityBase;
 use App\Entity\Exceptions\InvalidEntityException;
 use App\Models\ModelBase;
