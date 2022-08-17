@@ -84,9 +84,9 @@ class TranslateController extends Controller
         $this->website  = env('APP_URL') . '/translate';
         if (!is_dir($this->path)) mkdir($this->path);
 
-        $this->notFields    = eval('return ' . str_replace([' ', "\n"], ['', ''], config('translate.fields')) . ';');
-        $this->notText      = eval('return ' . str_replace([' ', "\n"], ['', ''], config('translate.text')) . ';');
-        $this->replace      = eval('return ' . str_replace([' ', "\n"], ['', ''], config('translate.replace')) . ';');
+        $this->notFields    = eval('return ' . str_replace("\n", '', config('translate.fields')) . ';');
+        $this->notText      = eval('return ' . str_replace("\n", '', config('translate.text')) . ';');
+        $this->replace      = eval('return ' . str_replace("\n", '', config('translate.replace')) . ';');
 
         $this->notFields    = is_array($this->notFields) ? $this->notFields : [];
         $this->notText      = is_array($this->notText) ? $this->notText : [];
