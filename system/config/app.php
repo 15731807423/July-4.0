@@ -178,7 +178,8 @@ return [
         July\Node\NodeServiceProvider::class,
         July\Message\MessageServiceProvider::class,
         Specs\SpecsServiceProvider::class,
-        Translate\TranslateServiceProvider::class
+        Translate\TranslateServiceProvider::class,
+        Google\GoogleServiceProvider::class
     ],
 
     /*
@@ -326,6 +327,39 @@ return [
                     'title' => '规格',
                     'icon' => null,
                     'route' => 'manage.specs.index',
+                    'children' => [],
+                ],
+            ],
+        ],
+
+        // 数据分析
+        'console' => [
+            'title' => '数据',
+            'icon' => 'trending_up',
+            'route' => null,
+            'children' => [
+                [
+                    'title' => '效果',
+                    'icon' => null,
+                    'route' => 'manage.google.searchConsole.searchAnalytics',
+                    'children' => [],
+                ],
+                [
+                    'title' => '网址检查',
+                    'icon' => null,
+                    'route' => 'manage.google.searchConsole.urlInspection',
+                    'children' => [],
+                ],
+                [
+                    'title' => '站点地图',
+                    'icon' => null,
+                    'route' => 'manage.google.searchConsole.siteMap',
+                    'children' => [],
+                ],
+                [
+                    'title' => '退出',
+                    'icon' => null,
+                    'route' => 'manage.google.logout',
                     'children' => [],
                 ],
             ],
