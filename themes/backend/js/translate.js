@@ -5,6 +5,8 @@ const translate = {
 
 	message: '',
 
+	nodes: [],
+
 	success: (data) => {
 		console.log(data)
 	},
@@ -15,7 +17,9 @@ const translate = {
 		return this;
 	},
 
-	createAll(url, success = null) {
+	createBatch(url, nodes, success = null) {
+		this.nodes = nodes;
+
 		if (success != null) this.success = success;
 
 		const loading = this.loading({
@@ -24,12 +28,12 @@ const translate = {
 			background: 'rgba(255, 255, 255, 0.7)',
 		});
 
-		axios.post(url, {}).then(response => {
+		axios.post(url, { nodes: nodes }).then(response => {
             loading.close();
             if (typeof response.data == 'string') {
                 this.message.error(response.data);
             } else {
-            	this.getAll(response.data);
+            	this.getBatch(response.data);
             }
         }).catch(err => {
             loading.close();
@@ -38,7 +42,7 @@ const translate = {
         });
 	},
 
-	createBatch(url, data, success = null) {
+	createPage(url, data, success = null) {
 		if (success != null) this.success = success;
 
 		const loading = this.loading({
@@ -52,7 +56,7 @@ const translate = {
             if (typeof response.data == 'string') {
                 this.message.error(response.data);
             } else {
-            	this.getBatch(response.data);
+            	this.getPage(response.data);
             }
         }).catch(err => {
             loading.close();
@@ -84,12 +88,14 @@ const translate = {
         });
 	},
 
-	getAll(data, status = null, i = 1) {
+	getBatch(data, status = null, i = 1) {
 		const loading = this.loading({
 			lock: true,
 			text: (status ? '第' + (i - 1) + '次结果为 ' + status + '，' : '') + '开始第' + i + '次获取结果 ...',
 			background: 'rgba(255, 255, 255, 0.7)',
 		});
+
+		data.nodes = this.nodes;
 
 		setTimeout(() => {
 			axios.post('/manage/translate/result', data).then(response => {
@@ -97,25 +103,27 @@ const translate = {
 	            var result = response.data;
 
 	            if (result instanceof Object) {
-	            	var status = [];
+	            	var status = [], complete = true;
 
-	            	for (let key in result) status.push(key + ':' + result[key]);
+	            	for (let key in result.lang) {
+	            		if (!result.lang[key].result) continue;
+	            		status.push(key + ':' + result.lang[key].result);
+	            	}
 
 	            	status = status.join('、');
 
-		            if (this.inObject('ready', result) || this.inObject('translating', result)) {
-		            	for (let key in result) {
-		            		if (result[key] == 'translate' || result[key] == 'error') {
-		            			data[key].result = result[key];
-		            		}
-		            	}
-		            	this.getAll(data, status, i + 1);
-		            } else {
+	            	for (let key in result.lang) {
+	            		if (result.lang[key].complete === false) complete = false;
+	            	}
+
+	            	if (complete) {
 		            	this.message.success('翻译完成，' + status);
 		            	this.success(result);
-		            }
-	            } else if (typeof result === 'string') {
-	            	this.message.error(result);
+	            	} else {
+	            		this.getBatch(result, status, i + 1);
+	            	}
+	            } else if (typeof result == 'string') {
+	            	this.$message.error(result);
 	            }
 	        }).catch(err => {
 	            loading.close();
@@ -125,7 +133,7 @@ const translate = {
 		}, 2000);
 	},
 
-	getBatch(data, status = null, i = 1) {
+	getPage(data, status = null, i = 1) {
 		const loading = this.loading({
 			lock: true,
 			text: (status ? '第' + (i - 1) + '次结果为' + status + '，' : '') + '开始第' + i + '次获取结果 ...',
@@ -135,17 +143,19 @@ const translate = {
 		setTimeout(() => {
 			axios.post('/manage/translate/result', data).then(response => {
 	            loading.close();
-	            if (typeof response.data == 'string') {
-	            	if (response.data == 'error') {
-	            		this.message.error('翻译失败');
-	            	} else if (response.data == 'ready' || response.data == 'translating') {
-	            		this.getBatch(data, response.data, i + 1);
+	            var result = response.data;
+
+	            if (result instanceof Object) {
+	            	var status = result.result.result, complete = result.result.complete;
+
+	            	if (complete) {
+		            	this.message.success(status);
+		            	this.success(result.result.content);
 	            	} else {
-	            		this.message.error(response.data);
+	            		this.getPage(result, status, i + 1);
 	            	}
-	            } else {
-	            	this.message.success('翻译成功');
-	    			this.success(response.data);
+	            } else if (typeof result == 'string') {
+	            	this.$message.error(result);
 	            }
 	        }).catch(err => {
 	            loading.close();
@@ -165,17 +175,18 @@ const translate = {
 		setTimeout(() => {
 			axios.post('/manage/translate/result', data).then(response => {
 	            loading.close();
-	            if (typeof response.data == 'string') {
-	            	if (response.data == 'error') {
-	            		this.message.error('翻译失败');
-	            	} else if (response.data == 'ready' || response.data == 'translating') {
-	        			this.getTpl(data, response.data, i + 1);
+	            var result = response.data;
+
+	            if (result instanceof Object) {
+	            	var status = result.result.result, complete = result.result.complete;
+
+	            	if (complete) {
+		            	this.message.success(status);
 	            	} else {
-	            		this.message.error(response.data);
+	            		this.getTpl(result, status, i + 1);
 	            	}
-	            } else {
-	            	this.message.success('生成模板成功');
-	    			this.success(response.data);
+	            } else if (typeof result == 'string') {
+	            	this.$message.error(result);
 	            }
 	        }).catch(err => {
 	            loading.close();
