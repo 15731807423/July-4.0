@@ -154,7 +154,7 @@
                 delete data.url;
                 delete data.view;
 
-                translate.frame(this.$loading, this.$message).createBatch("{{ short_url('manage.translate.batch') }}", {
+                translate.frame(this.$loading, this.$message).createPage("{{ short_url('manage.translate.page') }}", {
                     text: JSON.stringify(data),
                     to: '{{ $langcode }}'
                 }, (data) => {
