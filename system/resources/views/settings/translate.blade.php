@@ -14,10 +14,6 @@
 <el-form id="main_form" ref="main_form" :model="settings" label-position="top">
     <div id="main_form_left">
 
-        @include('spec_list.input', ['data' => $items['translate.accessKeyId'], 'index' => 'translate.accessKeyId', 'type' => 'password'])
-
-        @include('spec_list.input', ['data' => $items['translate.accessKeySecret'], 'index' => 'translate.accessKeySecret', 'type' => 'password'])
-
         @include('spec_list.textarea', ['data' => $items['translate.fields'], 'index' => 'translate.fields', 'rows' => 7])
 
         @include('spec_list.textarea', ['data' => $items['translate.text'], 'index' => 'translate.text', 'rows' => 7])
