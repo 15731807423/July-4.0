@@ -373,6 +373,7 @@ abstract class FieldBase extends ModelBase implements TranslatableInterface
             // }
 
             $meta = $this->attributesToArray();
+            isset($meta['field_meta']) && is_string($meta['field_meta']) && $meta['field_meta'] = unserialize($meta['field_meta']);
             $meta = array_merge($meta, $meta['field_meta'] ?? []);
             unset($meta['field_meta']);
 
