@@ -7,11 +7,11 @@ Route::prefix(config('app.management_prefix', 'admin'))
 ->name('manage.')
 ->middleware(['admin','auth'])
 ->group(function() {
-    // 一键翻译
-    Route::post('translate/all', [Controllers\TranslateController::class, 'all'])->name('translate.all');
-
     // 批量翻译
     Route::post('translate/batch', [Controllers\TranslateController::class, 'batch'])->name('translate.batch');
+
+    // 翻译一个页面
+    Route::post('translate/page', [Controllers\TranslateController::class, 'page'])->name('translate.page');
 
     // 创建模板并翻译
     Route::post('translate/tpl/{code}', [Controllers\TranslateController::class, 'tpl'])->name('translate.tpl');
