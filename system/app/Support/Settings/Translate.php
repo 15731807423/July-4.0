@@ -24,18 +24,6 @@ class Translate extends SettingGroupBase
      * @var array
      */
     protected $items = [
-        'translate.accessKeyId' => [
-            'key' => 'translate.accessKeyId',
-            'label' => 'accessKeyId',
-            'description' => '阿里云文档翻译accessKeyId',
-        ],
-
-        'translate.accessKeySecret' => [
-            'key' => 'translate.accessKeySecret',
-            'label' => 'accessKeySecret',
-            'description' => '阿里云文档翻译accessKeySecret',
-        ],
-
         'translate.fields' => [
             'key' => 'translate.fields',
             'label' => '全部不翻译的字段',
