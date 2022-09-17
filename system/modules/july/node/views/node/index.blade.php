@@ -1,4 +1,4 @@
-@extends('layout')
+ @extends('layout')
 
 @section('h1', '所有内容')
 
@@ -15,7 +15,7 @@
             <div class="md-ripple"><div class="md-button-content">全部生成 HTML</div></div>
         </button>
         @if (config('lang.multiple'))
-            <button type="button" class="md-button md-dense md-raised md-primary md-theme-default" @click.stop="translate">
+            <button type="button" class="md-button md-dense md-raised md-primary md-theme-default" :disabled="!selected.length" @click.stop="translate">
                 <div class="md-ripple"><div class="md-button-content">一键翻译</div></div>
             </button>
         @endif
@@ -180,7 +180,8 @@
                 deleteUrl: "{{ short_url('nodes.destroy', '_ID_') }}",
                 translateUrl: "{{ short_url('nodes.choose_language', '_ID_') }}",
                 currentPage: 1,
-                perPage: 50
+                perPage: 50,
+                langcodes: @jjson(array_keys($context['languages']), JSON_PRETTY_PRINT)
             };
         },
 
@@ -380,7 +381,13 @@
             },
 
             translate() {
-                translate.frame(this.$loading, this.$message).createAll("{{ short_url('manage.translate.all') }}");
+                var nodes = [];
+
+                this.selected.forEach(element => {
+                    nodes.push(element.id);
+                });
+
+                translate.frame(this.$loading, this.$message).createBatch("{{ short_url('manage.translate.batch') }}", nodes);
             },
 
             render(node) {
