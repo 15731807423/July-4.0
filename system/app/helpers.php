@@ -467,3 +467,28 @@ if (!function_exists('url_get_contents')) {
         return $result;
     }
 }
+
+if (!function_exists('post')) {
+    /**
+     * 发送post请求
+     * @param  string $url  链接
+     * @param  array  $data 参数
+     * @return string
+     */
+    function post(string $url, array $data)
+    {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        curl_setopt($ch, CURLOPT_HEADER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+
+        $data = curl_exec($ch);
+        curl_close($ch);
+
+        return $data;
+    }
+}
