@@ -9,32 +9,34 @@
     "license": "MIT",
     "authors": [
         {
-            "name": "Jianhui Chen",
-            "email": "jchenk@live.com"
+            "name": "liu",
+            "email": "877368032@qq.com"
         }
     ],
     "require": {
-        "php": "<=7.3.33",
-        "alibabacloud/alimt-20181012": "^1.0",
-        "doctrine/dbal": "^2.10",
-        "fideloper/proxy": "^4.2",
-        "fruitcake/laravel-cors": "^1.0",
-        "guzzlehttp/guzzle": "^6.3",
+        "doctrine/dbal": "^3.3",
+        "fideloper/proxy": "^4.4",
+        "fruitcake/laravel-cors": "^3.0",
+        "guzzlehttp/guzzle": "^7.0.1",
         "jenssegers/agent": "^2.6",
-        "laravel/framework": "^7.0",
-        "laravel/tinker": "^2.0",
-        "laravel/ui": "^2.0",
-        "symfony/validator": "^5.0",
-        "twig/twig": "^3.0"
+        "laravel/framework": "^9.0",
+        "laravel/tinker": "^2.7",
+        "laravel/ui": "^3.0",
+        "monolog/monolog": "^2.8",
+        "symfony/validator": "^6.1",
+        "twig/twig": "^3.4"
     },
     "require-dev": {
-        "barryvdh/laravel-debugbar": "^3.2",
-        "facade/ignition": "^2.0",
-        "fzaninotto/faker": "^1.9.1",
-        "kitloong/laravel-migrations-generator": "^6.1",
-        "mockery/mockery": "^1.3.1",
-        "nunomaduro/collision": "^4.1",
-        "phpunit/phpunit": "^8.5"
+        "barryvdh/laravel-debugbar": "^3.7",
+        "ext-bcmath": "*",
+        "ext-grpc": "*",
+        "kitloong/laravel-migrations-generator": "^6.3",
+        "mockery/mockery": "^1.5",
+        "nunomaduro/collision": "^6.1",
+        "phpunit/phpunit": "^9.5",
+        "spatie/laravel-ignition": "^1.3",
+        "squizlabs/php_codesniffer": "^3.5",
+        "ulrichsg/getopt-php": "^4.0"
     },
     "config": {
         "optimize-autoloader": true,
@@ -48,7 +50,8 @@
                 "July\\Node\\NodeServiceProvider",
                 "July\\Message\\MessageServiceProvider",
                 "Specs\\SpecsServiceProvider",
-                "Translate\\TranslateServiceProvider"
+                "Translate\\TranslateServiceProvider",
+                "Google\\GoogleServiceProvider"
             ]
         }
     },
@@ -60,6 +63,7 @@
             "App\\": "app/",
             "Database\\Seeds\\": "database/seeds/",
             "Installer\\": "modules/installer/src/",
+            "Google\\": "modules/google/src/",
             "Translate\\": "modules/translate/src/",
             "Specs\\": "modules/specs/src/",
             "July\\Node\\": "modules/july/node/src/",
