@@ -30,8 +30,18 @@ class NodeQueryExtension extends AbstractExtension implements GlobalsInterface
     {
         return [
             // 获取配置
-            new TwigFunction('config', function ($key) {
-                return config($key) ?? config('app.'.$key) ?? null;
+            new TwigFunction('config', function ($key, $code = null) {
+                $data = config($key) ?? config('app.'.$key) ?? null;
+
+                if ($code) {
+                    $list = eval('return ' . str_replace("\n", '', config('translate.replace')) . ';');
+                    $list = is_array($list) ? (count($list) == count($list, 1) ? $list : (isset($list[$code]) ? $list[$code] : [])) : [];
+                    $list = (is_array($list) && isset($list[$code])) ? $list[$code] : [];
+                } else {
+                    $list = [];
+                }
+
+                return (is_string($data) && isset($list[$data])) ? $list[$data] : $data;
             }),
 
             // 获取内容集
