@@ -255,12 +255,46 @@ class Node extends TranslatableEntityBase
         // 生成 html
         $html = $twig->render($view, $data);
 
+        $html = $this->staticVersion($html);
+
         config()->set('lang.rendering', null);
         config()->set('lang.output', null);
 
         $html = html_compress($html);
 
         $this->cacheHtml($html, $data['url']);
+
+        return $html;
+    }
+
+    private function staticVersion($html)
+    {
+        $dom = new \DOMDocument();
+        $dom->loadHTML($html);
+        $link = $dom->getElementsByTagName('link');
+
+        foreach ($link as $key => $value) {
+            $href = $value->getAttribute('href');
+
+            $href = urldecode($href);
+
+            $params_start = stripos($href, '?');
+
+            if ($params_start === false) {
+                $file = base_path('..' . $href);
+                if (!file_exists($file)) continue;
+                $time = filemtime($file);
+                $html = str_replace($href, $href . '?v=' . $time, $html);
+                continue;
+            }
+
+            $url = substr($href, 0, $params_start);
+
+            $file = base_path('..' . $url);
+            if (!file_exists($file)) continue;
+            $time = filemtime($file);
+            $html = str_replace($href, $href . '&v=' . $time, $html);
+        }
 
         return $html;
     }
