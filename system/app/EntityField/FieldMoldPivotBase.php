@@ -35,7 +35,7 @@ abstract class FieldMoldPivotBase extends PivotBase
      */
     protected $casts = [
         'delta' => 'int',
-        'field_meta' => Serialized::class,
+        // 'field_meta' => Serialized::class,
     ];
 
     /**
