@@ -298,6 +298,31 @@ class Node extends TranslatableEntityBase
             $html = str_replace($href, $href . '&v=' . $time, $html);
         }
 
+        $script = $dom->getElementsByTagName('script');
+
+        foreach ($script as $key => $value) {
+            $src = $value->getAttribute('src');
+
+            $src = urldecode($src);
+
+            $params_start = stripos($src, '?');
+
+            if ($params_start === false) {
+                $file = base_path('..' . $src);
+                if (!file_exists($file)) continue;
+                $time = filemtime($file);
+                $html = str_replace($src, $src . '?v=' . $time, $html);
+                continue;
+            }
+
+            $url = substr($src, 0, $params_start);
+
+            $file = base_path('..' . $url);
+            if (!file_exists($file)) continue;
+            $time = filemtime($file);
+            $html = str_replace($src, $src . '&v=' . $time, $html);
+        }
+
         return $html;
     }
 
