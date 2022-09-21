@@ -270,7 +270,9 @@ class Node extends TranslatableEntityBase
     private function staticVersion($html)
     {
         $dom = new \DOMDocument();
-        $dom->loadHTML(htmlentities($html));
+        $libxml_previous_state = libxml_use_internal_errors(true);
+        $dom->loadHTML($html);
+        libxml_use_internal_errors($libxml_previous_state);
         $link = $dom->getElementsByTagName('link');
 
         foreach ($link as $key => $value) {
