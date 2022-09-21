@@ -32,6 +32,8 @@ const translate = {
             loading.close();
             if (typeof response.data == 'string') {
                 this.message.error(response.data);
+            } else if (response.data.result.status === 0) {
+            	this.message.error(response.data.result.msg);
             } else {
             	this.getBatch(response.data);
             }
@@ -55,6 +57,8 @@ const translate = {
             loading.close();
             if (typeof response.data == 'string') {
                 this.message.error(response.data);
+            } else if (response.data.result.status === 0) {
+            	this.message.error(response.data.result.msg);
             } else {
             	this.getPage(response.data);
             }
@@ -78,6 +82,8 @@ const translate = {
             loading.close();
             if (typeof response.data == 'string') {
                 this.message.error(response.data);
+            } else if (response.data.result.status === 0) {
+            	this.message.error(response.data.result.msg);
             } else {
             	this.getTpl(response.data);
             }
@@ -149,7 +155,7 @@ const translate = {
 	            	var status = result.result.result, complete = result.result.complete;
 
 	            	if (complete) {
-		            	this.message.success(status);
+		            	result.result.state == 'error' ? this.message.error(status) : this.message.success(status);
 		            	this.success(result.result.content);
 	            	} else {
 	            		this.getPage(result, status, i + 1);
@@ -181,7 +187,7 @@ const translate = {
 	            	var status = result.result.result, complete = result.result.complete;
 
 	            	if (complete) {
-		            	this.message.success(status);
+		            	result.result.state == 'error' ? this.message.error(status) : this.message.success(status);
 	            	} else {
 	            		this.getTpl(result, status, i + 1);
 	            	}
