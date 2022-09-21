@@ -38,32 +38,7 @@ class MessageFieldController extends Controller
      */
     public function store(Request $request)
     {
-        $data = $request->all();
-
-        $data = [
-            'id'            => $data['id'],
-            'field_type'    => $data['field_type'],
-            'label'         => $data['label'],
-            'description'   => $data['description'],
-            'is_reserved'   => $data['is_reserved'],
-            'is_global'     => $data['is_global'],
-            'field_group'   => $data['field_group'],
-            'weight'        => $data['weight'],
-            'langcode'      => $data['langcode'],
-            'field_meta'    => serialize([
-                'required'          => $data['required'],
-                'default'           => $data['default'],
-                'placeholder'       => $data['placeholder'],
-                'helptext'          => $data['helptext'],
-                'maxlength'         => $data['maxlength'],
-                'rules'             => $data['rules'],
-                'options'           => $data['options'],
-                'reference_scope'   => $data['reference_scope'],
-                'is_management'     => $data['is_management']
-            ])
-        ];
-
-        MessageField::create($data);
+        MessageField::create($request->all());
 
         return response('');
     }
