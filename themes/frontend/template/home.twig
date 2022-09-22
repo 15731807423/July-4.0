@@ -4,6 +4,23 @@
 
 {% block main %}
 
+    {{ config('site.subject') }}
+
+    {{ content|raw }}
+
+    <style type="text/css">
+        .send-mail-open-pdf-form {
+            display: none;
+        }
+        .send-mail-open-pdf {
+            cursor: pointer;
+        }
+    </style>
+
+    <span class="send-mail-open-pdf" data-url="/pdf/a.pdf">open pdf</span>
+
+    {{ forms('pdf').render()|raw }}
+
 {# 	<div>
 		{{ specs(0, {
             'specList.model': 'static',
@@ -64,7 +81,7 @@
 		{{ specs()|raw }}
 	</div> #}
 
-	<div id="spec">
+{# 	<div id="spec">
 		{{ specsTpl('searchButton')|raw }}
 		{{ specsTpl('screenUser')|raw }}
 		{{ specsTpl('screen')|raw }}
@@ -128,20 +145,6 @@
                 'screen_type': 2
             }
         }
-	})|raw }}
-
-    <script type="text/javascript">
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/sw.js').then(function(registration) {
-                // Registration was successful
-                console.log('ServiceWorker registration successful with scope: ', registration.scope);
-            }).catch(function(err) {
-                // registration failed :(
-                console.log('ServiceWorker registration failed: ', err);
-            });
-        });
-        }
-    </script>
+	})|raw }} #}
 
 {% endblock %}
