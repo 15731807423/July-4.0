@@ -121,8 +121,10 @@ abstract class ModelBase extends Model
      */
     public static function create(array $attributes = [])
     {
-        $meta = (new $attributes['field_type'])->extractMeta($attributes);
-        $attributes['field_meta'] = serialize($meta);
+        if (isset($attributes['field_type'])) {
+            $meta = (new $attributes['field_type'])->extractMeta($attributes);
+            $attributes['field_meta'] = serialize($meta);
+        }
 
         return tap((new static)->newQuery()->make($attributes), function ($instance) {
             $instance->save();
