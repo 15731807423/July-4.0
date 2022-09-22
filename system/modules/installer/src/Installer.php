@@ -17,7 +17,7 @@ class Installer
     public static function checkRequirements()
     {
         $results = [
-            'PHP Version >= 7.2.5' => defined('PHP_VERSION_ID') && PHP_VERSION_ID >= 70205
+            'PHP Version >= 8.1.0' => defined('PHP_VERSION_ID') && PHP_VERSION_ID >= 80100
         ];
 
         foreach ([
