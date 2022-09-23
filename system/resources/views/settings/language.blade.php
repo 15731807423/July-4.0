@@ -328,7 +328,7 @@ const app = new Vue({
 
         // 是否预留设置，预留设置不可更改
         isReserved(langcode) {
-            return langcode === 'en' || langcode === 'zh';
+            return langcode === 'en';
         },
 
         // 确定上传图标的语言
