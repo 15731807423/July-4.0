@@ -200,7 +200,7 @@
 
             // 变更根节点
             changeRoot(node) {
-                if (node.id === 'recycle') return;
+                if (node.id === 'recycle' || node.parent_id === 'recycle') return;
 
                 this.syncTreeToRoot();
                 node = _nodes[node.id];
@@ -519,7 +519,7 @@
                     this.$message.error(error);
                     loading.close();
                 });
-            },
+            }
         }
     })
 </script>
