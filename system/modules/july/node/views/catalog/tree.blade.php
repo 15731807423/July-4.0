@@ -173,7 +173,8 @@
         },
 
         watch: {
-            '_nodes': (val, oldVal) => {
+            'tree': (val, oldVal) => {
+                _nodes[0].children = val
             }
         },
 
@@ -310,7 +311,6 @@
 
             // 从目录转移节点到回收站
             transferNodeToRecycle(parent, nodeInTree) {
-
                 // 从上级节点移除
                 for (let i = 0, len = parent.children.length; i < len; i++) {
                     if (parent.children[i].id === nodeInTree.id) {
@@ -318,7 +318,6 @@
                         break;
                     }
                 }
-
 
                 _nodes[nodeInTree.id] = null;
 
@@ -328,7 +327,6 @@
                     prev_id: null,
                     next_id: null,
                 }, first = recycle.children[0];
-
 
                 if (first) {
                     first.prev_id = nodeInTree.id;
@@ -354,6 +352,8 @@
                     parent_id: this.root.id,
                     prev_id: null,
                     next_id: null,
+                    child_id: null,
+                    path: [0],
                     children: [],
                 }, last = this.tree[this.tree.length - 1];
 
@@ -401,6 +401,8 @@
                     node.children = [];
                     _nodes[node.id] = node;
                 }
+
+                this.renderTree(this.tree.slice(1));
             },
 
             // 初始化回收站
