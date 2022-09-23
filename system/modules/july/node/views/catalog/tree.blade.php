@@ -36,11 +36,18 @@
             <span class="jc-tree-node__type" v-if="!isRecycle(node)">类型：@{{ getNodeAttr(data.id, 'mold_id') }}</span>
             <span class="jc-tree-node__updated" v-if="!isRecycle(node)">更新：@{{ getNodeAttr(data.id, 'updated_at') }}</span>
             <button
-                type="button" v-if="!isRecycle(node)" title="移出/移入回收站"
+                v-if="!isRecycle(node)"
+                type="button"
+                title="移出/移入回收站"
                 class="md-button md-fab md-mini md-accent md-theme-default jc-theme-light"
                 @click.stop="removeNode(data)"
+                @dblclick.stop=""
             >
-                <div class="md-ripple"><div class="md-button-content"><i class="md-icon md-icon-font md-theme-default">close</i></div></div>
+                <div class="md-ripple">
+                    <div class="md-button-content">
+                        <i class="md-icon md-icon-font md-theme-default">close</i>
+                    </div>
+                </div>
             </button>
             <select v-if="isRecycle(node)" v-model="recycle.orderBy" @click.stop @change="sortRecycle">
                 <option value="id,desc">默认排序</option>
