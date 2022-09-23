@@ -116,6 +116,10 @@
         return positions
     }
 
+    function assign(data) {
+        return JSON.parse(JSON.stringify(data))
+    }
+
     // 节点详情，标题、更新时间等
     const _details = @jjson($context['nodes']);
 
@@ -170,12 +174,6 @@
 
             // 初始化回收站
             this.initRecycle();
-        },
-
-        watch: {
-            'tree': (val, oldVal) => {
-                _nodes[0].children = val
-            }
         },
 
         methods: {
@@ -403,6 +401,8 @@
                 }
 
                 this.renderTree(this.tree.slice(1));
+
+                _nodes[0].children = this.tree;
             },
 
             // 初始化回收站
