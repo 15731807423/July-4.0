@@ -225,8 +225,8 @@
 
                 // 如果指定根节点在面包屑中
                 else {
-                    const rest = this.breadcrumbs.splice(index+1);
-                    this.$set(this.$data, 'expanded', ['recycle'].concat(rest.map(node=>node.id)))
+                    const rest = this.breadcrumbs.splice(index + 1);
+                    this.$set(this.$data, 'expanded', ['recycle'].concat(rest.map(node => node.id)));
                     // this.expanded.splice(1, this.expanded.length-1, ...rest.map(node=>node.id));
                 }
 
@@ -274,7 +274,7 @@
 
                 // 如果移除的节点位于树的最顶级，则重新渲染树
                 if (parent.id === this.root.id) {
-                    this.renderTree(parent.children);
+                    this.renderTree(parent.children.length > 0 && parent.children[0].id == 'recycle' ? parent.children.slice(1) : parent.children);
                 }
 
                 // 因为回收站加入了新节点，排序回收站
@@ -362,7 +362,7 @@
                     nodeInTree.prev_id = last.id;
                 }
 
-                _nodes[0].children = _nodes[0].children.concat([nodeInTree])
+                // _nodes[0].children = _nodes[0].children.concat([nodeInTree])
 
                 this.renderTree(this.tree.slice(1).concat([nodeInTree]));
             },
@@ -530,6 +530,6 @@
                 });
             }
         }
-    })
+    });
 </script>
 @endsection
