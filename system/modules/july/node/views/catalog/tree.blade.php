@@ -358,7 +358,7 @@
                     nodeInTree.prev_id = last.id;
                 }
 
-                // _nodes[0].children = _nodes[0].children.concat([nodeInTree])
+                this.breadcrumbs[this.breadcrumbs.length - 1].children = this.breadcrumbs[this.breadcrumbs.length - 1].children.concat([nodeInTree])
 
                 this.renderTree(this.tree.slice(1).concat([nodeInTree]));
             },
@@ -398,7 +398,7 @@
 
                 this.renderTree(this.tree.slice(1));
 
-                _nodes[0].children = this.tree;
+                this.syncTreeToRoot();
             },
 
             // 初始化回收站
