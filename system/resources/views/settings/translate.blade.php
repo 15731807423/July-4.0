@@ -1,6 +1,6 @@
 @extends('layout')
 
-@section('h1', '规格列表配置')
+@section('h1', '翻译配置')
 
 @section('inline-style')
 <style type="text/css">
@@ -13,6 +13,28 @@
 @section('main_content')
 <el-form id="main_form" ref="main_form" :model="settings" label-position="top">
     <div id="main_form_left">
+        @php ($list = [])
+        @foreach (config('translate.list') as $key => $value)
+            @php ($list[] = [
+                'text'  => $value['name'],
+                'label' => $key,
+                'mode'  => $value['mode']
+            ])
+        @endforeach
+
+        @include('spec_list.radio', ['data' => $items['translate.tool'], 'index' => 'translate.tool', 'list' => $list])
+
+        <el-form-item prop="translate.mode" size="small" class="has-helptext">
+            <el-tooltip slot="label" popper-class="jc-twig-output" effect="dark" content="{{ $items['translate.mode']['tips'] }}" placement="right">
+                <span>{{ $items['translate.mode']['label'] }}</span>
+            </el-tooltip>
+            <el-radio-group v-model="settings['translate.mode']">
+                <el-radio v-for="item in mode2" :label="item.label" :disabled="false">@{{ item.text }}</el-radio>
+            </el-radio-group>
+            @if ($items['translate.mode']['description'])
+                <span class="jc-form-item-help"><i class="el-icon-info"></i> {{ $items['translate.mode']['description'] }}</span>
+            @endif
+        </el-form-item>
 
         @include('spec_list.textarea', ['data' => $items['translate.fields'], 'index' => 'translate.fields', 'rows' => 7])
 
@@ -45,12 +67,23 @@
 
         data() {
             return {
-                settings: @jjson($settings)
+                settings: @jjson($settings),
+                list: @jjson($list)
             }
         },
 
         computed: {
+            mode2() {
+                var mode = [{ text: '直接返回结果', label: 'direct'}];
 
+                for (var i = 0; i < this.list.length; i++) {
+                    if (this.list[i].label != this.settings['translate.tool']) continue;
+
+                    if (this.list[i].mode == 'task') mode.unshift({ text: '创建任务后获取任务结果', label: 'task'});
+                }
+
+                return mode;
+            }
         },
 
         created() {
