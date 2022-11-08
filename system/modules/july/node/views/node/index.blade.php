@@ -143,7 +143,7 @@
 @section('script')
 <script src="/themes/backend/js/c-pagination.js"></script>
 <link rel="stylesheet" type="text/css" href="/themes/backend/css/c-pagination.css">
-<script type="text/javascript" src="/themes/backend/js/translate.js"></script>
+<script type="text/javascript" src="/themes/backend/js/translate-{{ config('translate.mode') }}.js"></script>
 <script>
     Vue.component('c-pagination', cPagination)
 
@@ -387,7 +387,7 @@
                     nodes.push(element.id);
                 });
 
-                translate.frame(this.$loading, this.$message).createBatch("{{ short_url('manage.translate.batch') }}", nodes);
+                translate.frame(this.$loading, this.$message).batch(nodes);
             },
 
             render(node) {

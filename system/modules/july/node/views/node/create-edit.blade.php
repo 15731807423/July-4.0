@@ -75,7 +75,7 @@
 @endsection
 
 @section('script')
-<script type="text/javascript" src="/themes/backend/js/translate.js"></script>
+<script type="text/javascript" src="/themes/backend/js/translate-{{ config('translate.mode') }}.js"></script>
 <script>
     window.showMediasWindow = function() {
         let mediaWindow = null;
@@ -154,9 +154,9 @@
                 delete data.url;
                 delete data.view;
 
-                translate.frame(this.$loading, this.$message).createPage("{{ short_url('manage.translate.page') }}", {
+                translate.frame(this.$loading, this.$message).page({
                     text: JSON.stringify(data),
-                    to: '{{ $langcode }}'
+                    code: '{{ $langcode }}'
                 }, (data) => {
                     for (let key in data) {
                         this.model[key] = data[key];
