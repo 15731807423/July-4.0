@@ -24,6 +24,18 @@ class Translate extends SettingGroupBase
      * @var array
      */
     protected $items = [
+        'translate.tool' => [
+            'key' => 'translate.tool',
+            'label' => '使用的工具',
+            'description' => ''
+        ],
+
+        'translate.mode' => [
+            'key' => 'translate.mode',
+            'label' => '翻译的模式',
+            'description' => '先创建任务再获取任务结果（可能超时）或者直接返回任务结果'
+        ],
+
         'translate.fields' => [
             'key' => 'translate.fields',
             'label' => '全部不翻译的字段',
