@@ -215,7 +215,7 @@ class Message extends EntityBase
             'show_in' => $showin,
         ];
 
-        return app('twig')->render($view, $data);
+        return html_entity_decode(app('twig')->render($view, $data));
     }
 
     /**
