@@ -2,7 +2,9 @@
 
 namespace Translate\Controllers;
 
-use Translate\Translate;
+use Translate\Task;
+use Translate\Azure;
+use Translate\Direct;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
@@ -12,23 +14,33 @@ use App\Http\Controllers\Controller;
  */
 class TranslateController extends Controller
 {
+    private $tool;
+
+    private $mode;
+
     private $translate;
 
+    // 微软翻译直接获取结果第三步 控制器的构造函数
     function __construct()
     {
-        $this->translate = new Translate();
+        $this->tool         = config('translate.tool');
+        $this->mode         = config('translate.mode');
+
+        if ($this->tool == 'azure') $this->translate = new Azure();
     }
 
     /**
      * 批量翻译指定页面的全部字段
+     * 微软翻译直接获取结果第四步 控制器
      */
     public function batch(Request $request)
     {
-        if (!config('lang.multiple')) return response('没有开启多语言');
+        if (!config('lang.multiple')) return $this->translate->error('没有开启多语言');
 
         $id = $request->input('nodes');
+        $id = [1,2];
 
-        if (count($id) == 0) return response('没有要翻译的页面');
+        if (count($id) == 0) return $this->translate->error('没有要翻译的页面');
 
         $list   = [];
         $front  = config('lang.frontend');
@@ -37,68 +49,48 @@ class TranslateController extends Controller
             if ($value['translatable'] && $key != $front) $list[] = $key;
         }
 
-        if (count($list) == 0) return response('没有要翻译的语言');
+        if (count($list) == 0) return $this->translate->error('没有要翻译的语言');
 
-        $result = [];
+        // 微软翻译直接获取结果第五步 调用模型并返回结果
+        $result = $this->translate->setTo($list)->setNodes($id)->batch();
 
-        foreach ($list as $key => $value) {
-            $result[$value] = $this->translate->setTo($value)->setNodes($id)->batch();
+        if (count($result) == 0) return $this->translate->error('没有要翻译的内容');
 
-            if (is_null($result[$value])) unset($result[$value]);
-        }
-
-        if (count($result) == 0) return response('没有要翻译的内容');
-
-        return response([
-            'type'      => 'batch',
-            'lang'      => $result
-        ]);
+        return $this->translate->batchSuccess($result);
     }
 
     /**
      * 翻译页面
-     * 
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
      */
     public function page(Request $request)
     {
+        if (!config('lang.multiple')) return $this->translate->error('没有开启多语言');
+
         // 获取数据
         $from   = config('lang.content');
         $to     = $request->input('to');
         $text   = json_decode($request->input('text'), true);
 
-        if ($from == $to || count($text) == 0) return '不需要翻译';
+        if ($from == $to || count($text) == 0) return $this->translate->pageError('不需要翻译');
 
-        $result = $this->translate->setTo($to)->page($text);
-
-        return response([
-            'type'      => 'page',
-            'result'    => $result
-        ]);
+        return $this->translate->setTo($to)->page($text);
     }
 
     /**
      * 翻译模板
      * 
-     * @param  \Illuminate\Http\Request     $request
      * @param  string                       $code       语言代码
-     * @return \Illuminate\Http\Response
      */
-    public function tpl(Request $request, string $code)
+    public function tpl(Request $request)
     {
+        if (!config('lang.multiple')) return $this->translate->error('没有开启多语言');
+
+        $code   = $request->input('code');
         $from   = config('lang.content');
 
-        if ($from == $code) return '不需要翻译';
+        if ($from == $code) return $this->translate->error('不需要翻译');;
 
-        $result = $this->translate->setTo($code)->tpl();
-
-        if (is_string($result)) return $result;
-
-        return response([
-            'type'      => 'tpl',
-            'result'    => $result
-        ]);
+        return $this->translate->setTo($code)->tpl();
     }
 
     /**
