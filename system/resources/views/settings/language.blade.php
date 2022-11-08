@@ -154,7 +154,7 @@
 @endsection
 
 @section('script')
-<script type="text/javascript" src="/themes/backend/js/translate.js"></script>
+<script type="text/javascript" src="/themes/backend/js/translate-{{ config('translate.mode') }}.js"></script>
 <script>
 const app = new Vue({
     el: '#main_content',
@@ -349,7 +349,7 @@ const app = new Vue({
 
         // 生成模板
         generateTemplate(code) {
-            translate.frame(this.$loading, this.$message).createTpl("{{ short_url('manage.translate.tpl', 'code') }}".replace('code', code));
+            translate.frame(this.$loading, this.$message).tpl(code);
         },
 
         // 提交
