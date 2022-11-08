@@ -4,278 +4,328 @@ namespace Translate;
 use Illuminate\Support\Facades\DB;
 
 /**
- * 文档翻译
+ * 文档翻译通用
  */
 class Translate
 {
-	// 域名
-	private $domain;
-
-	// 源语言
-	private $from = 'en';
-
-	// 翻译语言
-	private $to;
-
-	// 一键翻译翻译的页面id
-	private $nodes;
-
-	// 不翻译的字段
-	private $notFields;
-
-	// 不翻译的内容
-	private $notText;
-
-	// 指定翻译的内容
-	private $appoint;
-
-    // 模板路径
-    private $tplPath;
-
-    // 标识 第一个用于切割字段 第二个用于切割页面 第三个用于替换空格 第四个用于代替空页面的数据
-    private $replace = [
-        '<div class="translate-field-cutting"></div>',
-        '<div class="translate-page-cutting"></div>',
-        '<div class="translate-space"></div>',
-        '<div class="translate-page-empty"></div>'
-    ];
-
-    // 创建翻译任务的api
-    private $apiCreate = 'https://www.shouqibucuo.com/api/translate/create';
-
-    // 获取翻译结果的api
-    private $apiGet = 'https://www.shouqibucuo.com/api/translate/get';
-
     /**
-     * 初始化一批成员属性
-     */
-	function __construct()
-	{
-		$this->domain 		= parse_url(env('APP_URL'))['host'];
-
-        $this->notFields    = eval('return ' . str_replace("\n", '', config('translate.fields')) . ';');
-        $this->notText      = eval('return ' . str_replace("\n", '', config('translate.text')) . ';');
-        $this->appoint      = eval('return ' . str_replace("\n", '', config('translate.replace')) . ';');
-
-        $this->notFields    = is_array($this->notFields) ? $this->notFields : [];
-        $this->notText      = is_array($this->notText) ? $this->notText : [];
-        $this->appoint      = is_array($this->appoint) ? $this->appoint : [];
-
-        $this->tplPath      = base_path('../themes/frontend/template/');
-	}
-
-	/**
-	 * 设置翻译语言
-	 * 
-	 * @param  string $code 翻译语言
-	 * @return $this
-	 */
-	public function setTo(string $code)
-	{
-        // 源语言不能和翻译语言一致
-		if ($code == $this->from) return $this;
-
-        // 翻译语言必须在后台配置才能翻译
-		if (!in_array($code, array_keys(config('lang.available')))) return $this;
-
-		$this->to = $code;
-		return $this;
-	}
-
-	/**
-	 * 设置一键翻译翻译的页面id
-	 * 
-	 * @param  array $nodes 页面id
-	 * @return $this
-	 */
-	public function setNodes(array $nodes)
-	{
-        // 只能设置数据库里存在的页面
-		$nodes = Db::table('nodes')->whereIn('id', $nodes)->pluck('id')->toArray();
-
-		$this->nodes = $nodes;
-		return $this;
-	}
-
-	/**
-	 * 批量翻译
+     * 设置翻译语言
      * 
-     * @return array
-	 */
-	public function batch()
-	{
-		// 每个页面需要翻译的内容
-		$pages = [];
-
-		// 循环每个页面 获取每个页面需要翻译的内容
-		foreach ($this->nodes as $id) {
-			$data = $this->getPageContent($id);
-            $pages[] = implode($this->replace[0], $data);
-		}
-
-        // 如果没有需要翻译的内容 返回null
-		if (!$pages) return null;
-
-        // 创建任务
-        return $this->create(implode($this->replace[1], $pages));
-	}
-
-    /**
-     * 翻译页面
-     * 
-     * @param  array $content 被翻译的内容
-     * @return array
+     * @param  string $code 翻译语言
+     * @return $this
      */
-    public function page(array $content)
+    public function setTo(string|array $code)
     {
-        // 过滤不翻译的内容
-        foreach ($content as $key => $value) {
-            if (in_array($key, $this->getNotFields())) {
-                unset($content[$key]);
-            }
+        if (is_string($code)) {
+            // 源语言不能和翻译语言一致
+            if ($code == $this->source) return $this;
+
+            // 翻译语言必须在后台配置才能翻译
+            if (!in_array($code, array_keys(config('lang.available')))) return $this;
+
+            $this->target = [$code];
         }
 
-        // 创建任务
-        $result = $this->create(implode($this->replace[0], $content));
+        if (is_array($code)) {
+            $code = array_values(array_intersect(array_keys(config('lang.available')), array_diff($code, [$this->source])));
 
-        $result['data']['fields'] = array_keys($content);
+            if (count($code) == 0) return $this;
 
-        return $result;
+            $this->target = $code;
+        }
+
+        return $this;
     }
 
     /**
-     * 翻译模板
+     * 设置一键翻译翻译的页面id
      * 
-     * @return array
+     * @param  array $nodes 页面id
+     * @return $this
      */
-    public function tpl()
+    public function setNodes(array $nodes)
     {
-        // 如果目录已经存在 不执行任何操作
-        if (is_dir($this->tplPath . $this->to)) return '目录已存在，请先删除目录';
+        // 只能设置数据库里存在的页面
+        $nodes = Db::table('nodes')->whereIn('id', $nodes)->pluck('id')->toArray();
 
-        // 获取模板目录里的文件
-        $list = scandir($this->tplPath);
+        $this->nodes = $nodes;
+        return $this;
+    }
 
-        // 过滤不复制的文件 复制
-        foreach ($list as $key => $value) {
-            if ($value == '.' || $value == '..') continue;
-            if ($value == 'google-sitemap.twig') continue;
+    /**
+     * 创建翻译任务并获取翻译结果
+     * 
+     * @param  string $html 被翻译的html
+     */
+    protected function translate(string $html): void
+    {
+        $result = post($this->api[0], [
+            'html'          => $html,
+            'source'        => $this->source,
+            'target'        => $this->target,
+            'not'           => $this->getNotText(),
+            'appoint'       => $this->getAppoint(),
+            'domain'        => $this->domain,
+            'tool'          => config('translate.tool'),
+            'replace'       => $this->replace
+        ]);
 
-            if (is_dir($this->tplPath . $value)) {
-                if ($value != 'message' && $value != 'specs') continue;
-            }
+        if (is_null(json_decode($result, true))) exit($result);
 
-            if (is_file($this->tplPath . $value)) {
-                if (pathinfo($this->tplPath . $value)['extension'] != 'twig') continue;
-            }
+        $result = json_decode($result, true);
 
-            $this->tplCopy($this->tplPath . $value, $this->tplPath . $this->to . '/' . $value);
-        }
+        $this->result = $result['status'] ? $result['data'] : $result['message'];
+    }
 
-        // 获取目录下需要翻译的文件路径
-        $file = $this->tplFile($this->tplPath . $this->to);
+    /**
+     * 创建翻译任务并获取任务结果
+     * 
+     * @param  string $html 被翻译的html
+     */
+    protected function create(string $html): void
+    {
+        $result = post($this->api[1], [
+            'html'          => $html,
+            'source'        => $this->source,
+            'target'        => $this->target,
+            'not'           => $this->getNotText(),
+            'appoint'       => $this->getAppoint(),
+            'domain'        => $this->domain,
+            'tool'          => config('translate.tool'),
+            'replace'       => $this->replace
+        ]);
 
+        if (is_null(json_decode($result, true))) exit($result);
+
+        $result = json_decode($result, true);
+
+        $this->result = $result['status'] ? $result['data'] : $result['message'];
+    }
+
+    /**
+     * 获取翻译结果
+     * 
+     * @param  string $data 翻译任务的数据
+     */
+    protected function get(string $data): void
+    {
+        $result = post($this->api[2], ['data' => $data, 'tool' => config('translate.tool')]);
+
+        if (is_null(json_decode($result, true))) exit($result);
+
+        $this->result = json_decode($result, true);
+    }
+
+    /**
+     * 批量翻译前处理页面数据返回需要翻译的内容
+     * 
+     * @return ?string
+     */
+    protected function batchBefore(): ?string
+    {
         $html = [];
 
-        // 获取文件内容
-        foreach ($file as $key => $value) {
-            $html[] = file_get_contents($value);
+        // 循环每个页面 获取每个页面需要翻译的内容
+        foreach ($this->nodes as $id) {
+            $data = $this->getPageContent($id);
+            $html[] = implode($this->replace[0], $data);
         }
 
-        // 创建任务
-        return $this->create(implode($this->replace[1], $html));
+        return count($html) == 0 ? null : implode($this->replace[1], $html);
     }
 
     /**
-     * 批量翻译 结果
+     * 批量翻译完成后把结果写入对应的语言的数据库中
      * 
-     * @param  array $data 翻译接口返回的信息，用来获取数据
+     * @param  array $data
      * @return array
      */
-    public function resultBatch(array $data)
+    protected function batchAfter(array $data): array
     {
-        return $this->result($data, function (string $html) use ($data) {
+        foreach ($data as $code => $html) {
+            if ($html === false) continue;
+
             // 切割成每个页面的翻译结果
             $pages = explode($this->replace[1], $html);
 
             // 如果翻译后的页面数量和被翻译的页面数量不一致
             if (count($pages) != count($this->nodes)) {
-                return ['result' => '翻译完成，但翻译后页面数量和翻译前不一致'];
+                $data[$code] = false;
+                continue;
             }
 
-            // 保存每个页面被翻译的字段
-            $fields = [];
-
-            // 循环每个页面，为页面设置翻译后的内容
             foreach ($this->nodes as $key => $id) {
-                $fields[$id] = $this->setPageContent($id, explode($this->replace[0], $pages[$key]));
+                $this->setPageContent($id, explode($this->replace[0], $pages[$key]), $code);
             }
 
-            return ['fields' => $fields];
-        });
+            $data[$code] = true;
+        }
+
+        return $data;
     }
 
     /**
-     * 翻译页面 结果
+     * 翻译页面前处理页面数据返回需要翻译的内容
      * 
-     * @param  array $data 翻译接口返回的信息，用来获取数据
-     * @return array
+     * @param  array $html
+     * @return ?string
      */
-    public function resultPage(array $data)
+    protected function pageBefore(array $html): ?string
     {
-        return $this->result($data, function (string $html) use ($data) {
-            // 切割成每个页面的翻译结果
-            $html = explode($this->replace[0], $html);
-
-            // 如果翻译后的页面数量和被翻译的页面数量不一致
-            if (count($html) != count($data['data']['fields'])) {
-                return ['result' => '翻译完成，但翻译后字段数量和翻译前不一致'];
+        // 去掉不需要翻译的字段
+        foreach ($html as $key => $value) {
+            if (in_array($key, $this->getNotFields())) {
+                unset($html[$key]);
             }
+        }
 
-            $new = [];
-            foreach ($html as $key => $value) {
-                $new[$data['data']['fields'][$key]] = $value;
-            }
-
-            return ['content' => $new];
-        });
+        return count($html) == 0 ? null : implode($this->replace[0], $html);
     }
 
     /**
-     * 翻译模板 结果
+     * 翻译页面完成后处理数据
      * 
-     * @param  array $data 翻译接口返回的信息，用来获取数据
-     * @return array
+     * @param  array  $old
+     * @param  string $new
+     * @return ?array
      */
-    public function resultTpl(array $data)
+    protected function pageAfter(array $old, string $new): ?array
     {
-        return $this->result($data, function (string $html) {
-            // 切割成每个模板的翻译结果
-            $html = explode($this->replace[1], $html);
+        // 切割成每个字段的翻译结果
+        $new = explode($this->replace[0], $new);
 
-            // 获取目录下需要翻译的文件路径
-            $file = $this->tplFile($this->tplPath . $this->to);
+        // 如果翻译后的页面数量和被翻译的页面数量不一致
+        if (count($new) != count($old)) return null;
 
-            // 如果翻译后的页面数量和被翻译的页面数量不一致
-            if (count($html) != count($file)) {
-                return ['result' => '翻译完成，但翻译后模板数量和翻译前不一致'];
-            }
-
-            // 写入文件内容
-            foreach ($file as $key => $value) {
-                file_put_contents($value, $html[$key]);
-            }
-        });
+        return array_combine(array_keys($old), $new);
     }
 
-	/**
-	 * 获取一个页面需要翻译的内容
-	 * 
-	 * @param  int $id 页面id
-	 * @return array
-	 */
-	private function getPageContent(int $id)
-	{
+    /**
+     * 翻译模板前处理模板数据返回需要翻译的内容
+     * 
+     * @return ?string
+     */
+    protected function tplBefore(): ?string
+    {
+        // 所有需要翻译的文件的绝对路径
+        $files = $this->getTplFilePath();
+
+        $html = [];
+
+        // 所有需要翻译的文件的内容
+        foreach ($files as $file) $html[] = file_get_contents($file);
+
+        return count($html) == 0 ? null : implode($this->replace[0], $html);
+    }
+
+    /**
+     * 翻译模板完成后处理数据
+     * 
+     * @param  string $html
+     * @return bool
+     */
+    protected function tplAfter(string $html): bool
+    {
+        // 切割成每个文件的翻译结果
+        $html = explode($this->replace[0], $html);
+
+        // 所有需要翻译的文件的绝对路径
+        $files = $this->getTplFilePath();
+
+        // 如果翻译后的页面数量和被翻译的页面数量不一致
+        if (count($html) != count($files)) return false;
+
+        // 翻译后的模板文件写入内容
+        foreach ($files as $key => $file) {
+            $file = str_replace($this->tplPath, $this->tplPath . $this->target[0] . '/', $file);
+            $this->setTplFileContent($file, $html[$key]);
+        }
+
+        $dir = $this->tplPath . 'message/content/';
+        $list = array_slice(scandir($dir), 2);
+        foreach ($list as $key => $file) {
+            $source = $dir . $file;
+            $target = str_replace($this->tplPath, $this->tplPath . $this->target[0] . '/', $source);
+            $this->setTplFileContent($target, file_get_contents($source));
+        }
+
+        return true;
+    }
+
+    /**
+     * 获取不翻译的字段
+     * 
+     * @return array
+     */
+    private function getNotFields(): array
+    {
+        if (count($this->notFields) == count($this->notFields, 1)) {
+            return $this->notFields;
+        } else {
+            if (is_string($this->target)) return $this->notFields[$this->target] ?? [];
+
+            $list = [];
+            foreach ($this->target as $key => $value) {
+                if (isset($this->notFields[$value])) {
+                    $list[$value] = $this->notFields[$value];
+                }
+            }
+            return $list;
+        }
+    }
+
+    /**
+     * 获取不翻译的内容
+     * 
+     * @return array
+     */
+    private function getNotText(): array
+    {
+        if (count($this->notText) == count($this->notText, 1)) {
+            return $this->notText;
+        } else {
+            if (is_string($this->target)) return $this->notText[$this->target] ?? [];
+
+            $list = [];
+            foreach ($this->target as $key => $value) {
+                if (isset($this->notText[$value])) {
+                    $list[$value] = $this->notText[$value];
+                }
+            }
+            return $list;
+        }
+    }
+
+    /**
+     * 获取指定的翻译结果
+     * 
+     * @return array
+     */
+    private function getAppoint(): array
+    {
+        if (count($this->appoint) == count($this->appoint, 1)) {
+            return $this->appoint;
+        } else {
+            if (is_string($this->target)) return $this->appoint[$this->target] ?? [];
+
+            $list = [];
+            foreach ($this->target as $key => $value) {
+                if (isset($this->appoint[$value])) {
+                    $list[$value] = $this->appoint[$value];
+                }
+            }
+            return $list;
+        }
+    }
+
+    /**
+     * 获取一个页面需要翻译的内容
+     * 
+     * @param  int $id 页面id
+     * @return array
+     */
+    private function getPageContent(int $id): array
+    {
         // 结果
         $list = [];
 
@@ -286,7 +336,7 @@ class Translate
         $fields = array_diff($fields, $this->getNotFields());
 
         // 判断title是否存在翻译版本
-        $check = Db::table('node_translations')->where('entity_id', $id)->where('langcode', $this->to)->exists();
+        $check = Db::table('node_translations')->where('entity_id', $id)->where('langcode', $this->target)->exists();
 
         // 没有翻译版本 把内容放进结果里
         if (!$check) {
@@ -296,26 +346,27 @@ class Translate
         // 循环每个字段
         foreach ($fields as $key => $value) {
             // 判断字段是否存在翻译版本
-            $check = Db::table('node__' . $value)->where('entity_id', $id)->where('langcode', $this->to)->exists();
+            $check = Db::table('node__' . $value)->where('entity_id', $id)->where('langcode', $this->target)->exists();
 
             // 没有翻译版本 把内容放进结果里
             if (!$check) {
-                $list[$value] = Db::table('node__' . $value)->where('entity_id', $id)->where('langcode', $this->from)->value($value);
+                $list[$value] = Db::table('node__' . $value)->where('entity_id', $id)->where('langcode', $this->source)->value($value);
             }
         }
 
         // 过滤空字符串 返回结果
         return array_filter($list) ?: [$this->replace[3]];
-	}
+    }
 
     /**
      * 为页面设置翻译后的内容
      * 
-     * @param  int   $id   页面id
-     * @param  array $html 页面每个字段的翻译结果
+     * @param  int    $id   页面id
+     * @param  array  $html 页面每个字段的翻译结果
+     * @param  string $code 语言代码
      * @return array
      */
-    private function setPageContent(int $id, array $html)
+    private function setPageContent(int $id, array $html, string $code): ?array
     {
         // 获取翻译前的页面内容
         $new = $old = $this->getPageContent($id);
@@ -329,42 +380,43 @@ class Translate
         }
 
         // 设置页面字段并返回翻译了的字段名称
-        return $this->setPageFieldContent($id, $new);
+        return $this->setPageFieldContent($id, $new, $code);
     }
 
     /**
      * 设置页面字段
      * 
-     * @param  int   $id   页面id
-     * @param  array $list 字段数据列表
+     * @param  int    $id   页面id
+     * @param  array  $list 字段数据列表
+     * @param  string $code 语言代码
      * @return array
      */
-    private function setPageFieldContent(int $id, array $list)
+    private function setPageFieldContent(int $id, array $list, $code): array
     {
         // 循环每个字段并设置内容
-        foreach ($list as $key => $value) {
-            switch ($key) {
+        foreach ($list as $file => $html) {
+            switch ($file) {
                 case 'title':
                     $data = Db::table('nodes')->where('id', $id)->first();
 
                     Db::table('node_translations')->insert([
-                        'entity_id'     => intval($id),
+                        'entity_id'     => $id,
                         'mold_id'       => $data->mold_id,
-                        'title'         => $value,
+                        'title'         => $html,
                         'view'          => $data->view,
                         'is_red'        => $data->is_red,
                         'is_green'      => $data->is_green,
                         'is_blue'       => $data->is_blue,
-                        'langcode'      => $this->to,
+                        'langcode'      => $code,
                         'created_at'    => date('Y-m-d H:i:s')
                     ]);
                     break;
 
                 default:
-                    Db::table('node__' . $key)->insert([
+                    Db::table('node__' . $file)->insert([
                         'entity_id'     => $id,
-                        $key            => $value,
-                        'langcode'      => $this->to,
+                        $file           => $html,
+                        'langcode'      => $code,
                         'created_at'    => date('Y-m-d H:i:s', time())
                     ]);
                     break;
@@ -376,186 +428,50 @@ class Translate
     }
 
     /**
-     * 复制模板文件
+     * 获取需要复制的模板文件的路径
      * 
-     * @param  string $old 被复制的文件路径
-     * @param  string $new 复制后的文件路径
+     * @return array
      */
-    private function tplCopy(string $old, string $new)
+    private function getTplFilePath(): array
     {
-        // 复制的要求 old是一个文件 new不是文件也不是文件夹 防止覆盖
-        if (is_file($old) && !is_file($new) && !is_dir($new)) {
-            // new所在的目录不存在则创建
-            if (!is_dir(dirname($new))) mkdir(dirname($new));
-            copy($old, $new);
-        }
+        $dirs = [
+            $this->tplPath . 'message/form/',
+            $this->tplPath . 'specs/',
+            $this->tplPath
+        ];
 
-        // 如果复制的是文件夹 则需要递归复制
-        if (is_dir($old) && !is_file($new)) {
-            if (!is_dir($new)) mkdir($new);
-            $list = scandir($old);
-            unset($list[0]);
-            unset($list[1]);
-            foreach ($list as $key => $value) {
-                $this->tplCopy($old . '/' . $value, $new . '/' . $value);
+        $files = [];
+
+        foreach ($dirs as $dir) {
+            $list = array_slice(scandir($dir), 2);
+            foreach ($list as $key => $file) {
+                $list[$key] = $dir . $file;
+                if (is_dir($list[$key])) unset($list[$key]);
             }
-        }
-    }
-
-    /**
-     * 获取模板里需要翻译的文件的路径
-     * 
-     * @param  string $path 模板路径
-     * @return array  文件路径数组
-     */
-    private function tplFile(string $path)
-    {
-        $file = [];
-
-        // 获取路径下的文件
-        $list = scandir($path);
-        foreach ($list as $key => $value) {
-            if ($value == '.' || $value == '..') continue;
-
-            if (is_dir($path . '/' . $value)) continue;
-            $file[] = $path . '/' . $value;
+            $files = array_merge($files, array_values($list));
         }
 
-        // 获取路径下的表单文件
-        $list2 = scandir($path . '/message/form');
-        foreach ($list2 as $key => $value) {
-            if ($value == '.' || $value == '..') continue;
+        unset($files[array_search($this->tplPath . 'google-sitemap.twig', $files)]);
 
-            if (is_dir($path . '/message/form/' . $value)) continue;
-            $file[] = $path . '/message/form/' . $value;
-        }
-
-        return $file;
+        return array_values($files);
     }
 
     /**
-     * 处理结果
+     * 翻译后的模板文件写入内容
      * 
-     * @param  array  $data 结果
-     * @param  object $callback 成功的回调
-     * @return array
+     * @param  string $path 文件路径
+     * @param  string $html 文件内容
+     * @return void
      */
-    private function result(array $data, object $callback)
+    private function setTplFileContent(string $path, string $html): void
     {
-        // 如果事件已经完成，直接返回
-        if (isset($data['complete']) && $data['complete']) return $data;
+        // 路径信息
+        $pathinfo = pathinfo($path);
 
-        // 可能创建任务失败了
-        if ($data['status'] == 0) {
-            $data['result'] = $data['msg'];
-            $data['complete'] = true;
-            return $data;
-        }
+        // 创建不存在的路径
+        if (!is_dir($pathinfo['dirname'])) mkdir($pathinfo['dirname'], 0644, true);
 
-        // 获取翻译结果
-        $result = $this->get(json_encode($data['data']));
-
-        // 根据状态码区分翻译结果情况
-        switch ($result['status']) {
-            // 接口处理失败，报错
-            case -2:
-                $data['result'] = $result['msg'];
-                $data['complete'] = true;
-                break;
-
-            // 翻译失败，提示错误信息，事件完成
-            case -1:
-                $data['state'] = $result['data']['state'];
-                $data['result'] = $result['data']['msg'];
-                $data['complete'] = true;
-                break;
-
-            // 翻译正在准备或正在翻译，提示信息，事件未完成
-            case 0:
-                $data['state'] = $result['data']['state'];
-                $data['result'] = '正在翻译';
-                $data['complete'] = false;
-                break;
-
-            // 翻译完成，处理翻译结果，事件完成
-            case 1:
-                $data['state'] = $result['data']['state'];
-                $data['result'] = '翻译完成';
-                $data['complete'] = true;
-
-                // 取出翻译结果的html
-                $html = $result['data']['content'];
-
-                $return = $callback($html);
-
-                if (is_array($return)) $data = array_merge($data, $return);
-
-                break;
-        }
-
-        return $data;
-    }
-
-    /**
-     * 创建翻译任务
-     * 
-     * @param  string $html 被翻译的html
-     * @return array
-     */
-    private function create(string $html)
-    {
-        $result = post($this->apiCreate, [
-            'html'          => $html,
-            'from'          => $this->from,
-            'to'            => $this->to,
-            'not'           => $this->getNotText(),
-            'appoint'       => $this->getAppoint(),
-            'domain'        => $this->domain
-        ]);
-
-        return json_decode($result, true);
-    }
-
-    /**
-     * 获取翻译结果
-     * 
-     * @param  string $data 创建任务接口返回的数据json
-     * @return array
-     */
-    private function get(string $data)
-    {
-        $result = post($this->apiGet, ['data' => $data]);
-
-        return json_decode($result, true);
-    }
-
-    /**
-     * 获取不翻译的字段
-     * 
-     * @return array
-     */
-    private function getNotFields()
-    {
-        return count($this->notFields) == count($this->notFields, 1) ? $this->notFields : ($this->notFields[$this->to] ?? []);
-    }
-
-    /**
-     * 获取不翻译的内容
-     * 
-     * @return array
-     */
-    private function getNotText()
-    {
-        return count($this->notText) == count($this->notText, 1) ? $this->notText : ($this->notText[$this->to] ?? []);
-    }
-
-    /**
-     * 获取指定的翻译结果
-     * 
-     * @return array
-     */
-    private function getAppoint()
-    {
-        return count($this->appoint) == count($this->appoint, 1) ? $this->appoint : ($this->appoint[$this->to] ?? []);
+        // 创建文件 写入文件
+        if (touch($path)) file_put_contents($path, $html);
     }
 }
