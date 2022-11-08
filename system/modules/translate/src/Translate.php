@@ -191,6 +191,13 @@ class Translate
      */
     protected function pageAfter(array $old, string $new): ?array
     {
+        // 去掉不需要翻译的字段
+        foreach ($old as $key => $value) {
+            if (in_array($key, $this->getNotFields())) {
+                unset($old[$key]);
+            }
+        }
+
         // 切割成每个字段的翻译结果
         $new = explode($this->replace[0], $new);
 
