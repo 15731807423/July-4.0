@@ -65,14 +65,15 @@ class AnyPage extends Controller
         }
 
         // 大写字母跳转
-        $path = $request->getPathInfo();
-        if (preg_match('/[A-Z]/', $path)) {
-            if (null !== $qs = $request->getQueryString()) {
-                $qs = '?'.$qs;
-            }
+        // https://www.razorwiresupplier.com//bxss.me//%2F..
+        // $path = $request->getPathInfo();
+        // if (preg_match('/[A-Z]/', $path)) {
+        //     if (null !== $qs = $request->getQueryString()) {
+        //         $qs = '?'.$qs;
+        //     }
 
-            return ['to' => strtolower($path).$qs];
-        }
+        //     return ['to' => strtolower($path).$qs];
+        // }
 
         return null;
     }
