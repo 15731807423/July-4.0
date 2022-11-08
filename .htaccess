@@ -39,15 +39,15 @@
     RewriteRule ^ %1 [L,R=301]
 
     ##
-    ## 禁止访问 system 目录
-    ##
-    # RewriteRule ^system/.* - [L,NC,F]
-
-    ##
     ## Black listed folders
     ##
     RewriteRule ^system/.* index.php [L,NC]
     RewriteRule ^themes/.*/template/.* index.php [L,NC]
+    RewriteRule ^.editorconfig index.php [L,NC]
+    RewriteRule ^.gitignore index.php [L,NC]
+    RewriteRule ^LICENSE index.php [L,NC]
+    RewriteRule ^README.md index.php [L,NC]
+    RewriteRule ^time.txt index.php [L,NC]
 
     # Handle Front Controller...
     RewriteCond %{REQUEST_FILENAME} !-d
@@ -91,3 +91,6 @@
   ExpiresByType application/pdf "access plus 1 month"
   ExpiresByType image/vnd.microsoft.icon "access plus 1 year"
 </IfModule>
+
+Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains" env=HTTPS
+Header always set X-Frame-Options "SAMEORIGIN"
