@@ -83,9 +83,9 @@
             </el-table-column>
             <el-table-column label="颜色" prop="color" width="240">
                 <template slot-scope="scope">
-                    <el-switch style="margin-right: 1em" v-model="scope.row.is_red" active-color="#F44336" inactive-color="#FFCDD2"></el-switch>
-                    <el-switch style="margin-right: 1em" v-model="scope.row.is_green" active-color="#4caf50" inactive-color="#C8E6C9"></el-switch>
-                    <el-switch style="margin-right: 1em" v-model="scope.row.is_blue" active-color="#2196F3" inactive-color="#BBDEFB"></el-switch>
+                    <el-switch style="margin-right: 1em" @change="changeColor($event, scope.row.id, 'is_red')" v-model="scope.row.is_red" active-color="#F44336" inactive-color="#FFCDD2"></el-switch>
+                    <el-switch style="margin-right: 1em" @change="changeColor($event, scope.row.id, 'is_green')" v-model="scope.row.is_green" active-color="#4caf50" inactive-color="#C8E6C9"></el-switch>
+                    <el-switch style="margin-right: 1em" @change="changeColor($event, scope.row.id, 'is_blue')" v-model="scope.row.is_blue" active-color="#2196F3" inactive-color="#BBDEFB"></el-switch>
                 </template>
             </el-table-column>
             <el-table-column label="建议模板" prop="suggested_templates" width="auto" v-if="showSuggestedTemplates">
@@ -210,6 +210,26 @@
 
             diffForHumans(time) {
                 return moment(time).fromNow();
+            },
+
+            changeColor(status, id, color) {
+                var data = {
+                    id: id,
+                    [color]: status,
+                    langcode: 'en',
+                    _changed: [color]
+                };
+                axios.put("{{ short_url('nodes.update', 'node_id') }}".replace('node_id', id), data).then((response) => {
+                    axios.post("{{ short_url('nodes.render') }}", {nodes: [id]}).then((response) => {
+
+                    }).catch(err => {
+                        loading.close();
+                        this.$message.error('发生错误');
+                    });
+                }).catch((error) => {
+                    loading.close();
+                    this.$message.error(error);
+                });
             },
 
             getUrl(route, id) {
