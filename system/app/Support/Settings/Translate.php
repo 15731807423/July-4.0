@@ -27,7 +27,7 @@ class Translate extends SettingGroupBase
         'translate.tool' => [
             'key' => 'translate.tool',
             'label' => '使用的工具',
-            'description' => ''
+            'description' => '微软翻译不适用于twig标签和Vue标签，只能用来翻译页面'
         ],
 
         'translate.mode' => [
