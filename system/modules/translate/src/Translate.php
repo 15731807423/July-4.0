@@ -1,13 +1,95 @@
 <?php
 namespace Translate;
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 
 /**
- * 文档翻译通用
+ * 翻译
  */
 class Translate
 {
+    // 域名
+    private $domain;
+
+    // api
+    // private $api = [
+    //     'https://translate.vip/api/translate/translate',
+    //     'https://translate.vip/api/translate/create',
+    //     'https://translate.vip/api/translate/get'
+    // ];
+    private $api = [
+        'https://www.shouqibucuo.com/api/translate/translate',
+        'https://www.shouqibucuo.com/api/translate/create',
+        'https://www.shouqibucuo.com/api/translate/get'
+    ];
+
+    // 源语言
+    private $source = 'en';
+
+    // 翻译语言
+    private $target;
+
+    // 一键翻译翻译的页面id
+    private $nodes;
+
+    // 不翻译的字段
+    private $notFields;
+
+    // 不翻译的内容
+    private $notText;
+
+    // 指定翻译的内容
+    private $appoint;
+
+    // 模板路径
+    private $tplPath;
+
+    // 翻译结果
+    private $result;
+
+    // 当前模式是不是直接翻译
+    private $mode;
+
+    // 接口错误或任务错误
+    // $result = 'error';
+
+    // 翻译成功 可能部分语言错误
+    // $result = [
+    //     'de'    => '<p></p>',   // 成功
+    //     'es'    => false        // 失败
+    // ];
+
+    // 标识 第一个用于切割字段 第二个用于切割页面 第三个用于替换空格 第四个用于代替空页面的数据
+    private $replace = [
+        '<div class="translate-field-cutting"></div>',
+        '<div class="translate-page-cutting"></div>',
+        '<div class="translate-space"></div>',
+        '<div class="translate-page-empty"></div>'
+    ];
+
+    // 全局缓存
+    private $cache = [];
+
+    /**
+     * 初始化一批成员属性
+     */
+    function __construct($result = true)
+    {
+        $this->domain       = parse_url(env('APP_URL'))['host'];
+
+        $this->notFields    = eval('return ' . str_replace("\n", '', config('translate.fields')) . ';');
+        $this->notText      = eval('return ' . str_replace("\n", '', config('translate.text')) . ';');
+        $this->appoint      = eval('return ' . str_replace("\n", '', config('translate.replace')) . ';');
+
+        $this->notFields    = is_array($this->notFields) ? $this->notFields : [];
+        $this->notText      = is_array($this->notText) ? $this->notText : [];
+        $this->appoint      = is_array($this->appoint) ? $this->appoint : [];
+
+        $this->tplPath      = base_path('../themes/frontend/template/');
+        $this->mode         = $result;
+    }
+
     /**
      * 设置翻译语言
      * 
@@ -53,11 +135,134 @@ class Translate
     }
 
     /**
+     * 批量翻译
+     * 
+     * @return Response
+     */
+    public function batch(): JsonResponse
+    {
+        // 翻译
+        $result = $this->start($this->batchBefore());
+
+        if ($result !== true) return $result;
+
+        return $this->end('batch');
+    }
+
+    /**
+     * 翻译页面
+     * 
+     * @param  array $content 被翻译的内容
+     * @return Response
+     */
+    public function page(array $content): JsonResponse
+    {
+        $this->cache['pageContent'] = $content;
+
+        // 翻译
+        $result = $this->start($this->pageBefore($content));
+
+        if ($result !== true) return $result;
+
+        return $this->end('page');
+    }
+
+    /**
+     * 翻译模板
+     * 
+     * @return Response
+     */
+    public function tpl(): JsonResponse
+    {
+        // 翻译
+        $result = $this->start($this->tplBefore(), function () {
+            if (is_dir($this->tplPath . $this->target[0])) return $this->error('目录已存在，请先删除目录');
+        });
+
+        if ($result !== true) return $result;
+
+        return $this->end('tpl');
+    }
+
+    /**
+     * 根据数据获取翻译结果
+     * 
+     * @param  string $type    翻译的类型
+     * @param  string $data    翻译的数据
+     * @param  array  $content 翻译页面被翻译的内容
+     * @return JsonResponse
+     */
+    public function result(string $type, string $data, array $pageContent = []): JsonResponse
+    {
+        if ($type == 'page') $this->cache['pageContent'] = $pageContent;
+
+        $this->get($data);
+
+        if ($this->result['status'] === true) {
+            $this->result = $this->result['data'];
+            return $this->end($type, true);
+        }
+
+        if ($this->result['status'] === false) {
+            return $this->error($this->result['message']);
+        }
+
+        if ($this->result['status'] === null) {
+            return $this->running($this->result['message'], $this->result['data']);
+        }
+    }
+
+    public function batchSuccess(array $list)
+    {
+        foreach ($list as $key => $value) {
+            $list[$key] = $value === true
+            ? ['status' => true, 'message' => '翻译成功']
+            : ['status' => false, 'message' => '翻译失败'];
+        }
+        return response()->json(['status' => true, 'data' => $list])->setEncodingOptions(JSON_UNESCAPED_UNICODE);
+    }
+
+    public function pageSuccess(array $data)
+    {
+        return response()->json(['status' => true, 'data' => $data])->setEncodingOptions(JSON_UNESCAPED_UNICODE);
+    }
+
+    public function tplSuccess()
+    {
+        return response()->json(['status' => true])->setEncodingOptions(JSON_UNESCAPED_UNICODE);
+    }
+
+    public function success($data)
+    {
+        return response()->json(['status' => true, 'data' => $data])->setEncodingOptions(JSON_UNESCAPED_UNICODE);
+    }
+
+    public function error(string $message)
+    {
+        return response()->json(['status' => false, 'message' => $message])->setEncodingOptions(JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * 任务正在运行的返回值
+     * 
+     * @param  string $status 状态信息
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function running(string $message, string $data): JsonResponse
+    {
+        return response()->json([
+            'status'    => null,
+            'message'   => $message,
+            'data'      => $data
+        ])->setEncodingOptions(JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
      * 创建翻译任务并获取翻译结果
      * 
      * @param  string $html 被翻译的html
      */
-    protected function translate(string $html): void
+    private function translate(string $html): void
     {
         $result = post($this->api[0], [
             'html'          => $html,
@@ -68,13 +273,15 @@ class Translate
             'domain'        => $this->domain,
             'tool'          => config('translate.tool'),
             'replace'       => $this->replace
-        ]);
+        ], ['user-host: ' . parse_url(env('APP_URL'), PHP_URL_HOST)]);
 
-        if (is_null(json_decode($result, true))) exit($result);
+        $result === false && $this->result = '翻译接口调用失败';
+
+        $result !== false && is_null(json_decode($result, true)) && exit($result);
 
         $result = json_decode($result, true);
 
-        $this->result = $result['status'] ? $result['data'] : $result['message'];
+        $result !== null && $this->result = $result['status'] ? $result['data'] : $result['message'];
     }
 
     /**
@@ -82,7 +289,7 @@ class Translate
      * 
      * @param  string $html 被翻译的html
      */
-    protected function create(string $html): void
+    private function create(string $html): void
     {
         $result = post($this->api[1], [
             'html'          => $html,
@@ -93,13 +300,15 @@ class Translate
             'domain'        => $this->domain,
             'tool'          => config('translate.tool'),
             'replace'       => $this->replace
-        ]);
+        ], ['user-host: ' . parse_url(env('APP_URL'), PHP_URL_HOST)]);
 
-        if (is_null(json_decode($result, true))) exit($result);
+        $result === false && $this->result = '翻译接口调用失败';
+
+        $result !== false && is_null(json_decode($result, true)) && exit($result);
 
         $result = json_decode($result, true);
 
-        $this->result = $result['status'] ? $result['data'] : $result['message'];
+        $result !== null && $this->result = $result['status'] ? $result['data'] : $result['message'];
     }
 
     /**
@@ -107,11 +316,13 @@ class Translate
      * 
      * @param  string $data 翻译任务的数据
      */
-    protected function get(string $data): void
+    private function get(string $data): void
     {
-        $result = post($this->api[2], ['data' => $data, 'tool' => config('translate.tool')]);
+        $result = post($this->api[2], ['data' => $data, 'tool' => config('translate.tool')], ['user-host: ' . parse_url(env('APP_URL'), PHP_URL_HOST)]);
 
-        if (is_null(json_decode($result, true))) exit($result);
+        $result === false && $this->result = '翻译接口调用失败';
+
+        $result !== false && is_null(json_decode($result, true)) && exit($result);
 
         $this->result = json_decode($result, true);
     }
@@ -121,7 +332,7 @@ class Translate
      * 
      * @return ?string
      */
-    protected function batchBefore(): ?string
+    private function batchBefore(): ?string
     {
         $html = [];
 
@@ -140,7 +351,7 @@ class Translate
      * @param  array $data
      * @return array
      */
-    protected function batchAfter(array $data): array
+    private function batchAfter(array $data): array
     {
         foreach ($data as $code => $html) {
             if ($html === false) continue;
@@ -170,7 +381,7 @@ class Translate
      * @param  array $html
      * @return ?string
      */
-    protected function pageBefore(array $html): ?string
+    private function pageBefore(array $html): ?string
     {
         // 去掉不需要翻译的字段
         foreach ($html as $key => $value) {
@@ -189,7 +400,7 @@ class Translate
      * @param  string $new
      * @return ?array
      */
-    protected function pageAfter(array $old, string $new): ?array
+    private function pageAfter(array $old, string $new): ?array
     {
         // 去掉不需要翻译的字段
         foreach ($old as $key => $value) {
@@ -212,7 +423,7 @@ class Translate
      * 
      * @return ?string
      */
-    protected function tplBefore(): ?string
+    private function tplBefore(): ?string
     {
         // 所有需要翻译的文件的绝对路径
         $files = $this->getTplFilePath();
@@ -231,7 +442,7 @@ class Translate
      * @param  string $html
      * @return bool
      */
-    protected function tplAfter(string $html): bool
+    private function tplAfter(string $html): bool
     {
         // 切割成每个文件的翻译结果
         $html = explode($this->replace[0], $html);
@@ -257,6 +468,81 @@ class Translate
         }
 
         return true;
+    }
+
+    /**
+     * 处理后开始翻译
+     * 
+     * @param  string $html   翻译的内容
+     * @param  object $bofore 处理的函数
+     * @return JsonResponse|bool
+     */
+    private function start(string $html, object $bofore = null): JsonResponse|bool
+    {
+        if ($bofore) {
+            $bofore = $bofore();
+            if ($bofore) return $bofore;
+        }
+
+        // 没有要翻译的内容
+        if (is_null($html)) return $this->error('没有要翻译的内容');
+
+        // 创建任务并获取翻译的结果
+        $this->mode ? $this->translate($html) : $this->create($html);
+
+        return true;
+    }
+
+    /**
+     * 翻译结束返回结果
+     * 
+     * @param  string $type 翻译的三种类型
+     * @return JsonResponse
+     */
+    private function end(string $type, bool $result = false): JsonResponse
+    {
+        // 直接返回结果
+        if ($this->mode || $result) {
+            // 返回错误信息
+            if (is_string($this->result)) return $this->error($this->result);
+
+            switch ($type) {
+                case 'batch':
+                    // 翻译完成 把每个语言写入对应数据库表 获取写入结果
+                    $result = $this->batchAfter($this->result);
+
+                    // 所有页面都不需要翻译
+                    if (!$result) return $this->error('没有要翻译的内容');
+
+                    return $this->batchSuccess($result);
+                    break;
+
+                case 'page':
+                case 'tpl':
+                    // 翻译结果
+                    $html = $this->result[$this->target[0]];
+
+                    // 翻译失败的处理
+                    if (!$html) return $this->error('翻译失败');
+
+                    // 翻译完成后处理数据
+                    if ($type == 'page') $result = $this->pageAfter($this->cache['pageContent'], $html);
+                    if ($type == 'tpl') $result = $this->tplAfter($html);
+
+                    // 处理失败
+                    if (!$result) return $this->error('翻译成功但处理失败');
+
+                    // 翻译完成后处理数据
+                    if ($type == 'page') return $this->pageSuccess($result);
+                    if ($type == 'tpl') return $this->tplSuccess();
+                    break;
+            }
+        }
+
+        // 创建任务
+        else {
+            return json_decode($this->result, true) ? $this->success($this->result) : $this->error($this->result);
+        }
     }
 
     /**
@@ -443,7 +729,7 @@ class Translate
     {
         $dirs = [
             $this->tplPath . 'message/form/',
-            $this->tplPath . 'specs/',
+            // $this->tplPath . 'specs/',
             $this->tplPath
         ];
 

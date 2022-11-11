@@ -2,12 +2,12 @@
 
 namespace Translate\Controllers;
 
-use Translate\Azure;
+use Translate\Translate;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 
 /**
- * 翻译功能
+ * 翻译功能 创建任务后获取任务结果
  */
 class TaskController extends Controller
 {
@@ -15,11 +15,7 @@ class TaskController extends Controller
 
     function __construct()
     {
-        switch (config('translate.tool')) {
-            case 'azure':
-                $this->translate = new Azure(false);
-                break;
-        }
+        $this->translate = new Translate(false);
     }
 
     /**
@@ -112,7 +108,7 @@ class TaskController extends Controller
         $code   = $request->input('code');
         $from   = config('lang.content');
 
-        if ($from == $code) return $this->translate->error('不需要翻译');;
+        if ($from == $code) return $this->translate->error('不需要翻译');
 
         return $this->translate->setTo($code)->tpl();
     }
