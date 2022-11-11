@@ -471,11 +471,12 @@ if (!function_exists('url_get_contents')) {
 if (!function_exists('post')) {
     /**
      * 发送post请求
-     * @param  string $url  链接
-     * @param  array  $data 参数
+     * @param  string $url      链接
+     * @param  array  $data     参数
+     * @param  array  $header   头
      * @return string
      */
-    function post(string $url, array $data)
+    function post(string $url, array $data, array $header = [])
     {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -485,6 +486,8 @@ if (!function_exists('post')) {
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+
+        if ($header) curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
 
         $data = curl_exec($ch);
         curl_close($ch);
