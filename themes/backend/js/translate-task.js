@@ -7,11 +7,11 @@ const translate = {
 
 	nodes: [],
 
-	success: (data) => {
+	success(data) {
 		console.log(data)
 	},
 
-	error: (message = '翻译失败') => {
+	error(message = '翻译失败') {
 		this.message.error(message);
 	},
 
@@ -52,7 +52,6 @@ const translate = {
         }).catch(err => {
             loading.close();
             console.error(err);
-            this.$message.error('发生错误，可查看控制台');
         });
 	},
 
@@ -75,13 +74,12 @@ const translate = {
 	        }).catch(err => {
 	            loading.close();
 	            console.error(err);
-	            this.$message.error('发生错误，可查看控制台');
 	        });
 		}, 2000);
 	},
 
 	page(data, success = null) {
-		if (success != null) this.success = success;
+		this.success = success || this.success;
 
 		const loading = this.loading({
 			lock: true,
@@ -104,7 +102,6 @@ const translate = {
         }).catch(err => {
             loading.close();
             console.error(err);
-            this.$message.error('发生错误，可查看控制台');
         });
 	},
 
@@ -127,7 +124,6 @@ const translate = {
 	        }).catch(err => {
 	            loading.close();
 	            console.error(err);
-	            this.$message.error('发生错误，可查看控制台');
 	        });
 		}, 2000);
 	},
@@ -157,7 +153,6 @@ const translate = {
         }).catch(err => {
             loading.close();
             console.error(err);
-            this.$message.error('发生错误，可查看控制台');
         });
 	},
 
@@ -180,7 +175,6 @@ const translate = {
 	        }).catch(err => {
 	            loading.close();
 	            console.error(err);
-	            this.$message.error('发生错误，可查看控制台');
 	        });
 		}, 2000);
 	},

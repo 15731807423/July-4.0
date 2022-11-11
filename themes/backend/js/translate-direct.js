@@ -7,11 +7,11 @@ const translate = {
 
 	nodes: [],
 
-	success: data => {
-		// console.log(data)
+	success(data) {
+		console.log(data)
 	},
 
-	error: (message = '翻译失败') => {
+	error(message = '翻译失败') {
 		this.message.error(message);
 	},
 
@@ -24,7 +24,14 @@ const translate = {
 	// 直接翻译 获取翻译结果
 	batch(nodes, success = null) {
 		this.nodes = nodes;
-		this.success = success || this.success;
+		this.success = function (data) {
+			var status = [];
+			for (let key in data) {
+				status.push(key + '：' + data[key].message);
+			}
+			this.message.success(status.join('、'));
+			success ? success(data) : '';
+		}
 
 		const loading = this.loading({
 			lock: true,
@@ -40,7 +47,7 @@ const translate = {
 
             // 如果翻译失败 弹出错误信息
             if (!data.status) {
-            	this.message.error(data.message);
+            	this.error(data.message);
             	return false;
             }
 
@@ -50,8 +57,7 @@ const translate = {
         	}
 
         	// 弹出结果 执行回调函数
-        	this.message.success('翻译完成，' + status.join('、'));
-        	this.success(data);
+        	this.success(data.data);
         }).catch(err => {
             loading.close();
             console.error(err);
@@ -72,7 +78,7 @@ const translate = {
 		axios.post('/manage/translate/direct/page', data).then(response => {
             loading.close();
             var data = response.data;
-            data.status ? this.success(data.data) : this.error();
+            data.status ? this.success(data.data) : this.error(data.message);
         }).catch(err => {
             loading.close();
             console.error(err);
@@ -81,7 +87,10 @@ const translate = {
 
 	// 翻译模板文件并创建文件
 	tpl(code, success = null) {
-		this.success = success || this.success;
+		this.success = function (data) {
+			this.message.success(data.message ? data.message : '翻译成功');
+			success ? success(data) : '';
+		}
 
 		const loading = this.loading({
 			lock: true,
@@ -94,8 +103,7 @@ const translate = {
             var data = response.data;
 
         	// 弹出结果 执行回调函数
-        	data.status ? this.message.success('翻译完成') : this.message.error('翻译失败');
-            data.status ? this.success(data) : this.error();
+        	data.status ? this.success(data.data || {}) : this.error(data.message);
         }).catch(err => {
             loading.close();
             console.error(err);
