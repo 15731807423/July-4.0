@@ -2,12 +2,12 @@
 
 namespace Translate\Controllers;
 
-use Translate\Azure;
+use Translate\Translate;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 
 /**
- * 直接翻译
+ * 翻译功能 直接返回结果
  */
 class DirectController extends Controller
 {
@@ -15,11 +15,7 @@ class DirectController extends Controller
 
     function __construct()
     {
-        switch (config('translate.tool')) {
-            case 'azure':
-                $this->translate = new Azure();
-                break;
-        }
+        $this->translate = new Translate();
     }
 
     /**
