@@ -160,7 +160,11 @@ class NodeController extends Controller
         } else {
             $changed = (array) $request->input('_changed');
             if ($changed) {
-                $node->update($request->only($changed));
+                $data = $request->only($changed);
+                foreach ($data as $key => $value) {
+                    is_null($value) && $data[$key] = '';
+                }
+                $node->update($data);
             }
         }
 
