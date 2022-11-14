@@ -94,6 +94,11 @@ class NodeQueryExtension extends AbstractExtension implements GlobalsInterface
             new TwigFunction('specsTpl', function ($name, $specs = null, array $config = []) {
                 return Twig::{$name}($specs, $config);
             }),
+
+            // csrf_field
+            new TwigFunction('csrf_field', function () {
+                return csrf_field();
+            }),
         ];
     }
 
@@ -120,7 +125,7 @@ class NodeQueryExtension extends AbstractExtension implements GlobalsInterface
                     }
                     if (!empty($options)) {
                         return $nodes->filter(function($node) use($options) {
-                            return in_array($node->node_type_id, $options);
+                            return in_array($node['mold_id'], $options);
                         })->keyBy('id');
                     }
                 }
