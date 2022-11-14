@@ -396,7 +396,7 @@
                     _nodes[node.id] = node;
                 }
 
-                this.renderTree(this.tree.slice(1));
+                // this.renderTree(this.tree.slice(1));
 
                 this.syncTreeToRoot();
             },
