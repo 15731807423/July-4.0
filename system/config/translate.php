@@ -5,7 +5,7 @@ return [
 	'text'		=> '',
 	'replace'	=> '',
 
-	'tool'		=> 'azure',
+	'tool'		=> 'alibabacloud',
 	'mode'		=> 'direct',
 	'list'		=> [
 		'alibabacloud'	=> [
