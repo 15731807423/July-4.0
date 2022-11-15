@@ -603,6 +603,7 @@ abstract class FieldBase extends ModelBase implements TranslatableInterface
             '            $table->addColumn($column[\'type\'], $column[\'name\'], $column[\'parameters\'] ?? []);',
 
             '            $table->string(\'langcode\', 12);',
+            '            $table->softDeletes();',
             '            $table->timestamps();',
             '            $table->unique([\'entity_id\', \'langcode\']);',
         ], $column);
