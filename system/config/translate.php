@@ -6,7 +6,7 @@ return [
 	'replace'	=> '',
 
 	'tool'		=> 'alibabacloud',
-	'mode'		=> 'direct',
+	'mode'		=> 'task',
 	'list'		=> [
 		'alibabacloud'	=> [
 			'name'			=> '阿里云',
