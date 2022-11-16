@@ -13,16 +13,16 @@ class Translate
     private $domain;
 
     // api
-    // private $api = [
-    //     'https://translate.vip/api/translate/translate',
-    //     'https://translate.vip/api/translate/create',
-    //     'https://translate.vip/api/translate/get'
-    // ];
     private $api = [
-        'https://www.shouqibucuo.com/api/translate/translate',
-        'https://www.shouqibucuo.com/api/translate/create',
-        'https://www.shouqibucuo.com/api/translate/get'
+        'https://translate.vip/api/translate/translate',
+        'https://translate.vip/api/translate/create',
+        'https://translate.vip/api/translate/get'
     ];
+    // private $api = [
+    //     'https://www.shouqibucuo.com/api/translate/translate',
+    //     'https://www.shouqibucuo.com/api/translate/create',
+    //     'https://www.shouqibucuo.com/api/translate/get'
+    // ];
 
     // 源语言
     private $source = 'en';
@@ -76,7 +76,7 @@ class Translate
      */
     function __construct($result = true)
     {
-        $this->domain       = parse_url(env('APP_URL'))['host'];
+        $this->domain       = request()->host();
 
         $this->notFields    = eval('return ' . str_replace("\n", '', config('translate.fields')) . ';');
         $this->notText      = eval('return ' . str_replace("\n", '', config('translate.text')) . ';');
@@ -273,7 +273,7 @@ class Translate
             'domain'        => $this->domain,
             'tool'          => config('translate.tool'),
             'replace'       => $this->replace
-        ], ['user-host: ' . parse_url(env('APP_URL'), PHP_URL_HOST)]);
+        ], ['user-host: ' . $this->domain]);
 
         $result === false && $this->result = '翻译接口调用失败';
 
@@ -300,7 +300,7 @@ class Translate
             'domain'        => $this->domain,
             'tool'          => config('translate.tool'),
             'replace'       => $this->replace
-        ], ['user-host: ' . parse_url(env('APP_URL'), PHP_URL_HOST)]);
+        ], ['user-host: ' . $this->domain]);
 
         $result === false && $this->result = '翻译接口调用失败';
 
@@ -318,7 +318,7 @@ class Translate
      */
     private function get(string $data): void
     {
-        $result = post($this->api[2], ['data' => $data, 'tool' => config('translate.tool')], ['user-host: ' . parse_url(env('APP_URL'), PHP_URL_HOST)]);
+        $result = post($this->api[2], ['data' => $data, 'tool' => config('translate.tool')], ['user-host: ' . $this->domain]);
 
         $result === false && $this->result = '翻译接口调用失败';
 
