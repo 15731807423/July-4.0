@@ -88,7 +88,7 @@ class SpecList
      * @return string
      */
     private function staticData($spec, $list): array
-    {
+    {var_dump($this->attrData);die;
         // 使用配置信息的规格的名称
         $specName = $spec->getKey();
 
@@ -248,7 +248,7 @@ class SpecList
 
         $data['config']['search']['field'] = $search;
         $data['config']['screen']['list'] = $screen;
-
+var_dump($data);die;
         return $data;
     }
 

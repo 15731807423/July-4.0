@@ -16,6 +16,9 @@ var dataPanel = Vue.createApp({
             // 全部数据的集合 对象数组
             list: [],
 
+            // 重置的配置信息 默认resetInside
+            reset: {},
+
             // 搜索的配置信息 默认searchInside
             search: {},
 
@@ -185,6 +188,20 @@ var dataPanel = Vue.createApp({
                 list: []
             },
 
+            // 重置的默认配置信息
+            resetInside: {
+                // 重置按钮的状态
+                status: true,
+
+                // 重置按钮的文本
+                text: 'reset',
+
+                // 重置按钮的类名
+                class: 'data-reset-button'
+
+                // ... 组件配置
+            },
+
             // 模式选择器的默认配置信息
             selectorInside: {
                 value: '',
@@ -342,6 +359,7 @@ var dataPanel = Vue.createApp({
     methods: {
         init() {
             this.list = list;
+            this.reset = config.reset;
             this.search = config.search;
             this.screen = config.screen;
             this.selector = config.selector;
@@ -374,6 +392,9 @@ var dataPanel = Vue.createApp({
 
         // 处理组件配置
         handleComponentConfig() {
+            // 处理重置配置
+            this.resetInside = this.configTemplateRecursion(this.reset, this.resetInside);
+
             // 处理搜索配置
             this.searchInside = this.configTemplateRecursion(this.search, this.searchInside);
             if (this.searchInside.field === '*') this.searchInside.field = Object.keys(this.list[0]);
@@ -574,13 +595,15 @@ var dataPanel = Vue.createApp({
         },
 
         // 根据关键词对可搜索的字段筛选查询
-        searchFunc(list) {
+        searchFunc(list, value = false) {
             if (this.keywords.length > 0 && this.searchInside.field.length == 0) {
+                if (value) return [];
                 this.screenList = [];
                 return false;
             }
 
             if (!this.searchInside.status || this.keywords.length == 0) {
+                if (value) return list;
                 this.screenList = list;
                 return false;
             }
@@ -590,7 +613,7 @@ var dataPanel = Vue.createApp({
                 let searchValue = [];
 
                 for (var j = 0; j < this.searchInside.field.length; j++) {
-                    if (list[i][this.searchInside.field[j]] === undefined) continue;
+                    if (list[i][this.searchInside.field[j]] === undefined || list[i][this.searchInside.field[j]] === null) continue;
 
                     let value = this.searchInside.caseSensitive
                     ? list[i][this.searchInside.field[j]].toString()
@@ -611,6 +634,8 @@ var dataPanel = Vue.createApp({
                     }
                 }
             }
+
+            if (value) return screenList;
 
             this.screenList = screenList;
         },
@@ -671,7 +696,7 @@ var dataPanel = Vue.createApp({
             // 显示数值或隐藏空都需要计算 否则不计算
             if (!this.screenInside.countStatus && !this.screenInside.nullHidden) return false;
 
-            var list = this.assign(this.list);
+            var list = this.searchFunc(this.assign(this.list), true);
 
             if (this.screenInside.type == 1 || this.screenInside.type == 2) {
                 // 耗时0.5 - 0.6
@@ -706,7 +731,7 @@ var dataPanel = Vue.createApp({
 
             if (this.screenInside.type == 4) {
                 for (let key in this.screenAll) {
-                    var list = this.assign(this.list);
+                    var list = this.searchFunc(this.assign(this.list), true);
 
                     for (let key2 in this.screenAll) {
                         if (key == key2) continue;

@@ -150,6 +150,24 @@
 
         <p class="split-line"></p>
 
+        <template v-if="settings['specList.search.status'] || settings['specList.screen.status']">
+            <!-- 重置全部按钮的状态 -->
+            @include('spec_list.switch', ['data' => $items['specList.reset.status'], 'index' => 'specList.reset.status'])
+
+            <template v-if="settings['specList.reset.status']">
+                <!-- 重置按钮的文本 -->
+                @include('spec_list.input', ['data' => $items['specList.reset.text'], 'index' => 'specList.reset.text', 'class' => 'indent-2'])
+
+                <!-- 重置按钮的class -->
+                @include('spec_list.input', ['data' => $items['specList.reset.class'], 'index' => 'specList.reset.class', 'class' => 'indent-2'])
+
+                <!-- 重置按钮的组件配置 -->
+                @include('spec_list.textarea', ['data' => $items['specList.reset.componentConfig'], 'index' => 'specList.reset.componentConfig', 'class' => 'indent-2'])
+            </template>
+
+            <p class="split-line"></p>
+        </template>
+
         <!-- class -->
         @include('spec_list.input', ['data' => $items['specList.selector.class'], 'index' => 'specList.selector.class'])
 

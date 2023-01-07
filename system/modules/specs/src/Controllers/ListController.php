@@ -95,7 +95,7 @@ class ListController extends Controller
     public function list(Spec $spec): string
     {
         if ($spec->getKey()) $this->model->specs = [$spec->getKey()];
-// var_dump($this->staticSpec(true), (new Twig()));
+
         $this->model->setConfig([
             // 'specList.model' => 'dynamic',
             'specList.cuttingSymbol' => ',',

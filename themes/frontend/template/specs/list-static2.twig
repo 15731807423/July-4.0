@@ -2,11 +2,32 @@
 
 <div id="specs{{ number }}">
 	<div :class="className">
-		{# 放搜索功能的div 关闭搜索功能后div消失 #}
+		{# 放重置功能的div 关闭重置功能后div消失 #}
+        <div v-if="resetInside.status" :class="resetInside.class">
+            {# 重置按钮 #}
+            <el-button
+                :class="resetInside.class"
+                :size="resetInside.size"
+                :type="resetInside.type"
+                :plain="resetInside.plain"
+                :round="resetInside.round"
+                :circle="resetInside.circle"
+                :loading="resetInside.loading"
+                :loading-icon="resetInside.loadingIcon"
+                :disabled="resetInside.disabled"
+                :icon="resetInside.icon"
+                :autofocus="resetInside.autofocus"
+                :native-type="resetInside.nativeType"
+                :auto-insert-space="resetInside.autoInsertSpace"
+                @click="screenClear(), keywords = ''"
+            >{{'{{'}} resetInside.text {{'}}'}}</el-button>
+        </div>
+
+        {# 放搜索功能的div 关闭搜索功能后div消失 #}
         <div v-if="searchInside.status" :class="searchInside.class">
-        	{# 搜索框 #}
+            {# 搜索框 #}
             <el-input
-            	v-if="searchInside.status"
+                v-if="searchInside.status"
                 v-model="keywords"
                 :class="searchInside.inputConfig.class"
                 :type="searchInside.inputConfig.type"
@@ -318,7 +339,11 @@
                             :filter-multiple="item.filterMultiple"
                             :filter-method="item.filterMethod"
                             :filtered-value="item.filteredValue"
-                        ></el-table-column>
+                        >
+                            <template #default="scope">
+                                <span v-html="scope.row[item.field]"></span>
+                            </template>
+                        </el-table-column>
                     </el-table>
 
                     <template v-if="listItem.length > 0 && (!selectorInside || selectorInside.value == 'list')">
@@ -544,6 +569,20 @@
 	                list: []
 	            },
 
+                // 重置的默认配置信息
+                resetInside: {
+                    // 重置按钮的状态
+                    status: true,
+
+                    // 重置按钮的文本
+                    text: 'reset',
+
+                    // 重置按钮的类名
+                    class: 'data-reset-button'
+
+                    // ... 组件配置
+                },
+
 	            // 模式选择器的默认配置信息
 	            selectorInside: {
 	                value: '',
@@ -704,6 +743,7 @@
 				this.search = config.search;
 				this.screen = config.screen;
 				this.selector = config.selector;
+                this.reset = config.reset;
 				this.table = table;
 				this.listItem = listItem;
 				this.pagination = config.pagination;
@@ -733,8 +773,11 @@
 
 	        // 处理组件配置
 	        handleComponentConfig() {
-	            // 处理搜索配置
-	            this.searchInside = this.configTemplateRecursion(this.search, this.searchInside);
+	            // 处理重置配置
+	            this.resetInside = this.configTemplateRecursion(this.reset, this.resetInside);
+
+                // 处理搜索配置
+                this.searchInside = this.configTemplateRecursion(this.search, this.searchInside);
 	            if (this.searchInside.field === '*') this.searchInside.field = Object.keys(this.list[0]);
 
 	            // 处理筛选配置
@@ -933,46 +976,50 @@
 	        },
 
 	        // 根据关键词对可搜索的字段筛选查询
-	        searchFunc(list) {
-	            if (this.keywords.length > 0 && this.searchInside.field.length == 0) {
-	                this.screenList = [];
-	                return false;
-	            }
+            searchFunc(list, value = false) {
+                if (this.keywords.length > 0 && this.searchInside.field.length == 0) {
+                    if (value) return [];
+                    this.screenList = [];
+                    return false;
+                }
 
-	            if (!this.searchInside.status || this.keywords.length == 0) {
-	                this.screenList = list;
-	                return false;
-	            }
+                if (!this.searchInside.status || this.keywords.length == 0) {
+                    if (value) return list;
+                    this.screenList = list;
+                    return false;
+                }
 
-	            var screenList = [], keywords = this.searchInside.caseSensitive ? this.keywords : this.keywords.toLowerCase();
-	            for (var i = 0; i < list.length; i++) {
-	                let searchValue = [];
+                var screenList = [], keywords = this.searchInside.caseSensitive ? this.keywords : this.keywords.toLowerCase();
+                for (var i = 0; i < list.length; i++) {
+                    let searchValue = [];
 
-	                for (var j = 0; j < this.searchInside.field.length; j++) {
-	                    if (list[i][this.searchInside.field[j]] === undefined) continue;
+                    for (var j = 0; j < this.searchInside.field.length; j++) {
+                        if (list[i][this.searchInside.field[j]] === undefined || list[i][this.searchInside.field[j]] === null) continue;
 
-	                    let value = this.searchInside.caseSensitive
-	                    ? list[i][this.searchInside.field[j]].toString()
-	                    : list[i][this.searchInside.field[j]].toString().toLowerCase();
+                        let value = this.searchInside.caseSensitive
+                        ? list[i][this.searchInside.field[j]].toString()
+                        : list[i][this.searchInside.field[j]].toString().toLowerCase();
 
-	                    if (this.cuttingSymbol.length == 0) {
-	                        searchValue.push(value);
-	                    } else {
-	                        value = value.split(this.cuttingSymbol);
-	                        searchValue = this.merge(searchValue, value);
-	                    }
-	                }
+                        if (this.cuttingSymbol.length == 0) {
+                            searchValue.push(value);
+                        } else {
+                            value = value.split(this.cuttingSymbol);
+                            searchValue = this.merge(searchValue, value);
+                        }
+                    }
 
-	                for (var j = 0; j < searchValue.length; j++) {
-	                    if (searchValue[j].indexOf(keywords) !== -1) {
-	                        screenList.push(list[i]);
-	                        break;
-	                    }
-	                }
-	            }
+                    for (var j = 0; j < searchValue.length; j++) {
+                        if (searchValue[j].indexOf(keywords) !== -1) {
+                            screenList.push(list[i]);
+                            break;
+                        }
+                    }
+                }
 
-	            this.screenList = screenList;
-	        },
+                if (value) return screenList;
+
+                this.screenList = screenList;
+            },
 
 	        // 用户点击进行筛选
 	        screenChange(name) {
@@ -1030,7 +1077,7 @@
 	            // 显示数值或隐藏空都需要计算 否则不计算
 	            if (!this.screenInside.countStatus && !this.screenInside.nullHidden) return false;
 
-	            var list = this.assign(this.list);
+                var list = this.searchFunc(this.assign(this.list), true);
 
 	            if (this.screenInside.type == 1 || this.screenInside.type == 2) {
 	                // 耗时0.5 - 0.6
@@ -1065,7 +1112,7 @@
 
 	            if (this.screenInside.type == 4) {
 	                for (let key in this.screenAll) {
-	                    var list = this.assign(this.list);
+                        var list = this.searchFunc(this.assign(this.list), true);
 
 	                    for (let key2 in this.screenAll) {
 	                        if (key == key2) continue;
