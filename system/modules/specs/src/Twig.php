@@ -74,7 +74,7 @@ class Twig
         $js = self::$js . '<script type="text/javascript">' . file_get_contents(frontend_path() . '/js/list-static2.js') . '</script>';
         if (isset($config['id'])) $js = str_replace('{{ id }}', $config['id'], $js);
 
-        if (is_array($data) && is_double_array($data)) {
+        if (is_array($data) && is_multiple_array($data)) {
             $data = (new \Specs\Controllers\DataController($config))->setData($data)->setSpec($specs)->tplList(true);
         } else {
             $model = new SpecList();
