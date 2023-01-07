@@ -61,8 +61,8 @@ class DataController extends Controller
      * 
      * @return string
      */
-    public function tplList()
+    public function tplList(bool $return = false)
     {
-        return $this->model->tpl();
+        return $this->model->tpl($return);
     }
 }

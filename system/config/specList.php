@@ -35,6 +35,12 @@ return [
 		'class' => null,
 		'allClass' => null
 	],
+	'reset' => [
+		'status' => false,
+		'text' => null,
+		'class' => null,
+		'componentConfig' => null
+	],
 	'selector' => [
 		'class' => null,
 		'list' => [

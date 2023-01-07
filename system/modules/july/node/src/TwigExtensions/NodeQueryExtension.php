@@ -97,8 +97,8 @@ class NodeQueryExtension extends AbstractExtension implements GlobalsInterface
             }),
 
             // 规格
-            new TwigFunction('specsTpl', function ($name, $specs = null, array $config = []) {
-                return Twig::{$name}($specs, $config);
+            new TwigFunction('specsTpl', function ($name, $specs = null, $data = null, array $config = []) {
+                return Twig::{$name}($specs, $data, $config);
             }),
 
             // csrf_field

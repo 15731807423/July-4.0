@@ -90,6 +90,25 @@
 var dataListStatic = {
     template: `
         <div :class="className">
+            <div v-if="resetInside.status" :class="resetInside.class">
+                <el-button
+                    :class="resetInside.class"
+                    :size="resetInside.size"
+                    :type="resetInside.type"
+                    :plain="resetInside.plain"
+                    :round="resetInside.round"
+                    :circle="resetInside.circle"
+                    :loading="resetInside.loading"
+                    :loading-icon="resetInside.loadingIcon"
+                    :disabled="resetInside.disabled"
+                    :icon="resetInside.icon"
+                    :autofocus="resetInside.autofocus"
+                    :native-type="resetInside.nativeType"
+                    :auto-insert-space="resetInside.autoInsertSpace"
+                    @click="screenClear(), keywords = ''"
+                >{{ resetInside.text }}</el-button>
+            </div>
+
             <div v-if="searchInside.status" :class="searchInside.class">
                 <el-input
                     v-if="searchInside.status"
@@ -368,6 +387,7 @@ var dataListStatic = {
                             :table-layout="tableInside.config.tableLayout"
                             :scrollbar-always-on="tableInside.config.scrollbarAlwaysOn"
                             @sort-change="sortChange"
+                            @row-click="handleTableRowClick"
                             style="width: 100%"
                         >
                             <el-table-column
@@ -399,7 +419,11 @@ var dataListStatic = {
                                 :filter-multiple="item.filterMultiple"
                                 :filter-method="item.filterMethod"
                                 :filtered-value="item.filteredValue"
-                            ></el-table-column>
+                            >
+                                <template #default="scope">
+                                    <span v-html="scope.row[item.field]"></span>
+                                </template>
+                            </el-table-column>
                         </el-table>
 
                         <template v-if="listItem.length > 0 && (!selectorInside || selectorInside.value == 'list')">
@@ -437,6 +461,9 @@ var dataListStatic = {
     props: {
         // 全部数据的集合 对象数组
         list: { type: Array, default: [] },
+
+        // 重置的配置信息 默认resetInside
+        reset: { type: Object, default: {} },
 
         // 搜索的配置信息 默认searchInside
         search: { type: Object, default: {} },
@@ -608,6 +635,20 @@ var dataListStatic = {
 
                 // 全部筛选组
                 list: []
+            },
+
+            // 重置的默认配置信息
+            resetInside: {
+                // 重置按钮的状态
+                status: true,
+
+                // 重置按钮的文本
+                text: 'reset',
+
+                // 重置按钮的类名
+                class: 'data-reset-button'
+
+                // ... 组件配置
             },
 
             // 模式选择器的默认配置信息
@@ -785,6 +826,9 @@ var dataListStatic = {
 
         // 处理组件配置
         handleComponentConfig() {
+            // 处理重置配置
+            this.resetInside = this.configTemplateRecursion(this.reset, this.resetInside);
+
             // 处理搜索配置
             this.searchInside = this.configTemplateRecursion(this.search, this.searchInside);
             if (this.searchInside.field === '*') this.searchInside.field = Object.keys(this.list[0]);
@@ -982,6 +1026,11 @@ var dataListStatic = {
             var html = this.listItem;
             for (let key in data) html = html.replaceAll('{ ' + key + ' }', data[key]);
             return html;
+        },
+
+        // 处理表格行的点击事件
+        handleTableRowClick(row, column, event) {
+            if (row.click) (eval(row.click))();
         },
 
         // 根据关键词对可搜索的字段筛选查询

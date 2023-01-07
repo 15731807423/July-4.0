@@ -189,6 +189,31 @@ class SpecList extends SettingGroupBase
             'default' => 'data-screen-all'
         ],
 
+        'specList.reset.status' => [
+            'key' => 'specList.reset.status',
+            'label' => '重置搜索和筛选',
+            'description' => '重置搜索和筛选'
+        ],
+
+        'specList.reset.text' => [
+            'key' => 'specList.reset.text',
+            'label' => '重置按钮的文本',
+            'description' => '重置按钮的文本',
+            'default' => 'reset'
+        ],
+
+        'specList.reset.class' => [
+            'key' => 'specList.reset.class',
+            'label' => '重置按钮的class',
+            'description' => '重置按钮的class'
+        ],
+
+        'specList.reset.componentConfig' => [
+            'key' => 'specList.reset.componentConfig',
+            'label' => '重置按钮组件的配置信息',
+            'description' => '重置按钮组件的配置信息'
+        ],
+
         'specList.selector.class' => [
             'key' => 'specList.selector.class',
             'label' => '模式选择器div的class',
