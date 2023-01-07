@@ -496,8 +496,8 @@ if (!function_exists('post')) {
     }
 }
 
-if (!function_exists('is_double_array')) {
-    function is_double_array(array $data)
+if (!function_exists('is_multiple_array')) {
+    function is_multiple_array(array $data)
     {
         return count($data) != count($data, 1);
     }
