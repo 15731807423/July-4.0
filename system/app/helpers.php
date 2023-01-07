@@ -495,3 +495,10 @@ if (!function_exists('post')) {
         return $data;
     }
 }
+
+if (!function_exists('is_double_array')) {
+    function is_double_array(array $data)
+    {
+        return count($data) != count($data, 1);
+    }
+}
