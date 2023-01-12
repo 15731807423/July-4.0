@@ -502,3 +502,12 @@ if (!function_exists('is_multiple_array')) {
         return count($data) != count($data, 1);
     }
 }
+
+if (!function_exists('check_array_type')) {
+    function check_array_type(array $data)
+    {
+        $values = array_values($data);
+        $diff = array_diff_key($data, $values);
+        return $diff ? 'associative' : 'index';
+    }
+}
