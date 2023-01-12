@@ -45,10 +45,12 @@ return [
 		'class' => null,
 		'list' => [
 			'table' => [
-				'text' => null
+				'text' => null,
+				'default' => true
 			],
 			'list' => [
-				'text' => null
+				'text' => null,
+				'default' => false
 			]
 		],
 		'config' => [
@@ -78,6 +80,7 @@ return [
 		'screenType' => '1',
 		'screenOrder' => '1',
 		'screenDefault' => null,
+		'screenItemOrder' => null,
 		'screenConfig' => null,
 		'screenGroupConfig' => null,
 	]

@@ -1,0 +1,4 @@
+<div v-if="{{ condition }}" :class="screen.selectedClass">
+    <span v-for="item in userSelectedList" @click="screenClear(item.field, item.value)">{{ item.value }}</span>
+    <span @click="screenClear()">{{ screen.clearText }}</span>
+</div>

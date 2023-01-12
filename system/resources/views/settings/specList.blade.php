@@ -174,8 +174,14 @@
         <!-- 表格按钮文本 -->
         @include('spec_list.input', ['data' => $items['specList.selector.list.table.text'], 'index' => 'specList.selector.list.table.text'])
 
+        <!-- 表格默认 -->
+        @include('spec_list.switch', ['data' => $items['specList.selector.list.table.default'], 'index' => 'specList.selector.list.table.default'])
+
         <!-- 列表按钮文本 -->
         @include('spec_list.input', ['data' => $items['specList.selector.list.list.text'], 'index' => 'specList.selector.list.list.text'])
+
+        <!-- 列表默认 -->
+        @include('spec_list.switch', ['data' => $items['specList.selector.list.list.default'], 'index' => 'specList.selector.list.list.default'])
 
         <!-- 模式选择器组件的配置信息 -->
         @include('spec_list.textarea', ['data' => $items['specList.selector.config.componentConfig'], 'index' => 'specList.selector.config.componentConfig'])
@@ -247,14 +253,17 @@
                 @include('spec_list.input', ['data' => $items['specList.specAll.screenOrder'], 'index' => 'specList.specAll.screenOrder', 'class' => 'indent-2'])
 
                 <!-- 筛选默认值 -->
-                @include('spec_list.textarea', ['data' => $items['specList.specAll.screenDefault'], 'index' => 'specList.specAll.screenDefault', 'class' => 'indent-2'])
+                @include('spec_list.input', ['data' => $items['specList.specAll.screenDefault'], 'index' => 'specList.specAll.screenDefault', 'class' => 'indent-2'])
+
+                <!-- 筛选默认值 -->
+                @include('spec_list.input', ['data' => $items['specList.specAll.screenItemOrder'], 'index' => 'specList.specAll.screenItemOrder', 'class' => 'indent-2'])
 
                 <!-- 组件配置 -->
-                @include('spec_list.textarea', ['data' => $items['specList.specAll.screenConfig'], 'index' => 'specList.specAll.screenConfig', 'class' => 'indent-2'])
+                @include('spec_list.input', ['data' => $items['specList.specAll.screenConfig'], 'index' => 'specList.specAll.screenConfig', 'class' => 'indent-2'])
 
                 <!-- 组件group配置 -->
                 <template v-if="settings['specList.specAll.screenType'] == 1 || settings['specList.specAll.screenType'] == 2">
-                    @include('spec_list.textarea', ['data' => $items['specList.specAll.screenGroupConfig'], 'index' => 'specList.specAll.screenGroupConfig', 'class' => 'indent-2'])
+                    @include('spec_list.input', ['data' => $items['specList.specAll.screenGroupConfig'], 'index' => 'specList.specAll.screenGroupConfig', 'class' => 'indent-2'])
                 </template>
             </template>
         </template>

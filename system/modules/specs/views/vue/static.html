@@ -1,0 +1,886 @@
+<script type="text/javascript">
+	const list = {{ list }}, config = {{ config }}, table = {{ table }}, listItem = {{ listItem }};
+
+	const dataPanel = Vue.createApp({
+		data() {
+			return {
+                // 全部数据的集合 对象数组
+                list: list,
+
+                // 搜索和筛选后的集合 对象数组
+				screenList: [],
+
+                // 当前展示的数据的集合 对象数组
+                // currentList: [],
+
+                // 后台规格的配置信息
+                config: config,
+
+                // 表格的配置信息
+                table: table,
+
+                // 列表的布局html
+                listItem: listItem,
+
+                // 当前排序方式
+                currentSort: {},
+
+                // 默认排序方式
+                defaultSort: {},
+
+                // 用户选择的筛选项的顺序
+                screenSort: [],
+
+                // 搜索的关键词
+                keywords: config.search.default || '',
+
+                // 全部筛选信息
+                screenAll: config.screen.group[0],
+
+                // 当前筛选信息
+				screenAllSelected: config.screen.group[1],
+
+                // 每个组件的配置信息
+                reset: config.reset,
+                search: config.search,
+                screen: config.screen,
+                selector: config.selector,
+                pagination: config.pagination,
+			};
+		},
+
+		mounted() {
+			this.init();
+		},
+
+	    computed: {
+			// 处理分页
+	    	currentList() {
+				return this.assign(this.screenList).slice((this.pagination.currentPage - 1) * this.pagination.pageSize, this.pagination.currentPage * this.pagination.pageSize);
+	    	},
+
+	        // 用户的筛选信息
+	        userSelectedList() {
+	            var list = [];
+
+	            for (let key in this.screenAllSelected) {
+	                let item = this.screenAllSelected[key];
+
+                    item.type == 1 && this.screenEffect(key) && list.push({ field: key, value: item.value });
+
+	                if (item.type == 2 && this.screenEffect(key)) {
+	                    for (var i = 0; i < item.value.length; i++) list.push({ field: key, value: item.value[i] });
+	                }
+
+	                if (item.type == 3 && this.screenEffect(key)) {
+	                    item.value instanceof Array && list.push({ field: key, value: item.value[0] + ' - ' + item.value[1] });
+	                    typeof item.value == 'string' && list.push({ field: key, value: item.value });
+	                }
+
+	                if (item.type == 4 && this.screenEffect(key)) {
+	                    if (item.config.type == 'date' || item.config.type == 'datetime') {
+	                        list.push({ field: key, value: this.date(item.value, true) });
+	                    } else if (item.config.type == 'datetimerange') {
+	                        let range = this.dateRange(item.value, item.config.type);
+	                        list.push({ field: key, value: this.date(range[0], true) + ' - ' + this.date(range[1], true) });
+	                    } else if (item.config.type == 'dates') {
+	                        for (var i = 0; i < item.value.length; i++) list.push({ field: key, value: this.date(item.value[i], false) });
+	                    } else {
+	                        let range = this.dateRange(item.value, item.config.type);
+	                        list.push({ field: key, value: this.date(range[0], false) + ' - ' + this.date(range[1], false) });
+	                    }
+	                }
+
+	                if (item.type == 5 && this.screenEffect(key)) {
+	                    if (item.value instanceof Array) for (var i = 0; i < item.value.length; i++) list.push({ field: key, value: item.value[i] });
+	                    (typeof item.value == 'string' || typeof item.value == 'number') && list.push({ field: key, value: item.value });
+	                }
+	            }
+
+	            return list;
+	        }
+	    },
+
+		methods: {
+			data() {
+				return {
+					list: this.assign(this.list),
+					screenList: this.assign(this.screenList),
+					currentList: this.assign(this.currentList),
+					config: this.assign(this.config),
+					table: this.assign(this.table),
+					listItem: this.assign(this.listItem),
+					currentSort: this.assign(this.currentSort),
+					defaultSort: this.assign(this.defaultSort),
+					keywords: this.assign(this.keywords),
+					userSelectedList: this.assign(this.userSelectedList),
+					screenAll: this.assign(this.screenAll),
+					screenAllSelected: this.assign(this.screenAllSelected),
+					reset: this.assign(this.reset),
+					search: this.assign(this.search),
+					screen: this.assign(this.screen),
+					selector: this.assign(this.selector),
+					pagination: this.assign(this.pagination),
+				};
+			},
+
+			init() {
+				if (this.table.status && this.listItem) {
+					// 处理选择器的默认值
+		        	for (let key in this.selector.list) {
+		        		this.selector.list[key].default === true && (this.selector.value = key);
+		        	}
+		        	this.selector.value || (this.selector.value = Object.keys(this.selector.list)[0]);
+				} else {
+					// 不需要选择器
+					this.selector = false;
+				}
+
+	        	if (this.table.status) {
+		        	// 处理默认排序
+		        	for (let i = 0; i < this.table.column.length; i++) {
+		        		let item = this.table.column[i];
+		        		item.sortableDefaultField && (this.defaultSort = { prop: item.field, order: item.sortableDefaultMode });
+		        	}
+
+		        	// 当前排序
+		        	this.currentSort = this.defaultSort;
+	        	}
+
+	        	// 加载数据
+	        	this.handleData();
+	        	console.log(this.data())
+	        },
+
+	        /**
+	         * 用户操作后更新显示的数据
+	         * @param  {String} source 来源
+	         */
+	        handleData(source = null) {
+                // 没有数据 不执行
+                if (this.list.length == 0) return false;
+
+	        	// 如果没有开启 不执行
+	            if (source === 'searchInput' && !this.search.inputConfig.onInput) return false;
+	            if (source === 'searchChange' && !this.search.inputConfig.onChange) return false;
+
+	            // 加载中
+	            const loading = this.loading();
+
+                // 计算出每个筛选选项的数量
+                setTimeout(() => {
+                    this.screen.status && this.screenStatistics();
+                }, 30);
+
+	            // 处理搜索
+	            this.handleSearch();
+
+	            // 处理筛选
+	            this.handleScreen();
+
+	            // 处理排序
+	            this.handleSort();
+
+	            // 关闭加载中
+	            loading && loading.close();
+	        },
+
+	        /**
+	         * 处理搜索 把搜索后的结果赋值给screenList
+	         * @param  {Boolean}    value 是否返回值而不是赋值
+	         * @return {Array|null}       结果
+	         */
+	        handleSearch(value = false) {
+	        	const list = this.filter(this.list, this.search.fields, this.keywords, this.search.caseSensitive, false);
+
+	        	if (value) return list;
+
+	        	this.screenList = list;
+	        },
+
+	        /**
+	         * 处理筛选 把筛选后的结果赋值给screenList
+	         * @param  {Boolean}    value 是否返回值而不是赋值
+	         * @return {Array|null}       结果
+	         */
+			handleScreen(value = false) {
+				// 如果没开启筛选 退出
+				if (!this.screen.status) return false;
+
+				// 定义需要的变量
+	            var screenList = [], condition = {};
+
+	            // 循环每个筛选组 生效的筛选组放进条件里
+	            for (var key in this.screenAllSelected) this.screenEffect(key) && (condition[key] = this.screenAllSelected[key]);
+
+	            // 没有条件则不需要处理 退出
+	            if (Object.keys(condition).length == 0) return false;
+
+	        	// 循环每条数据 判断是否符合条件 符合条件放进数组
+	            for (var i = 0; i < this.screenList.length; i++) {
+	                this.screenCheckData(this.screenList[i], condition) && screenList.push(this.screenList[i]);
+	            }
+
+	        	if (value) return screenList;
+
+	        	this.screenList = screenList;
+			},
+
+			/**
+			 * 处理排序
+			 */
+			handleSort() {
+				const _this = this,
+					number = typeof this.list[0][this.currentSort['prop']] == 'number',
+					order = this.currentSort.order,
+					field = this.currentSort.prop;
+
+	            if (number && order == 'asc') {
+	                var func = (a, b) => {
+	                	return _this.sortFunc(a[field], b[field], 1);
+	                }
+	            } else if (number && order == 'desc') {
+	                var func = (a, b) => {
+	                	return _this.sortFunc(b[field], a[field], 1);
+	                }
+	            } else if (!number && order == 'asc') {
+	                var func = (a, b) => {
+	                    if (a[field] === undefined && b[field] === undefined) {
+	                        return 0;
+	                    } else if (a[field] === undefined) {
+	                        return 1;
+	                    } else if (b[field] === undefined) {
+	                        return -1;
+	                    }
+
+	                    a = _this.config.sortCaseSensitive ? a[field] : a[field].toLowerCase();
+	                    b = _this.config.sortCaseSensitive ? b[field] : b[field].toLowerCase();
+
+	                    return _this.sortFunc(a, b, 2);
+	                }
+	            } else if (!number && order == 'desc') {
+	                var func = (a, b) => {
+	                    if (a[field] === undefined && b[field] === undefined) {
+	                        return 0;
+	                    } else if (a[field] === undefined) {
+	                        return -1;
+	                    } else if (b[field] === undefined) {
+	                        return 1;
+	                    }
+
+	                    a = _this.config.sortCaseSensitive ? a[field] : a[field].toLowerCase();
+	                    b = _this.config.sortCaseSensitive ? b[field] : b[field].toLowerCase();
+
+	                    return _this.sortFunc(b, a, 2);
+	                }
+	            }
+
+	            this.screenList = this.screenList.sort(func);
+			},
+
+			/**
+			 * 将传进来的html中的属性转换成对应的值
+			 * @param  {Object} data 一条数据
+			 * @return {String}      结果
+			 */
+			handleHtml(data) {
+	            var html = this.assign(this.listItem);
+	            for (let key in data) html = html.replaceAll('{ ' + key + ' }', data[key]);
+	            return html;
+			},
+
+	        /**
+	         * 处理表格行的点击事件
+	         * @param  {[Object]} row    行数据
+	         * @param  {[Object]} column 列数据
+	         * @param  {[Object]} event  事件
+	         */
+	        handleTableRowClick(row, column, event) {
+	            row.click && (eval(row.click))();
+	        },
+
+			/**
+			 * 判断一个筛选组是否进行了筛选
+			 * @param  {String}  name 筛选组名字
+			 * @return {Boolean}      结果
+			 */
+			screenEffect(name) {
+				return this.screenAllSelected[name].value && JSON.stringify(this.screenAll[name].all) != JSON.stringify(this.screenAllSelected[name].value);
+			},
+
+			/**
+			 * 判断一条数据是否符合条件
+			 * @param  {Object}  data       数据
+			 * @param  {Object}  conditions 条件
+			 * @return {Boolean}            符合吗
+			 */
+			screenCheckData(data, conditions) {
+				// 循环每个条件 判断这条数据是否符合 条件属于并列关系 只要有一个条件不符合就返回false
+				for (let key in conditions) {
+					// 值和条件
+					let value = data[key], condition = conditions[key], cuttingSymbol = this.config.cuttingSymbol;
+
+					// 值不存在时为假
+					if (value === undefined) return false;
+
+					// 不同的筛选类型分别处理
+					switch (condition.type) {
+						case 1:
+							// 切割值
+							value = typeof value == 'number' ? [value] : (cuttingSymbol ? value.split(cuttingSymbol) : [value]);
+
+							// 如果条件的值不在数组里 不通过
+							if (condition.value != 'All' && value.indexOf(condition.value) === -1) return false;
+							break;
+
+						case 2:
+							// 切割值
+							value = typeof value == 'number' ? [value] : (cuttingSymbol ? value.split(cuttingSymbol) : [value]);
+
+							// 如果值和条件没有交集 不通过
+							if (condition.value.length > 0 && this.intersect(value, condition.value).length == 0) return false;
+							break;
+
+						case 3:
+							// 转小数
+							value = parseFloat(value);
+
+							// 如果是范围 判断在不在范围内 否则判断是否相等
+							if (this.screenAll[key].config.range === true) {
+								if (value < condition.value[0] || value > condition.value[1]) return false;
+							} else {
+								if (value != condition.value) return false;
+							}
+							break;
+
+						case 4:
+							// 转时间戳并获取条件的日期范围
+							value = typeof value == 'number' ? value : parseInt(Date.parse(value) / 1000);
+							date = this.dateRange(condition.value, condition.config.type);
+
+							// 如果是天多选 循环每一天 判断有没有合法的 否则判断在不在范围内
+							if (condition[key].config.type == 'dates') {
+		                        var status = false;
+		                        for (let i = 0; i < date.length; i++) value >= date[i][0] && value <= date[i][1] && (status = true);
+		                        return status;
+		                    } else {
+		                        if (value < date[0] || value > date[1]) return false;
+		                    }
+							break;
+
+						case 5:
+							// 切割值
+							value = typeof value == 'number' ? [value] : (cuttingSymbol ? value.split(cuttingSymbol) : [value]);
+
+							// 如果是多选
+							if (this.screenAll[key].config.multiple === true) {
+								// 如果值和条件没有交集 不通过
+								if (condition.value.length > 0 && this.intersect(value, condition.value).length == 0) return false;
+							} else {
+								// 如果条件的值不在数组里 不通过
+								if (condition.value != 'All' && value.indexOf(condition.value) === -1) return false;
+							}
+							break;
+					}
+				}
+
+	            return true;
+			},
+
+	        /**
+	         * 用户点击进行筛选
+	         * @param  {String} name 筛选组名称
+	         */
+	        screenChange(name) {
+	            var index = Object.keys(this.screenAll).indexOf(name);
+
+	            // 点击筛选时重置下级组
+	            if (this.screen.type == 2) {
+	                var i = -2;
+	                for (let key in this.screenAllSelected) {
+	                    i++;
+	                    if (i < index) continue;
+	                    this.screenAllSelected[key] = this.screenReset(key);
+	                }
+	            }
+
+	            // 把点击的顺序存进数组
+	            if (this.screen.type == 3) {
+	                if (this.screenSort.indexOf(name) === -1) {
+	                    this.screenSort.push(name);
+	                } else {
+	                    this.screenSort.splice(this.screenSort.indexOf(name), 1);
+	                    this.screenSort.push(name);
+	                }
+	            }
+
+	            this.handleData();
+	        },
+
+	        /**
+	         * 计算每个筛选项对应数据的数量
+	         */
+	        screenStatistics() {
+	            // 显示数值或隐藏空都需要计算 否则不计算
+	            if (!this.screen.countStatus && !this.screen.nullHidden) return false;
+
+	            // 搜索后的数据
+	            var list = this.handleSearch(true);
+
+	            // 逐级计算数量
+	            if (this.screen.type == 1 || this.screen.type == 2) {
+	                // 耗时0.5 - 0.6
+	                for (let key in this.screenAll) {
+	                	// 根据集合计算筛选组里每个筛选项对应的数据数量
+	                    this.screenGroupCount(list, key);
+
+	                    // 如果这个筛选组生效了 获取筛选后的数据继续循环
+	                    this.screenEffect(key) && (list = this.checkList(list, key, this.screenAllSelected[key]));
+	                }
+	            }
+
+	            // 根据用户点击顺序计算 没有点击的按默认顺序
+	            if (this.screen.type == 3) {
+	            	// 先处理用户筛选过的筛选组
+	                for (var i = 0; i < this.screenSort.length; i++) {
+	                	// 根据集合计算筛选组里每个筛选项对应的数据数量
+	                    this.screenGroupCount(list, this.screenSort[i]);
+
+	                    // 如果这个筛选组生效了 获取筛选后的数据继续循环
+	                    this.screenEffect(this.screenSort[i]) && (list = this.checkList(list, this.screenSort[i], this.screenAllSelected[this.screenSort[i]]));
+	                }
+
+	                // 再处理没有筛选过的筛选组
+	                for (let key in this.screenAll) {
+	                    if (this.screenSort.indexOf(key) !== -1) continue;
+
+						// 根据集合计算筛选组里每个筛选项对应的数据数量
+	                    this.screenGroupCount(list, key);
+
+	                    // 如果这个筛选组生效了 获取筛选后的数据继续循环
+	                    this.screenEffect(key) && (list = this.checkList(list, key, this.screenAllSelected[key]));
+	                }
+	            }
+
+	            // 计算每个筛选组的数量时都是基于其他筛选组筛选后的结果
+	            if (this.screen.type == 4) {
+	            	// 处理每一组
+	                for (let key in this.screenAll) {
+	                    var list = this.handleSearch(true);
+
+	                    // 不处理自己 其他组如果生效了 获取筛选结果
+	                    for (let key2 in this.screenAll) {
+	                        if (key == key2) continue;
+
+	                        this.screenEffect(key2) && (list = this.checkList(list, key2, this.screenAllSelected[key2]));
+	                    }
+
+						// 根据集合计算筛选组里每个筛选项对应的数据数量
+	                    this.screenGroupCount(list, key);
+	                }
+	            }
+
+	            // 如果已选择的选项因为数量为0被隐藏了 重置该组
+	            this.screenCheckHidden();
+	        },
+
+	        /**
+	         * 根据集合计算筛选组里每个筛选项对应的数据数量
+	         * @param  {Array}  list 数据
+	         * @param  {String} name 筛选项名称
+	         */
+	        screenGroupCount(list, name) {
+	            if (this.screen.groupCountType.indexOf(this.screenAll[name].type) === -1) return false;
+
+	            for (var i = 0; i < this.screenAll[name].list.length; i++) {
+	                let value = { type: this.screenAll[name].type, value: this.screenAll[name].list[i].name };
+	                (value.type == 2 || this.screenAll[name].config.multiple === true) && (value.value = [value.value]);
+	                this.screenAll[name].list[i].count = this.checkList(list, name, value).length;
+	            }
+	        },
+
+	        /**
+	         * 取消某一个筛选或全部筛选
+	         * @param  {String} name  筛选的名字
+	         * @param  {Mixed}  value 筛选的值
+	         */
+	        screenClear(name = null, value = null) {
+	            if (name === null && value === null) {
+	            	// 如果为空 表示取消全部筛选 重置全部已筛选并清空筛选顺序
+	                for (let key in this.screenAllSelected) this.screenAllSelected[key] = this.screenReset(key);
+	                this.screenSort = [];
+	            } else {
+	            	// 如果是多选 值为数组 删除数组中指定的值 否则为字符串 直接重置
+	                if (this.screenAllSelected[name].type == 2 || (this.screenAllSelected[name].type == 4 && this.screenAllSelected[name].config.type == 'dates') || (this.screenAllSelected[name].type == 5 && this.screenAllSelected[name].value instanceof Array)) {
+	                    this.screenAllSelected[name].value.splice(this.screenAllSelected[name].value.indexOf(value), 1);
+	                } else {
+	                    this.screenAllSelected[name] = this.screenReset(name);
+	                }
+
+	                // 如果清空的筛选信息在顺序里 删除
+	                if (this.screenSort.length > 0 && this.screenSort.indexOf(name) !== -1) {
+	                    this.screenSort.splice(this.screenSort.indexOf(name), 1);
+	                }
+	            }
+
+	            this.handleData();
+	        },
+
+	        /**
+	         * 根据筛选结果的类型返回重置结果
+	         * @param  {String} name  筛选项名称
+	         * @param  {Mined}  value 重置后的值 默认全部
+	         * @return {Object}       重置后的结果
+	         */
+	        screenReset(name, value = null) {
+	            return { 
+	            	type: this.screenAll[name].type,
+	            	value: value === null ? this.screenAll[name].all : value,
+	            	config: this.screenAll[name].config
+	            };
+	        },
+
+	        /**
+	         * 过滤不显示的筛选项
+	         * @param  {Object} data 筛选组信息
+	         * @return {Array}       结果
+	         */
+            screenItem(data) {
+                var list = [];
+                for (var i = 0; i < data.list.length; i++) {
+                    (this.screen.groupCountType.indexOf(data.type) == -1
+                    	|| data.list[i].count > 0
+                    	|| !this.screen.nullHidden)
+                    && list.push({
+                    	name: data.list[i].name,
+                    	count: this.screen.countStatus && this.screen.groupCountType.indexOf(data.type) != -1 ? '(' + data.list[i].count + ')' : ''
+                    });
+                }
+                return list;
+            },
+
+            /**
+             * 判断筛选组的已选择项是否被隐藏 如果隐藏重置该组
+             */
+            screenCheckHidden() {
+                // 如果不隐藏 不执行
+                if (!this.screen.nullHidden) return false;
+
+                // 是否需要重新加载
+                var reload = false;
+
+                // 循环全部筛选组
+                for (let key in this.screenAll) {
+                    // 获取这一组当前的筛选值
+                    let value = this.screenAllSelected[key].value;
+
+                    // 判断筛选类型
+                    switch (this.screenAll[key].type) {
+                        case 1:
+                            // 全选不处理
+                            if (value == 'All') continue;
+
+                            // 单选 获取这个值的数量 如果为0 重置 重载
+                            this.screenGroupItemCount(key, value) == 0 && (this.screenAllSelected[key] = this.screenReset(key), reload = true);
+                            break;
+
+                        case 2:
+                            // 不选不处理
+                            if (value.length == 0) continue;
+
+                            // 循环每个值 把有数据的值放进新数组里
+                            let value2 = [];
+                            for (var i = 0; i < value.length; i++) {
+                                this.screenGroupItemCount(key, value[i]) > 0 && value2.push(value[i]);
+                            }
+
+                            // 数量相同说明没有隐藏的项 不需要处理
+                            if (value.length == value2.length) continue;
+
+                            // 重置成新数组 重载
+                            this.screenAllSelected[key] = this.screenReset(key, value2);
+                            reload = true;
+                            break;
+
+                        case 5:
+                            // 如果是多选
+                            if (this.screenAll[key].config.multiple === true) {
+                                // 不选不处理
+                                if (value.length == 0) continue;
+
+                                // 循环每个值 把有数据的值放进新数组里
+                                let value2 = [];
+                                for (var i = 0; i < value.length; i++) {
+                                    this.screenGroupItemCount(key, value[i]) > 0 && value2.push(value[i]);
+                                }
+
+                                // 数量相同说明没有隐藏的项 不需要处理
+                                if (value.length == value2.length) continue;
+
+                                // 重置成新数组 重载
+                                this.screenAllSelected[key] = this.screenReset(key, value2);
+                                reload = true;
+                            } else {
+                                // 全选不处理
+                                if (value == 'All') continue;
+
+                                // 单选 获取这个值的数量 如果为0 重置 重载
+                                this.screenGroupItemCount(key, value) == 0 && (this.screenAllSelected[key] = this.screenReset(key), reload = true);
+                            }
+                            break;
+                    }
+                }
+
+                reload && this.handleData();
+            },
+
+            /**
+             * 获取一个筛选组中某一项的数据数量
+             * @param  {String} group 组
+             * @param  {String} item  项
+             * @return {Number}       数量
+             */
+            screenGroupItemCount(group, item) {
+                // 循环这一组里全部项
+                for (var i = 0; i < this.screenAll[group].list.length; i++) {
+                    // 如果找到这个名字 返回数量
+                    if (this.screenAll[group].list[i].name == item) return this.screenAll[group].list[i].count;
+                }
+            },
+
+	        /**
+	         * 获取列表里某个属性符合某个值的集合
+	         * @param  {Array}  list  数据列表
+	         * @param  {String} name  属性
+	         * @param  {Mixed}  value 值
+	         * @return {Array}        结果
+	         */
+	        checkList(list, name, value) {
+	            var list2 = [];
+	            for (var i = 0; i < list.length; i++) this.screenCheckData(list[i], { [name]: value }) && list2.push(list[i]);
+	            return list2;
+	        },
+
+	        /**
+	         * 表格排序发生变化
+	         * @param  {Object} data 字段和排序方式
+	         */
+	        sortChange(data) {
+	        	// 如果有排序就用 没有就用默认排序
+	        	this.currentSort = data.order ? { prop: data.prop, order: data.order.replace('ending', '') } : this.defaultSort;
+
+	        	this.handleSort();
+	        },
+
+			/**
+			 * 过滤一个列表 判断指定属性是否包含指定值
+			 * @param  {Array}   list     被过滤的列表
+			 * @param  {Array}   keys     属性列表
+			 * @param  {String}  value    判断的值
+			 * @param  {Boolean} isCase   大小写敏感
+			 * @param  {Boolean} isStrict 严格模式 开启后值必须相等 不开启时包含即可
+			 * @return {Array}            过滤后的值
+			 */
+			filter(list, keys, value, isCase = false, isStrict = false) {
+				// 结果
+				var result = [];
+
+				// 循环每条数据
+				for (let i = 0; i < list.length; i++) {
+					// 循环每个字段
+					for (let j = 0; j < keys.length; j++) {
+						// 列表中的值
+						let data = list[i][keys[j]].toString();
+						value = value.toString();
+
+						// 如果大小写不敏感 全部转小写
+						isCase || (data = data.toLowerCase(), value = value.toLowerCase());
+
+						if (isStrict) {
+							// 严格模式下值相等 放进结果里 终止循环
+							if (data === value) {
+								result.push(list[i]);
+								break;
+							}
+						} else {
+							// 非严格模式下值包含 放进结果里 终止循环
+							if (data.indexOf(value) !== -1) {
+								result.push(list[i]);
+								break;
+							}
+						}
+					}
+				}
+
+				return result;
+			},
+
+	        /**
+	         * 创建并返回一个加载中的弹窗 没有配置会返回null
+	         * 
+	         * @return {[ElLoading, null]}
+	         */
+	        loading() {
+	        	return this.config.loading.status ? ElementPlus.ElLoading.service(this.config.loading.config) : null;
+	        },
+
+	        /**
+	         * 获取时间戳对应时间类型的时间戳范围
+	         * @param  {Mined}  data 时间
+	         * @param  {String} type 时间类型
+	         * @return {Mined}       结果
+	         */
+	        dateRange(data, type) {
+	        	// 如果值是数组且类型不是这两种 一般为开始时间和结束时间 转数字返回即可
+	            if (data instanceof Array && type != 'dates' && type != 'monthrange') {
+	                data[0] = parseInt(data[0]);
+	                data[1] = parseInt(data[1]);
+	                return data;
+	            }
+
+	            // 天多选选择器
+	            if (type == 'dates') {
+	            	// 循环每个时间戳 获取当天 00:00:00 和 23:59:59 的时间戳
+        			for (var i = 0; i < data.length; i++) {
+        				var d = this.timeInfo(parseInt(data[i]) * 1000);
+        				data[i] = [new Date(d.y, d.m, d.d).getTime() / 1000, new Date(d.y, d.m, d.d + 1).getTime() / 1000 - 1];
+        			}
+
+        			return data;
+	            }
+
+	            // 月范围选择器
+	            if (type == 'monthrange') {
+	                // 开始时间当月的第一秒
+    				var d = this.timeInfo(parseInt(data[0]) * 1000);
+	                data[0] = new Date(d.y, d.m, 1).getTime() / 1000;
+
+	                // 结束时间当月的最后一秒
+    				var d = this.timeInfo(parseInt(data[1]) * 1000);
+	                data[1] = new Date(d.y, d.m + 1, 1).getTime() / 1000 - 1;
+
+	                return data;
+	            }
+
+	            // 剩下的情况data为时间戳
+
+	            // 获取时间信息
+	            data = parseInt(data);
+	            var d = this.timeInfo(data * 1000);
+
+	        	switch (type) {
+	        		case 'year':
+	        			// 当年的第一秒和最后一秒
+		                return [new Date(d.y, 0, 1).getTime() / 1000, new Date(d.y + 1, 0, 1).getTime() / 1000 - 1];
+
+	        		case 'month':
+	        			// 当月的第一秒和最后一秒
+		                return [new Date(d.y, d.m, 1).getTime() / 1000, new Date(d.y, d.m + 1, 1).getTime() / 1000 - 1];
+
+	        		case 'date':
+	        			// 当日的第一秒和最后一秒
+		                return [new Date(d.y, d.m, d.d).getTime() / 1000, new Date(d.y, d.m, d.d + 1).getTime() / 1000 - 1];
+
+	        		case 'datetime':
+	        			// 这个是选择了一个时间点 直接返回
+	        			return [data, data];
+
+	        		case 'week':
+	        			// 开始时间往后数一星期
+	        			return [data, data + 86400 * 7 - 1];
+	        	}
+	        },
+
+	        /**
+	         * 根据时间戳获取年月日时分秒
+	         * @param  {Number} time 时间戳
+	         * @return {Object}      时间信息
+	         */
+	        timeInfo(time) {
+	        	const date = new Date(data * 1000),
+	        		y = date.getFullYear(),
+	        		m = date.getMonth(),
+	        		d = date.getDate(),
+	        		h = date.getHours(),
+	        		i = date.getMinutes(),
+	        		s = date.getSeconds();
+
+ 	        	return { y: y, m: m, d: d, h: h, i: i, s: s };
+	        },
+
+	        /**
+	         * 排序函数
+	         * @param  {Mixed}  a 第一个值
+	         * @param  {Mixed}  b 第二个值
+	         * @param  {Number} n 1数字 2字符串
+	         * @param  {Number} i 字符串的下标 两个字符串第一个字符相同时 判断第二个字符 递归
+	         * @return {Number}   结果
+	         */
+	        sortFunc(a, b, n, i = 0) {
+	            if (n == 1) return a - b;
+
+	            if (n == 2) {
+	                if (isNaN(a.charCodeAt(i)) && isNaN(b.charCodeAt(i))) return 0;
+	                if (isNaN(a.charCodeAt(i))) return -1;
+	                if (isNaN(b.charCodeAt(i))) return 1;
+
+	                if (a.charCodeAt(i) == b.charCodeAt(i)) {
+	                    return this.sortFunc(a, b, n, i + 1);
+	                } else {
+	                    return a.charCodeAt(i) - b.charCodeAt(i);
+	                }
+	            }
+	        },
+
+	        /**
+	         * 获取变量的数据
+	         * @param  {Mixed} a 处理前
+	         * @return {Mixed}   处理后
+	         */
+	        assign(a) {
+	            return JSON.parse(JSON.stringify(a));
+	        },
+
+	        /**
+	         * 取数组交集
+	         * @param  {Array} a 数组1
+	         * @param  {Array} b 数组2
+	         * @return {Array}   结果
+	         */
+	        intersect(a, b) {
+	            return a.filter(item => new Set(b).has(item))
+	        },
+
+	        /**
+	         * 合并数组
+	         * @param  {Array} a 数组1
+	         * @param  {Array} b 数组2
+	         * @return {Array}   结果
+	         */
+	        merge(a, b) {
+	            a.push.apply(a, b);
+	            return a;
+	        },
+
+	        /**
+	         * 数组去重
+	         * @param  {Array} a 数组
+	         * @return {Array}   结果
+	         */
+	        unique(a) {
+	            return [...new Set(a)];
+	        }
+	    }
+	})
+	.use(ElementPlus.ElInput)
+	.use(ElementPlus.ElButton)
+	.use(ElementPlus.ElRadio)
+	.use(ElementPlus.ElCheckbox)
+	.use(ElementPlus.ElSlider)
+	.use(ElementPlus.ElDatePicker)
+	.use(ElementPlus.ElSelect)
+	.use(ElementPlus.ElTable)
+	.use(ElementPlus.ElLoading)
+	.use(ElementPlus.ElPagination)
+	.mount('#{{ id }}');
+</script>

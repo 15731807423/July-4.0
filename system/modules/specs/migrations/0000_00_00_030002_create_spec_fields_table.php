@@ -52,6 +52,9 @@ class CreateSpecFieldsTable extends Migration
             // 筛选的默认值
             $table->string('screen_default')->nullable();
 
+            // 筛选的默认值
+            $table->string('screen_item_order')->nullable();
+
             // 组件配置
             $table->string('screen_config')->nullable();
 

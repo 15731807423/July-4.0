@@ -205,7 +205,8 @@ class SpecList extends SettingGroupBase
         'specList.reset.class' => [
             'key' => 'specList.reset.class',
             'label' => '重置按钮的class',
-            'description' => '重置按钮的class'
+            'description' => '重置按钮的class',
+            'default' => 'data-reset'
         ],
 
         'specList.reset.componentConfig' => [
@@ -228,11 +229,25 @@ class SpecList extends SettingGroupBase
             'default' => 'table'
         ],
 
+        'specList.selector.list.table.default' => [
+            'key' => 'specList.selector.list.table.default',
+            'label' => '表格默认展示',
+            'description' => '表格默认展示',
+            'default' => true
+        ],
+
         'specList.selector.list.list.text' => [
             'key' => 'specList.selector.list.list.text',
             'label' => '列表按钮文本',
             'description' => '列表按钮文本',
             'default' => 'list'
+        ],
+
+        'specList.selector.list.list.default' => [
+            'key' => 'specList.selector.list.list.default',
+            'label' => '列表默认展示',
+            'description' => '列表默认展示',
+            'default' => false
         ],
 
         'specList.selector.config.componentConfig' => [
@@ -341,6 +356,12 @@ class SpecList extends SettingGroupBase
             'key' => 'specList.specAll.screenDefault',
             'label' => '筛选默认值',
             'description' => '列表里的‘规格’的筛选默认值',
+        ],
+
+        'specList.specAll.screenItemOrder' => [
+            'key' => 'specList.specAll.screenItemOrder',
+            'label' => '筛选项顺序',
+            'description' => '用‘|’分割每个项，没有设置的项在后面按顺序排序',
         ],
 
         'specList.specAll.screenConfig' => [

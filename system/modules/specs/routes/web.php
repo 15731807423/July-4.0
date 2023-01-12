@@ -40,7 +40,4 @@ Route::get('specs/{spec}/records/{record_id}', [Controllers\RecordController::cl
     ->name('specs.record.show');
 
 // 规格列表页
-Route::get('specs/list/{spec?}', [Controllers\ListController::class, 'list'])->name('specs.list.get');
-
-// 规格列表页
-Route::post('specs/getlist', [Controllers\ListController::class, 'getlist'])->name('specs.getlist.post');
+Route::post('specs/list', [Controllers\VueController::class, 'list'])->name('specs.list.post');

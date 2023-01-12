@@ -9,6 +9,7 @@ use July\Node\CatalogSet;
 use July\Node\NodeSet;
 use July\Node\NodeTypeSet;
 use July\Taxonomy\TermSet;
+use Specs\Vue;
 use Specs\Spec;
 use Specs\Twig;
 use Specs\Controllers\ListController as SpecList;
@@ -86,19 +87,23 @@ class NodeQueryExtension extends AbstractExtension implements GlobalsInterface
                 return current_lang_code($url);
             }),
 
-            // 规格
-            new TwigFunction('specsList', function ($specs = null, $config = []) {
-                return (new SpecList($config))->setSpecs($specs)->tplList();
+            // 加载数据
+            new TwigFunction('specsList', function ($name, array $data = [], array $config = []) {
+                $vue = (new Vue())->setSpec($name)->setConfig($config);
+
+                return ($data ? $vue->setData($data) : $vue)->handleData()->output();
             }),
 
-            // 规格
-            new TwigFunction('specsData', function (array $data, string $name, array $config = []) {
-                return (new SpecData($config))->setData($data)->setSpec($name)->tplList();
-            }),
+            // 加载组件数据
+            new TwigFunction('specsTpl', function (string $tpl, $name = '', array $data = [], array $config = []) {
+                $vue = new Vue();
 
-            // 规格
-            new TwigFunction('specsTpl', function ($name, $specs = null, $data = null, array $config = []) {
-                return Twig::{$name}($specs, $data, $config);
+                if ($tpl == 'js') {
+                    $vue = $vue->setSpec($name)->setConfig($config);
+                    return ($data ? $vue->setData($data) : $vue)->handleData()->call('js');
+                }
+
+                return $vue->call($tpl);
             }),
 
             // csrf_field

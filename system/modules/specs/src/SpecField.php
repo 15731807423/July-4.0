@@ -38,6 +38,7 @@ class SpecField extends ModelBase
         'delta',
         'screen_type',
         'screen_default',
+        'screen_item_order',
         'screen_config',
         'screen_config_group'
     ];
@@ -84,6 +85,7 @@ class SpecField extends ModelBase
             'delta' => 0,
             'screen_type' => 1,
             'screen_default' => null,
+            'screen_item_order' => null,
             'screen_config' => null,
             'screen_config_group' => null
         ];
