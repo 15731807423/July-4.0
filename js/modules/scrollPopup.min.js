@@ -75,10 +75,10 @@ LazyScript.load('jquery', function (global) {
 		// 提交过并且设置了提交后的限制
 		if (data.stopSubmit !== null && submitTime !== null) {
 			// 永久禁用
-			data.stopSubmit === true && frozen = true;
+			data.stopSubmit === true && (frozen = true);
 
 			// 设置时间并且还没到过期时间
-			data.stopSubmit[1] == 's' && submitTime + data.stopSubmit[0] * 1000 > getTime() && frozen = true;
+			data.stopSubmit[1] == 's' && submitTime + data.stopSubmit[0] * 1000 > getTime() && (frozen = true);
 
 			// 设置次数并且还没到规定次数
 			data.stopSubmit[1] == 't' && frozenTimes < data.stopSubmit[0] && (frozen = true, setFrozenTimes(frozenTimes + 1));
@@ -87,10 +87,10 @@ LazyScript.load('jquery', function (global) {
 		// 显示过并且设置了显示后的限制
 		if (data.stopClose !== null && showTime !== null) {
 			// 永久禁用
-			data.stopClose === true && frozen = true;
+			data.stopClose === true && (frozen = true);
 
 			// 设置时间并且还没到过期时间
-			data.stopClose[1] == 's' && showTime + data.stopClose[0] * 1000 > getTime() && frozen = true;
+			data.stopClose[1] == 's' && showTime + data.stopClose[0] * 1000 > getTime() && (frozen = true);
 
 			// 设置次数并且还没到规定次数
 			data.stopClose[1] == 't' && (frozenTimes < data.stopClose[0] ? (frozen = true, setFrozenTimes(frozenTimes + 1)) : setFrozenTimes(0));
