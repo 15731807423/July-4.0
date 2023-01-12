@@ -1,0 +1,17 @@
+<el-button
+    v-if="{{ condition }}"
+    :class="search.buttonConfig.class"
+    :size="search.buttonConfig.size"
+    :type="search.buttonConfig.type"
+    :plain="search.buttonConfig.plain"
+    :round="search.buttonConfig.round"
+    :circle="search.buttonConfig.circle"
+    :loading="search.buttonConfig.loading"
+    :loading-icon="search.buttonConfig.loadingIcon"
+    :disabled="search.buttonConfig.disabled"
+    :icon="search.buttonConfig.icon"
+    :autofocus="search.buttonConfig.autofocus"
+    :native-type="search.buttonConfig.nativeType"
+    :auto-insert-space="search.buttonConfig.autoInsertSpace"
+    @click="handleData"
+>{{ search.buttonConfig.text }}</el-button>

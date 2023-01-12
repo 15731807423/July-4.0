@@ -1,0 +1,162 @@
+<div :class="screen.allClass">
+    <div v-for="(item, key) in screenAll">
+        <span>{{ item.name }}</span>
+
+        <el-radio-group
+            v-if="item.type == 1"
+            v-model="screenAllSelected[key].value"
+            :size="item.configGroup.size"
+            :disabled="item.configGroup.disabled"
+            :text-color="item.configGroup.textColor"
+            :fill="item.configGroup.fill"
+            @change="screenChange(key)"
+        >
+            <template v-if="item.config.button">
+                <el-radio-button
+                    v-for="it in screenItem(item)"
+                    :label="it.name"
+                    :border="item.config.border"
+                    :size="item.config.size"
+                    :name="item.config.name"
+                >{{ it.name }}{{ it.count }}</el-radio-button>
+            </template>
+
+            <template v-else>
+                <el-radio
+                    v-for="it in screenItem(item)"
+                    :label="it.name"
+                    :border="item.config.border"
+                    :size="item.config.size"
+                    :name="item.config.name"
+                >{{ it.name }}{{ it.count }}</el-radio>
+            </template>
+        </el-radio-group>
+
+        <el-checkbox-group
+            v-if="item.type == 2"
+            v-model="screenAllSelected[key].value"
+            :size="item.configGroup.size"
+            :disabled="item.configGroup.disabled"
+            :min="item.configGroup.min"
+            :max="item.configGroup.max"
+            :text-color="item.configGroup.textColor"
+            :fill="item.configGroup.fill"
+            @change="screenChange(key)"
+        >
+            <template v-if="item.config.button">
+                <el-checkbox-button
+                    v-for="it in screenItem(item)"
+                    :label="it.name"
+                    :border="item.config.border"
+                    :size="item.config.size"
+                    :name="item.config.name"
+                >{{ it.name }}{{ it.count }}</el-radio-button>
+            </template>
+
+            <template v-else>
+                <el-checkbox
+                    v-for="it in screenItem(item)"
+                    :label="it.name"
+                    :border="item.config.border"
+                    :size="item.config.size"
+                    :name="item.config.name"
+                >{{ it.name }}{{ it.count }}</el-radio>
+            </template>
+        </el-checkbox-group>
+
+        <el-slider
+            v-if="item.type == 3"
+            v-model="screenAllSelected[key].value"
+            :min="item.config.min"
+            :max="item.config.max"
+            :disabled="item.config.disabled"
+            :step="item.config.step"
+            :show-input="item.config.showInput"
+            :show-input-controls="item.config.showInputControls"
+            :size="item.config.size"
+            :input-size="item.config.inputSize"
+            :show-stops="item.config.showStops"
+            :show-tooltip="item.config.showTooltip"
+            :format-tooltip="item.config.formatTooltip"
+            :range="item.config.range"
+            :vertical="item.config.vertical"
+            :height="item.config.height"
+            :label="item.config.label"
+            :debounce="item.config.debounce"
+            :tooltip-class="item.config.tooltipClass"
+            :marks="item.config.marks"
+            @change="screenChange(key)"
+        ></el-slider>
+
+        <el-date-picker
+            v-if="item.type == 4"
+            v-model="screenAllSelected[key].value"
+            value-format="X"
+            :type="item.config.type"
+            :disabled="item.config.disabled"
+            :editable="item.config.editable"
+            :clearable="item.config.clearable"
+            :size="item.config.size"
+            :placeholder="item.config.placeholder"
+            :start-placeholder="item.config.startPlaceholder"
+            :end-placeholder="item.config.endPlaceholder"
+            :time-arrow-control="item.config.timeArrowControl"
+            :format="item.config.format"
+            :popper-class="item.config.popperClass"
+            :range-separator="item.config.rangeSeparator"
+            :default-value="item.config.defaultValue"
+            :default-time="item.config.defaultTime"
+            :id="item.config.id"
+            :name="item.config.name"
+            :unlink-panels="item.config.unlinkPanels"
+            :prefix-icon="item.config.prefixIcon"
+            :clear-icon="item.config.clearIcon"
+            :shortcuts="item.config.shortcuts"
+            :disabledDate="item.config.disabledDate"
+            :cellClassName="item.config.cellClassName"
+            :teleported="item.config.teleported"
+            @change="screenChange(key)"
+        ></el-date-picker>
+
+        <el-select
+            v-if="item.type == 5"
+            v-model="screenAllSelected[key].value"
+            :multiple="item.config.multiple"
+            :disabled="item.config.disabled"
+            :value-key="item.config.valueKey"
+            :size="item.config.size"
+            :clearable="item.config.clearable"
+            :collapse-tags="item.config.collapseTags"
+            :collapse-tags-tooltip="item.config.collapseTagsTooltip"
+            :multiple-limit="item.config.multipleLimit"
+            :name="item.config.name"
+            :effect="item.config.effect"
+            :autocomplete="item.config.autocomplete"
+            :placeholder="item.config.placeholder"
+            :filterable="item.config.filterable"
+            :allow-create="item.config.allowCreate"
+            :filter-method="item.config.filterMethod"
+            :remote="item.config.remote"
+            :remote-method="item.config.remoteMethod"
+            :loading="item.config.loading"
+            :loading-text="item.config.loadingText"
+            :no-match-text="item.config.noMatchText"
+            :no-data-text="item.config.noDataText"
+            :popper-class="item.config.popperClass"
+            :reserve-keyword="item.config.reserveKeyword"
+            :default-first-option="item.config.defaultFirstOption"
+            :teleported="item.config.teleported"
+            :persistent="item.config.persistent"
+            :automatic-dropdown="item.config.automaticDropdown"
+            :clear-icon="item.config.clearIcon"
+            :fit-input-width="item.config.fitInputWidth"
+            :suffix-icon="item.config.suffixIcon"
+            :tag-type="item.config.tagType"
+            @change="screenChange(key)"
+        >
+            <template v-for="it in item.list">
+                <el-option v-for="it in screenItem(item)" :key="it.name" :label="it.name" :value="it.name">{{ it.name }}{{ it.count }}</el-option>
+            </template>
+        </el-select>
+    </div>
+</div>

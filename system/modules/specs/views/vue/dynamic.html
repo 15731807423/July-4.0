@@ -1,0 +1,385 @@
+<script type="text/javascript">
+	const specs = {{ specs }}, configThis = {{ configThis }}, config = {{ config }}, table = {{ table }}, listItem = {{ listItem }};
+
+	const dataPanel = Vue.createApp({
+		data() {
+			return {
+                // 当前展示的数据的集合 对象数组
+                currentList: [],
+
+                // 后台规格的配置信息
+                config: config,
+
+                // 表格的配置信息
+                table: table,
+
+                // 列表的布局html
+                listItem: listItem,
+
+                // 当前排序方式
+                currentSort: {},
+
+                // 默认排序方式
+                defaultSort: {},
+
+                // 用户选择的筛选项的顺序
+                screenSort: [],
+
+                // 搜索的关键词
+                keywords: config.search.default || '',
+
+                // 全部筛选信息
+                screenAll: config.screen.group[0],
+
+                // 当前筛选信息
+				screenAllSelected: config.screen.group[1],
+
+                // 每个组件的配置信息
+                reset: config.reset,
+                search: config.search,
+                screen: config.screen,
+                selector: config.selector,
+                pagination: config.pagination,
+
+                // 取消axios
+                cancel: null
+			};
+		},
+
+		mounted() {
+			this.init();
+		},
+
+	    watch: {
+	        'pagination.currentPage': {
+	            handler (newVal, oldVal) {
+	                this.handleData();
+	            },
+	            deep: true
+	        },
+
+	        'pagination.pageSize': {
+	            handler (newVal, oldVal) {
+	                this.handleData();
+	            },
+	            deep: true
+	        }
+	    },
+
+	    computed: {
+	        // 用户的筛选信息
+	        userSelectedList() {
+	            var list = [];
+
+	            for (let key in this.screenAllSelected) {
+	                let item = this.screenAllSelected[key];
+
+                    item.type == 1 && this.screenEffect(key, item.value) && list.push({ field: key, value: item.value });
+
+	                if (item.type == 2 && this.screenEffect(key, item.value)) {
+	                    for (var i = 0; i < item.value.length; i++) list.push({ field: key, value: item.value[i] });
+	                }
+
+	                if (item.type == 3 && this.screenEffect(key, item.value)) {
+	                    item.value instanceof Array && list.push({ field: key, value: item.value[0] + ' - ' + item.value[1] });
+	                    typeof item.value == 'string' && list.push({ field: key, value: item.value });
+	                }
+
+	                if (item.type == 4 && this.screenEffect(key, item.value)) {
+	                    if (item.config.type == 'date' || item.config.type == 'datetime') {
+	                        list.push({ field: key, value: this.date(item.value, true) });
+	                    } else if (item.config.type == 'datetimerange') {
+	                        let range = this.dateRange(item.value, item.config.type);
+	                        list.push({ field: key, value: this.date(range[0], true) + ' - ' + this.date(range[1], true) });
+	                    } else if (item.config.type == 'dates') {
+	                        for (var i = 0; i < item.value.length; i++) list.push({ field: key, value: this.date(item.value[i], false) });
+	                    } else {
+	                        let range = this.dateRange(item.value, item.config.type);
+	                        list.push({ field: key, value: this.date(range[0], false) + ' - ' + this.date(range[1], false) });
+	                    }
+	                }
+
+	                if (item.type == 5 && this.screenEffect(key, item.value)) {
+	                    if (item.value instanceof Array) for (var i = 0; i < item.value.length; i++) list.push({ field: key, value: item.value[i] });
+	                    (typeof item.value == 'string' || typeof item.value == 'number') && list.push({ field: key, value: item.value });
+	                }
+	            }
+
+	            return list;
+	        }
+	    },
+
+		methods: {
+			data() {
+				return {
+					currentList: this.assign(this.currentList),
+					config: this.assign(this.config),
+					table: this.assign(this.table),
+					listItem: this.assign(this.listItem),
+					currentSort: this.assign(this.currentSort),
+					defaultSort: this.assign(this.defaultSort),
+					keywords: this.assign(this.keywords),
+					userSelectedList: this.assign(this.userSelectedList),
+					screenAll: this.assign(this.screenAll),
+					screenAllSelected: this.assign(this.screenAllSelected),
+					reset: this.assign(this.reset),
+					search: this.assign(this.search),
+					screen: this.assign(this.screen),
+					selector: this.assign(this.selector),
+					pagination: this.assign(this.pagination),
+				};
+			},
+
+			init() {
+				if (this.table.status && this.listItem) {
+					// 处理选择器的默认值
+		        	for (let key in this.selector.list) {
+		        		this.selector.list[key].default === true && (this.selector.value = key);
+		        	}
+		        	this.selector.value || (this.selector.value = Object.keys(this.selector.list)[0]);
+				} else {
+					// 不需要选择器
+					this.selector = false;
+				}
+
+	        	if (this.table.status) {
+		        	// 处理默认排序
+		        	for (let i = 0; i < this.table.column.length; i++) {
+		        		let item = this.table.column[i];
+		        		item.sortableDefaultField && (this.defaultSort = { prop: item.field, order: item.sortableDefaultMode });
+		        	}
+
+		        	// 当前排序
+		        	this.currentSort = this.defaultSort;
+	        	}
+
+	        	// 加载数据
+	        	this.handleData();
+	        	console.log(this.data())
+	        },
+
+	        /**
+	         * 用户操作后更新显示的数据
+	         * @param  {String} source 来源
+	         */
+	        handleData(source = null) {
+	        	// 如果没有开启 不执行
+	            if (source === 'searchInput' && !this.search.inputConfig.onInput) return false;
+	            if (source === 'searchChange' && !this.search.inputConfig.onChange) return false;
+
+	            // 请求参数
+	            var data = {
+	                search: this.keywords,
+	                screen: {},
+	                sort: this.currentSort,
+	                page: [this.pagination.currentPage, this.pagination.pageSize]
+	            };
+
+	            // 筛选排序
+	            this.screen.type == 3 && (data.screenSort = this.screenSort);
+
+	            // 筛选项
+	            for (let key in this.screenAllSelected) {
+	                this.screenEffect(key) && (data.screen[key] = this.screenAllSelected[key].value);
+	            }
+
+	            // 发送请求
+	            this.send(data);
+	        },
+
+	        /**
+	         * 发送请求
+	         * @param  {Object} data 请求参数
+	         */
+	        send(data) {
+	            if (this.cancel) this.cancel();
+
+	            // 加载中
+	            const loading = this.loading();
+
+	            data.specs = specs;
+	            data.configThis = configThis;
+
+	            axios.post('/specs/list', data, {
+	                cancelToken: new axios.CancelToken(c => this.cancel = c)
+	            }).then(data => {
+	                if (data.status == 200) {
+	                    this.currentList = data.data.list;
+	                    this.screenAll = data.data.screenAll;
+	                    this.pagination.total = data.data.count;
+
+	                    for (let key in this.screenAllSelected) {
+	                    	this.screenAllSelected[key] = this.screenReset(key, data.data.screen[key] || null);
+	                    }
+	                }
+
+		            // 关闭加载中
+		            loading && loading.close();
+	            }).catch(data => {
+		            // 关闭加载中
+		            loading && loading.close();
+	            });
+	        },
+
+			/**
+			 * 将传进来的html中的属性转换成对应的值
+			 * @param  {Object} data 一条数据
+			 * @return {String}      结果
+			 */
+			handleHtml(data) {
+	            var html = this.assign(this.listItem);
+	            for (let key in data) html = html.replaceAll('{ ' + key + ' }', data[key]);
+	            return html;
+			},
+
+	        /**
+	         * 处理表格行的点击事件
+	         * @param  {[Object]} row    行数据
+	         * @param  {[Object]} column 列数据
+	         * @param  {[Object]} event  事件
+	         */
+	        handleTableRowClick(row, column, event) {
+	            row.click && (eval(row.click))();
+	        },
+
+			/**
+			 * 判断一个筛选组是否进行了筛选
+			 * @param  {String}  name 筛选组名字
+			 * @return {Boolean}      结果
+			 */
+			screenEffect(name) {
+				return this.screenAllSelected[name].value && JSON.stringify(this.screenAll[name].all) != JSON.stringify(this.screenAllSelected[name].value);
+			},
+
+	        /**
+	         * 用户点击进行筛选
+	         * @param  {String} name 筛选组名称
+	         */
+	        screenChange(name) {
+	            var index = Object.keys(this.screenAll).indexOf(name);
+
+	            // 点击筛选时重置下级组
+	            if (this.screen.type == 2) {
+	                var i = -2;
+	                for (let key in this.screenAllSelected) {
+	                    i++;
+	                    if (i < index) continue;
+	                    this.screenAllSelected[key] = this.screenReset(key);
+	                }
+	            }
+
+	            // 把点击的顺序存进数组
+	            if (this.screen.type == 3) {
+	                if (this.screenSort.indexOf(name) === -1) {
+	                    this.screenSort.push(name);
+	                } else {
+	                    this.screenSort.splice(this.screenSort.indexOf(name), 1);
+	                    this.screenSort.push(name);
+	                }
+	            }
+
+	            this.handleData();
+	        },
+
+	        /**
+	         * 取消某一个筛选或全部筛选
+	         * @param  {String} name  筛选的名字
+	         * @param  {Mixed}  value 筛选的值
+	         */
+	        screenClear(name = null, value = null) {
+	            if (name === null && value === null) {
+	            	// 如果为空 表示取消全部筛选 重置全部已筛选并清空筛选顺序
+	                for (let key in this.screenAllSelected) this.screenAllSelected[key] = this.screenReset(key);
+	                this.screenSort = [];
+	            } else {
+	            	// 如果是多选 值为数组 删除数组中指定的值 否则为字符串 直接重置
+	                if (this.screenAllSelected[name].type == 2 || (this.screenAllSelected[name].type == 4 && this.screenAllSelected[name].config.type == 'dates') || (this.screenAllSelected[name].type == 5 && this.screenAllSelected[name].value instanceof Array)) {
+	                    this.screenAllSelected[name].value.splice(this.screenAllSelected[name].value.indexOf(value), 1);
+	                } else {
+	                    this.screenAllSelected[name] = this.screenReset(name);
+	                }
+
+	                // 如果清空的筛选信息在顺序里 删除
+	                if (this.screenSort.length > 0 && this.screenSort.indexOf(name) !== -1) {
+	                    this.screenSort.splice(this.screenSort.indexOf(name), 1);
+	                }
+	            }
+
+	            this.handleData();
+	        },
+
+	        /**
+	         * 根据筛选结果的类型返回重置结果
+	         * @param  {String} name  筛选项名称
+	         * @param  {Mined}  value 重置后的值 默认全部
+	         * @return {Object}       重置后的结果
+	         */
+	        screenReset(name, value = null) {
+	            return { 
+	            	type: this.screenAll[name].type,
+	            	value: value === null ? this.screenAll[name].all : value,
+	            	config: this.screenAll[name].config
+	            };
+	        },
+
+	        /**
+	         * 过滤不显示的筛选项
+	         * @param  {Object} data 筛选组信息
+	         * @return {Array}       结果
+	         */
+            screenItem(data) {
+                var list = [];
+                for (var i = 0; i < data.list.length; i++) {
+                    (this.screen.groupCountType.indexOf(data.type) == -1
+                    	|| data.list[i].count > 0
+                    	|| !this.screen.nullHidden)
+                    && list.push({
+                    	name: data.list[i].name,
+                    	count: this.screen.countStatus && this.screen.groupCountType.indexOf(data.type) != -1 ? '(' + data.list[i].count + ')' : ''
+                    });
+                }
+                return list;
+            },
+
+	        /**
+	         * 表格排序发生变化
+	         * @param  {Object} data 字段和排序方式
+	         */
+	        sortChange(data) {
+	        	// 如果有排序就用 没有就用默认排序
+	        	this.currentSort = data.order ? { prop: data.prop, order: data.order.replace('ending', '') } : this.defaultSort;
+
+	        	this.handleData();
+	        },
+
+	        /**
+	         * 创建并返回一个加载中的弹窗 没有配置会返回null
+	         * 
+	         * @return {[ElLoading, null]}
+	         */
+	        loading() {
+	        	return this.config.loading.status ? ElementPlus.ElLoading.service(this.config.loading.config) : null;
+	        },
+
+	        /**
+	         * 获取变量的数据
+	         * @param  {Mixed} a 处理前
+	         * @return {Mixed}   处理后
+	         */
+	        assign(a) {
+	            return JSON.parse(JSON.stringify(a));
+	        }
+	    }
+	})
+	.use(ElementPlus.ElInput)
+	.use(ElementPlus.ElButton)
+	.use(ElementPlus.ElRadio)
+	.use(ElementPlus.ElCheckbox)
+	.use(ElementPlus.ElSlider)
+	.use(ElementPlus.ElDatePicker)
+	.use(ElementPlus.ElSelect)
+	.use(ElementPlus.ElTable)
+	.use(ElementPlus.ElLoading)
+	.use(ElementPlus.ElPagination)
+	.mount('#{{ id }}');
+</script>

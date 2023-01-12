@@ -157,6 +157,11 @@
                 <span class="jc-form-item-help"><i class="el-icon-info"></i> 使用方法见文档</span>
             </el-form-item>
 
+            <el-form-item label="筛选项顺序" size="small">
+                <el-input v-model="currentField.screen_item_order" native-size="60"></el-input>
+                <span class="jc-form-item-help"><i class="el-icon-info"></i> 用‘|’分割每个项，没有设置的项在后面按顺序排序</span>
+            </el-form-item>
+
             <el-form-item label="组件配置" size="small">
                 <el-input v-model="currentField.screen_config" native-size="60"></el-input>
                 <span class="jc-form-item-help"><i class="el-icon-info"></i> 使用方法见文档</span>
