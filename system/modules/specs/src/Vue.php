@@ -954,7 +954,9 @@ class Vue
 
 		foreach ($list as $item) {
 			// 获取这一列出现过的数据并正序排序
-			$data = array_values(array_unique(array_column($this->data, $item['field'])));
+			$data = array_unique(array_column($this->data, $item['field']));
+			foreach ($data as $key => $value) if (is_string($value) && strlen($value) == 0) unset($data[$key]);
+			$data = array_values($data);
 
 			// 如果存在切割符号 循环判断每个值 如果包含符号 用符号切割并合并到数组中
 			if ($this->config['cuttingSymbol']) {
