@@ -87,23 +87,13 @@ class NodeQueryExtension extends AbstractExtension implements GlobalsInterface
                 return current_lang_code($url);
             }),
 
-            // 加载数据
-            new TwigFunction('specsList', function ($name, array $data = [], array $config = []) {
-                $vue = (new Vue())->setSpec($name)->setConfig($config);
-
-                return ($data ? $vue->setData($data) : $vue)->handleData()->output();
-            }),
-
             // 加载组件数据
-            new TwigFunction('specsTpl', function (string $tpl, $name = '', array $data = [], array $config = []) {
+            new TwigFunction('specsVue', function ($name, array $data = [], array $config = []) {
                 $vue = new Vue();
-
-                if ($tpl == 'js') {
-                    $vue = $vue->setSpec($name)->setConfig($config);
-                    return ($data ? $vue->setData($data) : $vue)->handleData()->call('js');
-                }
-
-                return $vue->call($tpl);
+                $vue->setSpec($name)->setConfig($config);
+                $data && $vue->setData($data);
+                $vue->handleData();
+                return $vue;
             }),
 
             // csrf_field

@@ -53,9 +53,7 @@ return [
 				'default' => false
 			]
 		],
-		'config' => [
-			'componentConfig' => null
-		]
+		'componentConfig' => null
 	],
 	'pagination' => [
 		'class' => null,
@@ -65,9 +63,7 @@ return [
 	],
 	'loading' => [
 		'status' => false,
-		'config' => [
-			'componentConfig' => null
-		]
+		'componentConfig' => null
 	],
 	'specAll' => [
 		'specConfig' => null,

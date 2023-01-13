@@ -296,9 +296,9 @@ class Vue
 		$this->handleComponentConfig($this->config['search']['inputConfig']);
 		$this->handleComponentConfig($this->config['search']['buttonConfig']);
 		$this->handleComponentConfig($this->config['reset']);
-		$this->handleComponentConfig($this->config['selector']['config']);
+		$this->handleComponentConfig($this->config['selector']);
 		$this->handleComponentConfig($this->config['pagination']);
-		$this->handleComponentConfig($this->config['loading']['config']);
+		$this->handleComponentConfig($this->config['loading']);
 
 		// int处理
 		$this->int($this->config['screen']['type']);
@@ -382,7 +382,7 @@ class Vue
 		if (!in_array($name, $this->components)) return '';
 
 		// 获取组件的内容并处理条件
-		return $this->handleCondition($this->view($name), $this->conditionCall[$name]);
+		return $this->setComponentConfig($name, $this->viewCall[$name]);
 	}
 
 	/**
@@ -396,6 +396,70 @@ class Vue
 		$this->js = is_null($js) ? '' : $this->js();
 
 		return str_replace(['{{ html }}', '{{ js }}'], [$this->html, $this->js], $this->view('tpl'));
+	}
+
+	/**
+	 * 给组件设置配置信息
+	 * 
+	 * @param  string $name 组件名字
+	 * @param  string $html 组件内容
+	 * @return string
+	 */
+	private function setComponentConfig(string $name, string $html) : string
+	{
+		// 获取配置信息
+		switch ($name) {
+			case 'resetButton':
+				$config = $this->config['reset'];
+				unset($config['status'], $config['text']);
+				$name = 'reset';
+				break;
+
+			case 'searchInput':
+				$config = $this->config['search']['inputConfig'];
+				unset($config['onInput'], $config['onChange']);
+				$name = 'search.inputConfig';
+				break;
+
+			case 'searchButton':
+				$config = $this->config['search']['buttonConfig'];
+				unset($config['status'], $config['text']);
+				$name = 'search.buttonConfig';
+				break;
+
+			case 'selector':
+				$config = $this->config['selector'];
+				unset($config['class'], $config['list']);
+				$name = 'selector.config';
+				break;
+
+			case 'table':
+				$config = $this->renderData['table']['config'];
+				$name = 'table.config';
+				break;
+
+			case 'pagination':
+				$config = $this->config['pagination'];
+				break;
+			
+			default:
+				return $html;
+				break;
+		}
+
+		// 过滤配置信息 已经存在的不要
+		foreach ($config as $key => $value) {
+			// 大驼峰转中划线
+			$attr = $this->snake($key, '-');
+			// 判断是否存在
+			if (strstr($html, $attr) || strstr($html, 'v-model:' . $attr) || strstr($html, '@' . $attr)) {
+				unset($config[$key]);
+				continue;
+			}
+			$config[$key] = ':' . $attr . '="' . $name . '.' . $key . '"';
+		}
+
+		return str_replace('{{ config }}', implode(' ', $config), $html);
 	}
 
 	/**
@@ -431,14 +495,46 @@ class Vue
 	private function html() : string
 	{
 		$whole = [
-			$this->container['resetButton'][0] . str_replace(':class="reset.class"', '', $this->viewTpl['resetButton']) . $this->container['resetButton'][1],
-			$this->container['search'][0] . $this->viewTpl['searchInput'] . $this->viewTpl['searchButton'] . $this->container['search'][1],
-			$this->container['screen'][0] . $this->viewTpl['screenUser'] . $this->viewTpl['screenAll'] . $this->container['screen'][1],
-			$this->container['selector'][0] . str_replace(':class="selector.class"', '', $this->viewTpl['selector']) . $this->container['selector'][1],
-			$this->container['table'][0] . $this->viewTpl['table'] . $this->container['table'][1],
-			$this->container['list'][0] . $this->viewTpl['list'] . $this->container['list'][1],
-			$this->container['pagination'][0] . str_replace(':class="pagination.class"', '', $this->viewTpl['pagination']) . $this->container['pagination'][1],
+			[
+				$this->container['resetButton'][0],
+				$this->setComponentConfig('resetButton', str_replace(':class="reset.class"', '', $this->viewTpl['resetButton'])),
+				$this->container['resetButton'][1]
+			],
+			[
+				$this->container['search'][0],
+				$this->setComponentConfig('searchInput', $this->viewTpl['searchInput']),
+				$this->setComponentConfig('searchButton', $this->viewTpl['searchButton']),
+				$this->container['search'][1]
+			],
+			[
+				$this->container['screen'][0],
+				$this->setComponentConfig('screenUser', $this->viewTpl['screenUser']),
+				$this->setComponentConfig('screenAll', $this->viewTpl['screenAll']),
+				$this->container['screen'][1]
+			],
+			[
+				$this->container['selector'][0],
+				$this->setComponentConfig('selector', str_replace(':class="selector.class"', '', $this->viewTpl['selector'])),
+				$this->container['selector'][1]
+			],
+			[
+				$this->container['table'][0],
+				$this->setComponentConfig('table', $this->viewTpl['table']),
+				$this->container['table'][1]
+			],
+			[
+				$this->container['list'][0],
+				$this->setComponentConfig('list', $this->viewTpl['list']),
+				$this->container['list'][1]
+			],
+			[
+				$this->container['pagination'][0],
+				$this->setComponentConfig('pagination', str_replace(':class="pagination.class"', '', $this->viewTpl['pagination'])),
+				$this->container['pagination'][1]
+			]
 		];
+
+		foreach ($whole as $key => $value) $whole[$key] = implode('', $value);
 
 		return str_replace('{{ id }}', $this->id, $this->container['whole'][0]) . implode('', $whole) . $this->container['whole'][1];
 	}
@@ -804,8 +900,7 @@ class Vue
 						'text'				=> 'list',
 						'default'			=> false
 					],
-				],
-				'config'			=> []
+				]
 			],
 			'pagination'		=> [
 				'class'				=> 'pagination',
@@ -813,8 +908,7 @@ class Vue
 				'currentPage'		=> 1
 			],
 			'loading'			=> [
-				'status'			=> false,
-				'config'			=> []
+				'status'			=> false
 			],
 			'specAll'			=> [
 				'specConfig'		=> null,
@@ -871,7 +965,7 @@ class Vue
 			$item['type'] == 1 && $all = 'All';
 			$item['type'] == 2 && $all = [];
 			$item['type'] == 3 && $all = ($item['config']['range'] ?? null) === true ? [$item['config']['min'] ?? 0, $item['config']['max'] ?? 100] : 0;
-			$item['type'] == 4 && $all = $item['default'];
+			$item['type'] == 4 && $all = '';
 			$item['type'] == 5 && $all = '';
 
 			// 处理一组筛选项
@@ -889,7 +983,7 @@ class Vue
 	 * @param  array  $list    筛选项
 	 * @param  mixed  $default 默认值
 	 * @param  mixed  $all     每种筛选显示全部数据的情况
-	 * @return array           结果
+	 * @return array
 	 */
 	private function handleScreenItem(array $data, array $list, $default, $all)
 	{
@@ -1073,5 +1167,39 @@ class Vue
 	private function float(&$var, $null = true)
 	{
 		(!is_null($var) || (is_null($var) && $null)) && $var = floatval($var);
+	}
+
+	/**
+	 * 驼峰转下划线
+	 *
+	 * @param  string $value
+	 * @param  string $delimiter
+	 * @return string
+	 */
+	private function snake(string $value, string $delimiter = '_') : string
+	{
+		return ctype_lower($value) ? $value : strtolower(preg_replace('/(.)(?=[A-Z])/u', '$1' . $delimiter, preg_replace('/\s+/u', '', ucwords($value))));
+	}
+
+	/**
+	 * 下划线转驼峰(首字母小写)
+	 *
+	 * @param  string $value
+	 * @return string
+	 */
+	private function camel(string $value) : string
+	{
+		return lcfirst($this->studly($value));
+	}
+
+	/**
+	 * 下划线转驼峰(首字母大写)
+	 *
+	 * @param  string $value
+	 * @return string
+	 */
+	private function studly(string $value) : string
+	{
+		return str_replace(' ', '', ucwords(str_replace(['-', '_'], ' ', $value)));
 	}
 }

@@ -1,5 +1,4 @@
 <template v-if="listItem.length > 0 && (!selector || selector.value == 'list')">
     <p class="empty" v-if="currentList.length == 0">{{ config.dataEmptyText }}</p>
-
     <div v-else v-for="item in currentList" class="data-list-item" v-html="handleHtml(item)"></div>
 </template>
