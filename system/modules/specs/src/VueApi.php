@@ -253,7 +253,7 @@ trait VueApi
 					$value = is_int($value) ? [$value] : ($cuttingSymbol ? explode($cuttingSymbol, $value) : [$value]);
 
 					// 如果是天多选 循环每一天 判断有没有合法的 否则判断在不在范围内
-					if ($this->apiScreenAll[$key]['config']['multiple'] === true) {
+					if (($this->apiScreenAll[$key]['config']['multiple'] ?? null) === true) {
 						// 如果值和条件没有交集 不通过
 						if (count($condition['value']) > 0 && count(array_intersect($value, $condition['value'])) == 0) return false;
 					} else {
