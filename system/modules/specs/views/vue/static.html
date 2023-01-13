@@ -211,7 +211,7 @@
 	            var screenList = [], condition = {};
 
 	            // 循环每个筛选组 生效的筛选组放进条件里
-	            for (var key in this.screenAllSelected) this.screenEffect(key) && (condition[key] = this.screenAllSelected[key]);
+	            for (var key in this.screenAllSelected) this.screenEffect(key) && (condition[key] = this.assign(this.screenAllSelected[key]));
 
 	            // 没有条件则不需要处理 退出
 	            if (Object.keys(condition).length == 0) return false;
@@ -742,7 +742,7 @@
 	            if (type == 'dates') {
 	            	// 循环每个时间戳 获取当天 00:00:00 和 23:59:59 的时间戳
         			for (var i = 0; i < data.length; i++) {
-        				var d = this.timeInfo(parseInt(data[i]) * 1000);
+        				var d = this.timeInfo(parseInt(data[i]));
         				data[i] = [new Date(d.y, d.m, d.d).getTime() / 1000, new Date(d.y, d.m, d.d + 1).getTime() / 1000 - 1];
         			}
 
@@ -752,11 +752,11 @@
 	            // 月范围选择器
 	            if (type == 'monthrange') {
 	                // 开始时间当月的第一秒
-    				var d = this.timeInfo(parseInt(data[0]) * 1000);
+    				var d = this.timeInfo(parseInt(data[0]));
 	                data[0] = new Date(d.y, d.m, 1).getTime() / 1000;
 
 	                // 结束时间当月的最后一秒
-    				var d = this.timeInfo(parseInt(data[1]) * 1000);
+    				var d = this.timeInfo(parseInt(data[1]));
 	                data[1] = new Date(d.y, d.m + 1, 1).getTime() / 1000 - 1;
 
 	                return data;
