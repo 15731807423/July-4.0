@@ -250,8 +250,8 @@ class SpecList extends SettingGroupBase
             'default' => false
         ],
 
-        'specList.selector.config.componentConfig' => [
-            'key' => 'specList.selector.config.componentConfig',
+        'specList.selector.componentConfig' => [
+            'key' => 'specList.selector.componentConfig',
             'label' => '模式选择器组件的配置信息',
             'description' => '模式选择器组件的配置信息',
         ],
@@ -289,8 +289,8 @@ class SpecList extends SettingGroupBase
             'description' => '加载数据时页面显示加载中',
         ],
 
-        'specList.loading.config.componentConfig' => [
-            'key' => 'specList.loading.config.componentConfig',
+        'specList.loading.componentConfig' => [
+            'key' => 'specList.loading.componentConfig',
             'label' => '加载组件的配置信息',
             'description' => '加载组件的配置信息',
         ],

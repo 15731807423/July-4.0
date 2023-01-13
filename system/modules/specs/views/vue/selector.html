@@ -1,12 +1,4 @@
-<el-radio-group
-    v-if="{{ condition }}"
-    :class="selector.class"
-    v-model="selector.value"
-    :size="selector.config.size"
-    :disabled="selector.config.disabled"
-    :text-color="selector.config.textColor"
-    :fill="selector.config.fill"
->
+<el-radio-group v-if="{{ condition }}" :class="selector.class" v-model="selector.value" {{ config }}>
     <el-radio-button
         v-for="(item, key) in selector.list"
         :label="key"

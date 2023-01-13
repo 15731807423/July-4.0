@@ -1,16 +1,1 @@
-<el-button
-    :class="reset.class"
-    :size="reset.size"
-    :type="reset.type"
-    :plain="reset.plain"
-    :round="reset.round"
-    :circle="reset.circle"
-    :loading="reset.loading"
-    :loading-icon="reset.loadingIcon"
-    :disabled="reset.disabled"
-    :icon="reset.icon"
-    :autofocus="reset.autofocus"
-    :native-type="reset.nativeType"
-    :auto-insert-space="reset.autoInsertSpace"
-    @click="keywords = '', screenClear()"
->{{ reset.text }}</el-button>
+<el-button @click="keywords = '', screenClear()" {{ config }}>{{ reset.text }}</el-button>
