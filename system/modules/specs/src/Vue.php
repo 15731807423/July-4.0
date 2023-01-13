@@ -938,7 +938,7 @@ class Vue
 	 */
 	private function handleDataNumber()
 	{
-		foreach ($this->data as $key => $data) foreach ($data as $attr => $value) !is_int($value) && $this->isInt($value) && ($this->data[$key][$attr] = $value);
+		foreach ($this->data as $key => $data) foreach ($data as $attr => $value) !is_int($value) && $this->isInt($value) && ($this->data[$key][$attr] = intval($value));
 	}
 
 	/**
@@ -1144,7 +1144,7 @@ class Vue
 	private function isInt($value) : bool
 	{
 		try {
-			return eval('return is_int(' . $a . ');');
+			return eval('return is_int(' . $value . ');');
 		} catch (\Throwable $e) {
 			return false;
 		}
