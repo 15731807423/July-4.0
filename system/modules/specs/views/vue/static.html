@@ -359,7 +359,7 @@
 							date = this.dateRange(condition.value, condition.config.type);
 
 							// 如果是天多选 循环每一天 判断有没有合法的 否则判断在不在范围内
-							if (condition[key].config.type == 'dates') {
+							if (condition.config.type == 'dates') {
 		                        var status = false;
 		                        for (let i = 0; i < date.length; i++) value >= date[i][0] && value <= date[i][1] && (status = true);
 		                        return status;
