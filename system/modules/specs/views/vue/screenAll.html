@@ -154,9 +154,7 @@
             :tag-type="item.config.tagType"
             @change="screenChange(key)"
         >
-            <template v-for="it in item.list">
-                <el-option v-for="it in screenItem(item)" :key="it.name" :label="it.name" :value="it.name">{{ it.name }}{{ it.count }}</el-option>
-            </template>
+            <el-option v-for="it in screenItem(item)" :key="it.name" :label="it.name" :value="it.name">{{ it.name }}{{ it.count }}</el-option>
         </el-select>
     </div>
 </div>
