@@ -938,7 +938,7 @@ class Vue
 	 */
 	private function handleDataNumber()
 	{
-		foreach ($this->data as $key => $data) foreach ($data as $attr => $value) !is_int($value) && $this->isInt($value) && ($data[$attr] = $value);
+		foreach ($this->data as $key => $data) foreach ($data as $attr => $value) !is_int($value) && $this->isInt($value) && ($this->data[$key][$attr] = $value);
 	}
 
 	/**
