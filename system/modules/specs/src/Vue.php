@@ -361,6 +361,9 @@ class Vue
 		// 配置信息设置默认值
 		$this->handleConfigDefault();
 
+		// 数据中的数字解析
+		$this->handleDataNumber();
+
 		// 处理渲染时需要提供的数据
 		$this->handleRenderData();
 
@@ -931,6 +934,14 @@ class Vue
 	}
 
 	/**
+	 * 处理数据中的非int类型的数字数据
+	 */
+	private function handleDataNumber()
+	{
+		foreach ($this->data as $key => $data) foreach ($data as $attr => $value) !is_int($value) && $this->isInt($value) && ($data[$attr] = $value);
+	}
+
+	/**
 	 * 处理每组筛选项
 	 *
 	 * @param  array $list 全部筛选的字段的数据
@@ -1122,6 +1133,20 @@ class Vue
 			foreach ($data as $key => $value) {
 				$this->{$type}($data[$key]);
 			}
+		}
+	}
+
+	/**
+	 * 判断一个值是不是数字 包括字符串类型的数字
+	 * @param  Mixed   $data 值
+	 * @return boolean
+	 */
+	private function isInt($value) : bool
+	{
+		try {
+			return eval('return is_int(' . $a . ');');
+		} catch (\Throwable $e) {
+			return false;
 		}
 	}
 
