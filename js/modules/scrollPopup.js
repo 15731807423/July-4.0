@@ -15,6 +15,7 @@ LazyScript.load('jquery', function (global) {
 		data.switchType 		= parseValue(data.switchType, 'switchType');
 		data.switchShow 		= parseValue(data.switchShow, 'switchShow');
 		data.switchHide 		= parseValue(data.switchHide, 'switchHide');
+		data.animationDuration	= parseValue(data.animationDuration, 'animationDuration');
 		data.mask 				= parseValue(data.mask, 'mask');
 		data.before				= parseValue(data.before, 'before');
 
@@ -267,6 +268,10 @@ LazyScript.load('jquery', function (global) {
 					}
 					break;
 
+				case 'animationDuration':
+					if (data.switchType == 'css' && type == 'number' && value > 0) return value;
+					break;
+
 				case 'mask':
 					if (type == 'object') {
 						return {
@@ -429,7 +434,8 @@ LazyScript.load('jquery', function (global) {
 			}
 
 			if (data.switchType == 'css') {
-				popup.css(data.switchHide[0], '').css(data.switchShow[0], data.switchShow[1]);
+				var e = popup.css(data.switchHide[0], '').css(data.switchShow[0], data.switchShow[1]);
+				data.animationDuration && e.css('opacity', 0).animate({ opacity: 1 }, data.animationDuration * 1000);
 			}
 
 			mask && mask.css('display', 'block');
@@ -444,7 +450,9 @@ LazyScript.load('jquery', function (global) {
 			}
 
 			if (data.switchType == 'css') {
-				popup.css(data.switchShow[0], '').css(data.switchHide[0], data.switchHide[1]);
+				data.animationDuration ? popup.css('opacity', 1).animate({ opacity: 0 }, data.animationDuration * 1000, () => {
+					popup.css(data.switchShow[0], '').css(data.switchHide[0], data.switchHide[1]);
+				}) : popup.css(data.switchShow[0], '').css(data.switchHide[0], data.switchHide[1]);
 			}
 
 			mask && mask.css('display', 'none');
