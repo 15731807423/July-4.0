@@ -102,28 +102,6 @@
 	    },
 
 		methods: {
-			data() {
-				return {
-					list: this.assign(this.list),
-					screenList: this.assign(this.screenList),
-					currentList: this.assign(this.currentList),
-					config: this.assign(this.config),
-					table: this.assign(this.table),
-					listItem: this.assign(this.listItem),
-					currentSort: this.assign(this.currentSort),
-					defaultSort: this.assign(this.defaultSort),
-					keywords: this.assign(this.keywords),
-					userSelectedList: this.assign(this.userSelectedList),
-					screenAll: this.assign(this.screenAll),
-					screenAllSelected: this.assign(this.screenAllSelected),
-					reset: this.assign(this.reset),
-					search: this.assign(this.search),
-					screen: this.assign(this.screen),
-					selector: this.assign(this.selector),
-					pagination: this.assign(this.pagination),
-				};
-			},
-
 			init() {
 				if (this.table.status && this.listItem) {
 					// 处理选择器的默认值
@@ -149,7 +127,6 @@
 
 	        	// 加载数据
 	        	this.handleData();
-	        	console.log(this.data())
 	        },
 
 	        /**
