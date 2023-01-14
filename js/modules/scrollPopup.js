@@ -39,8 +39,7 @@ LazyScript.load('jquery', function (global) {
 			showTime = getShowTime(),
 			submitTime = getSubmitTime(),
 			frozenTimes = getFrozenTimes(),
-			cycleVisits = getCycleVisits(),
-			height = $(document).height() - $(window).innerHeight();
+			cycleVisits = getCycleVisits();
 
 		// 如果没有弹窗元素 说明这个页面没有该功能
 		if (popup.length == 0) return false;
@@ -157,7 +156,7 @@ LazyScript.load('jquery', function (global) {
 
 		// 解析参数
 		function parseValue(value, name) {
-			let type = $.type(value);
+			let type = $.type(value), height = $(document).height() - $(window).innerHeight();
 
 			switch (name) {
 				case 'form':
