@@ -184,7 +184,7 @@
         @include('spec_list.switch', ['data' => $items['specList.selector.list.list.default'], 'index' => 'specList.selector.list.list.default'])
 
         <!-- 模式选择器组件的配置信息 -->
-        @include('spec_list.textarea', ['data' => $items['specList.selector.config.componentConfig'], 'index' => 'specList.selector.config.componentConfig'])
+        @include('spec_list.textarea', ['data' => $items['specList.selector.componentConfig'], 'index' => 'specList.selector.componentConfig'])
 
         <p class="split-line"></p>
 
@@ -207,7 +207,7 @@
 
         <template v-if="settings['specList.loading.status']">
             <!-- 加载组件的配置信息 -->
-            @include('spec_list.textarea', ['data' => $items['specList.loading.config.componentConfig'], 'index' => 'specList.loading.config.componentConfig', 'class' => 'indent-1'])
+            @include('spec_list.textarea', ['data' => $items['specList.loading.componentConfig'], 'index' => 'specList.loading.componentConfig', 'class' => 'indent-1'])
         </template>
 
         <p class="split-line"></p>
