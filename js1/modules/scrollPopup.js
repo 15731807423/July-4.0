@@ -2,6 +2,8 @@ LazyScript.load('jquery', function (global) {
 	function ScrollPopup(data) {
 		// 解析参数
 		data.form 				= parseValue(data.form, 'form');
+		data.result				= parseValue(data.result, 'result');
+		data.submit				= parseValue(data.submit, 'submit');
 		data.once 				= parseValue(data.once, 'once');
 		data.click 				= parseValue(data.click, 'click');
 		data.cycle 				= parseValue(data.cycle, 'cycle');
@@ -155,6 +157,21 @@ LazyScript.load('jquery', function (global) {
 		// 调用延迟触发
 		timeout();
 
+		// 提交
+		if (data.result && data.submit) {
+			var form = $(data.form, data.popup);
+
+			form.submit(e => {
+				const action = form.attr('action') || 'post', method = form.attr('method') || '', input = form.serializeArray(), info = {};
+
+		        for (var i = 0; i < input.length; i++) {
+		            info[input[i].name] = input[i].value;
+		        }
+
+				$[action](method, info, e => data.submit && data.submit(e));
+			})
+		}
+
 		// 解析参数
 		function parseValue(value, name) {
 			let type = $.type(value), height = $(document).height() - $(window).innerHeight();
@@ -162,6 +179,14 @@ LazyScript.load('jquery', function (global) {
 			switch (name) {
 				case 'form':
 					if (type == 'string') return value;
+					break;
+
+				case 'result':
+					if (type == 'string') return value;
+					break;
+
+				case 'submit':
+					if (type == 'function') return value;
 					break;
 
 				case 'once':
@@ -431,14 +456,14 @@ LazyScript.load('jquery', function (global) {
 
 			if (data.switchType == 'class') {
 				popup.removeClass(data.switchHide).addClass(data.switchShow);
+				mask && mask.css('display', 'block');
 			}
 
 			if (data.switchType == 'css') {
-				var e = popup.css(data.switchHide[0], '').css(data.switchShow[0], data.switchShow[1]);
+				const e = popup.css(data.switchHide[0], '').css(data.switchShow[0], data.switchShow[1]), o = mask ? mask.css('opacity') : 0, m = mask ? mask.css('display', 'block') : null;
 				data.animationDuration && e.css('opacity', 0).animate({ opacity: 1 }, data.animationDuration * 1000);
+				data.animationDuration && m && m.css('opacity', 0).animate({ opacity: o }, data.animationDuration * 1000);
 			}
-
-			mask && mask.css('display', 'block');
 
 			return false;
 		}
@@ -447,15 +472,17 @@ LazyScript.load('jquery', function (global) {
 		this.hide = () => {
 			if (data.switchType == 'class') {
 				popup.removeClass(data.switchShow).addClass(data.switchHide);
+				mask && mask.css('display', 'none');
 			}
 
 			if (data.switchType == 'css') {
-				data.animationDuration ? popup.css('opacity', 1).animate({ opacity: 0 }, data.animationDuration * 1000, () => {
+				const o = mask ? mask.css('opacity') : 0;
+				data.animationDuration ? (popup.css('opacity', 1).animate({ opacity: 0 }, data.animationDuration * 1000, () => {
 					popup.css(data.switchShow[0], '').css(data.switchHide[0], data.switchHide[1]);
-				}) : popup.css(data.switchShow[0], '').css(data.switchHide[0], data.switchHide[1]);
+				}), mask && mask.css('opacity', o).animate({ opacity: 0 }, data.animationDuration * 1000, () => {
+					mask.css('display', 'none');
+				})) : (popup.css(data.switchShow[0], '').css(data.switchHide[0], data.switchHide[1]), mask && mask.css('display', 'none'));
 			}
-
-			mask && mask.css('display', 'none');
 
 			return false;
 		}
