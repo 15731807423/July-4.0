@@ -149,8 +149,7 @@ LazyScript.load('jquery', function (global) {
                     if (type == 'array') {
                         for (var i = 0; i < value.length; i++) {
                             value[i] = {
-                                formula     : parseValue(value[i].formula, 'string'),
-                                calculation : parseValue(value[i].calculation, 'function'),
+                                calculation : parseValue(value[i].calculation, 'result[].calculation'),
                                 selector    : parseValue(value[i].selector, 'string'),
                                 decimal     : parseValue(value[i].decimal, 'number', 2)
                             };
@@ -159,6 +158,10 @@ LazyScript.load('jquery', function (global) {
                         return value;
                     }
                     return [];
+                    break;
+
+                case 'result[].calculation':
+                    if (type == 'string' || type == 'function') return value;
                     break;
             }
 
@@ -475,11 +478,13 @@ LazyScript.load('jquery', function (global) {
         // 计算结果
         function calculation() {
             for (let i = 0; i < data.result.length; i++) {
-                // 如果设置了公式则直接执行表达式 否则如果设置了计算过程则执行函数 否则结果为空
-                if (data.result[i].formula) {
-                    var value = eval(data.result[i].formula);
-                } else if (data.result[i].calculation) {
-                    var value = eval('(' + data.result[i].calculation + ')()');
+                let item = data.reset[i], type = $.type(item.calculation);
+
+                // 字符串时执行表达式 函数时执行函数 否则为空
+                if (type == 'string') {
+                    var value = eval(item.calculation);
+                } else if (type == 'function') {
+                    var value = eval('(' + item.calculation + ')()');
                 } else {
                     var value = '';
                 }
