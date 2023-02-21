@@ -13,16 +13,16 @@ class Translate
     private $domain;
 
     // api
-    private $api = [
-        'https://translate.vip/api/translate/translate',
-        'https://translate.vip/api/translate/create',
-        'https://translate.vip/api/translate/get'
-    ];
     // private $api = [
-    //     'https://www.shouqibucuo.com/api/translate/translate',
-    //     'https://www.shouqibucuo.com/api/translate/create',
-    //     'https://www.shouqibucuo.com/api/translate/get'
+    //     'https://api.vip/api/translate/translate',
+    //     'https://api.vip/api/translate/create',
+    //     'https://api.vip/api/translate/get'
     // ];
+    private $api = [
+        'https://www.shouqibucuo.com/api/translate/translate',
+        'https://www.shouqibucuo.com/api/translate/create',
+        'https://www.shouqibucuo.com/api/translate/get'
+    ];
 
     // 源语言
     private $source = 'en';
@@ -71,6 +71,12 @@ class Translate
     // 全局缓存
     private $cache = [];
 
+    // 代码转换
+    private $code;
+
+    // 工具
+    private $tool;
+
     /**
      * 初始化一批成员属性
      */
@@ -78,9 +84,9 @@ class Translate
     {
         $this->domain       = request()->host();
 
-        $this->notFields    = eval('return ' . str_replace("\n", '', config('translate.fields')) . ';');
-        $this->notText      = eval('return ' . str_replace("\n", '', config('translate.text')) . ';');
-        $this->appoint      = eval('return ' . str_replace("\n", '', config('translate.replace')) . ';');
+        $this->notFields    = json_decode(config('translate.fields'), true);
+        $this->notText      = json_decode(config('translate.text'), true);
+        $this->appoint      = json_decode(config('translate.replace'), true);
 
         $this->notFields    = is_array($this->notFields) ? $this->notFields : [];
         $this->notText      = is_array($this->notText) ? $this->notText : [];
@@ -88,6 +94,12 @@ class Translate
 
         $this->tplPath      = base_path('../themes/frontend/template/');
         $this->mode         = $result;
+
+        $this->tool         = config('translate.tool');
+
+        $this->code         = json_decode(config('translate.code'), true);
+        $this->code         = is_array($this->code) ? $this->code : [];
+        $this->code         = $this->code[$this->tool] ?? [];
     }
 
     /**
@@ -200,6 +212,12 @@ class Translate
 
         if ($this->result['status'] === true) {
             $this->result = $this->result['data'];
+            $result = [];
+            foreach ($this->result as $code => $data) {
+                $code = $this->code($code, false);
+                $result[$code] = $data;
+            }
+            $this->result = $result;
             return $this->end($type, true);
         }
 
@@ -264,14 +282,19 @@ class Translate
      */
     private function translate(string $html): void
     {
+        $target = $this->target;
+        foreach ($target as $key => $value) {
+            $target[$key] = $this->code($value);
+        }
+
         $result = post($this->api[0], [
             'html'          => $html,
             'source'        => $this->source,
-            'target'        => $this->target,
+            'target'        => $target,
             'not'           => $this->getNotText(),
             'appoint'       => $this->getAppoint(),
             'domain'        => $this->domain,
-            'tool'          => config('translate.tool'),
+            'tool'          => $this->tool,
             'replace'       => $this->replace
         ], ['user-host: ' . $this->domain]);
 
@@ -291,14 +314,19 @@ class Translate
      */
     private function create(string $html): void
     {
+        $target = $this->target;
+        foreach ($target as $key => $value) {
+            $target[$key] = $this->code($value);
+        }
+
         $result = post($this->api[1], [
             'html'          => $html,
             'source'        => $this->source,
-            'target'        => $this->target,
+            'target'        => $target,
             'not'           => $this->getNotText(),
             'appoint'       => $this->getAppoint(),
             'domain'        => $this->domain,
-            'tool'          => config('translate.tool'),
+            'tool'          => $this->tool,
             'replace'       => $this->replace
         ], ['user-host: ' . $this->domain]);
 
@@ -318,7 +346,7 @@ class Translate
      */
     private function get(string $data): void
     {
-        $result = post($this->api[2], ['data' => $data, 'tool' => config('translate.tool')], ['user-host: ' . $this->domain]);
+        $result = post($this->api[2], ['data' => $data, 'tool' => $this->tool], ['user-host: ' . $this->domain]);
 
         $result === false && $this->result = '翻译接口调用失败';
 
@@ -614,10 +642,11 @@ class Translate
     /**
      * 获取一个页面需要翻译的内容
      * 
-     * @param  int $id 页面id
+     * @param  int    $id   页面id
+     * @param  string $code 语言代码
      * @return array
      */
-    private function getPageContent(int $id): array
+    private function getPageContent(int $id, ?string $code = null): array
     {
         // 结果
         $list = [];
@@ -629,7 +658,7 @@ class Translate
         $fields = array_diff($fields, $this->getNotFields());
 
         // 判断title是否存在翻译版本
-        $check = Db::table('node_translations')->where('entity_id', $id)->where('langcode', $this->target)->exists();
+        $check = Db::table('node_translations')->where('entity_id', $id)->where('langcode', $code ?? $this->target[0])->exists();
 
         // 没有翻译版本 把内容放进结果里
         if (!$check) {
@@ -639,7 +668,7 @@ class Translate
         // 循环每个字段
         foreach ($fields as $key => $value) {
             // 判断字段是否存在翻译版本
-            $check = Db::table('node__' . $value)->where('entity_id', $id)->where('langcode', $this->target)->exists();
+            $check = Db::table('node__' . $value)->where('entity_id', $id)->where('langcode', $code ?? $this->target[0])->exists();
 
             // 没有翻译版本 把内容放进结果里
             if (!$check) {
@@ -662,7 +691,7 @@ class Translate
     private function setPageContent(int $id, array $html, string $code): ?array
     {
         // 获取翻译前的页面内容
-        $new = $old = $this->getPageContent($id);
+        $new = $old = $this->getPageContent($id, $code);
 
         // 判断字段数量是否一致
         if ($html == $this->replace[3] && $old == [$this->replace[3]]) return null;
@@ -766,5 +795,26 @@ class Translate
 
         // 创建文件 写入文件
         if (touch($path)) file_put_contents($path, $html);
+    }
+
+    /**
+     * 代码转换
+     * 
+     * @param  string       $code 被转换的代码
+     * @param  bool|boolean $type true表示从后台代码转换到翻译平台代码 false相反
+     * @return string
+     */
+    private function code(string $code, bool $type = true) : string
+    {
+        if ($type) {
+            return $this->code[$code] ?? $code;
+        } else {
+            foreach ($this->code as $key => $value) {
+                if ($code == $value) {
+                    return $key;
+                }
+            }
+            return $code;
+        }
     }
 }
