@@ -33,10 +33,10 @@ class CreateNodesTable extends Migration
             // 源语言
             $table->string('langcode', 12);
 
+            $table->timestamps();
+
             // 软删除
             $table->softDeletes();
-
-            $table->timestamps();
         });
     }
 

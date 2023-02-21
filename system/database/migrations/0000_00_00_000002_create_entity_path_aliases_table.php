@@ -31,10 +31,10 @@ class CreateEntityPathAliasesTable extends Migration
             // 路径别名
             $table->string('alias', 150);
 
+            $table->timestamps();
+
             // 软删除
             $table->softDeletes();
-
-            $table->timestamps();
 
             $table->unique(['langcode','alias']);
         });
