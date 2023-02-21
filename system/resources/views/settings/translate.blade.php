@@ -36,20 +36,21 @@
             @endif
         </el-form-item>
 
+        <el-form-item prop="translate.code" size="small" class="{{ $items['translate.code']['description'] ? 'has-helptext' : '' }}">
+            <el-tooltip slot="label" popper-class="jc-twig-output" effect="dark" content="{!! $items['translate.code']['tips'] !!}" placement="right">
+                <span>{{ $items['translate.code']['label'] }}</span>
+            </el-tooltip>
+            <el-input type="textarea" v-model="settings['translate.code']" :rows="7" placeholder="{{ $items['translate.code']['placeholder'] ?? '' }}"></el-input>
+            @if ($items['translate.code']['description'])
+            <span class="jc-form-item-help"><i class="el-icon-info"></i> {{ $items['translate.code']['description'] }}</span>
+            @endif
+        </el-form-item>
+
         @include('spec_list.textarea', ['data' => $items['translate.fields'], 'index' => 'translate.fields', 'rows' => 7])
 
         @include('spec_list.textarea', ['data' => $items['translate.text'], 'index' => 'translate.text', 'rows' => 7])
 
         @include('spec_list.textarea', ['data' => $items['translate.replace'], 'index' => 'translate.replace', 'rows' => 7])
-
-        <p>‘全部不翻译的字段’、‘全部不翻译的内容’和‘指定翻译结果’编辑时需要严格遵循PHP语法：</p>
-        <p>索引数组：['value1','value2','value3'...]。数组用中括号表示，数组中的多个键值用逗号隔开，字符串值用引号引起来。</p>
-        <p>关联数组：['key1'=>'value1','key2'=>'value2'...]。数组用中括号表示，数组中每个键值都有一个键名，键名和键值之间用‘=>’，多个值之间用逗号隔开。</p>
-        <p>首先确定是否区分语言，如果不区分语言，表示对所有语言设置。如果区分语言，用语言设置里设置的语言代码做键名。上面的占位文本添加的回车和空格是为了看得更清楚，写的时候可以不加。</p>
-        <p>‘全部不翻译的字段’和‘全部不翻译的内容’：如果不区分语言，用索引数组设置内容。</p>
-        <p>‘全部不翻译的字段’和‘全部不翻译的内容’：如果区分语言，用关联数组设置内容，键名为语言代码，键值为索引数组，表示该语言设置的内容。</p>
-        <p>‘指定翻译结果’：如果不区分语言，用关联数组设置内容，键名为被翻译的内容，键值为指定的翻译结果。</p>
-        <p>‘指定翻译结果’：如果区分语言，用关联数组设置内容，键名为语言代码，键值为该语言设置的内容。</p>
 
         <div id="main_form_bottom" class="is-button-item">
             <button type="button" class="md-button md-raised md-dense md-primary md-theme-default" @click.stop="submitMainForm">

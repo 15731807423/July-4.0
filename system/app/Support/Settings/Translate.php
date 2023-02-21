@@ -36,6 +36,12 @@ class Translate extends SettingGroupBase
             'description' => '先创建任务再获取任务结果（可能超时）或者直接返回任务结果'
         ],
 
+        'translate.code' => [
+            'key' => 'translate.code',
+            'label' => '代码转换',
+            'description' => '网站上用的代码和翻译平台的代码不一致时配置'
+        ],
+
         'translate.fields' => [
             'key' => 'translate.fields',
             'label' => '全部不翻译的字段',

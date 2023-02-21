@@ -7,6 +7,17 @@ return [
 
 	'tool'		=> 'alibabacloud',
 	'mode'		=> 'task',
+	'code'		=> '[
+	\'alibabacloud\' => [
+		\'en\' => \'en\',
+	],
+	\'tencentcloud\' => [
+		\'en\' => \'en\',
+	],
+	\'azure\' => [
+		\'en\' => \'en\',
+	],
+]',
 	'list'		=> [
 		'alibabacloud'	=> [
 			'name'			=> '阿里云',
