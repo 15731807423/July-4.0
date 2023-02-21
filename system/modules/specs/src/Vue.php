@@ -97,7 +97,7 @@ class Vue
 		'table'			=> ['<div v-if="table.status && (!selector || selector.value == \'table\')" class="data-table">', '</div>'],
 		'list'			=> ['<div v-if="listItem.length > 0 && (!selector || selector.value == \'list\')" class="data-list">', '</div>'],
 		'pagination'	=> ['<div :class="pagination.class">', '</div>'],
-		'whole'			=> ['<div id="spec{{ id }}" class="data">', '</div>']
+		'whole'			=> ['<style>[v-cloak] {display: none;}</style><div id="spec{{ id }}" class="data" v-cloak>', '</div>']
 	];
 
 	// 规格字段中允许修改的属性
