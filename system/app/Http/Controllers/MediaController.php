@@ -19,8 +19,8 @@ class MediaController extends Controller
     public function index()
     {
         // echo '<script>window.onload = () => { window.open("/package/filemanager/index.php"); }</script>';
-        return redirect('/package/FileManager/index.php');
-        // return view('media.index');
+        // return redirect('/package/FileManager/index.php');
+        return view('media.index');
     }
 
     public function select()
