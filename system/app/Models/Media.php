@@ -105,8 +105,8 @@ class Media
 
         if (Str::startsWith($info['mimeType'], 'image')) {
             $dimenssion = getimagesize($this->path($file));
-            $info['width'] = $dimenssion[0];
-            $info['height'] = $dimenssion[1];
+            $info['width'] = $dimenssion ? $dimenssion[0] : 0;
+            $info['height'] = $dimenssion ? $dimenssion[1] : 0;
         }
 
         return $info;
