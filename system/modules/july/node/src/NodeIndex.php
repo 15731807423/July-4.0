@@ -272,7 +272,7 @@ class NodeIndex extends ModelBase
             return false;
         }
 
-        $similar = $this->similar($this->attributes['content'], key($keywords));
+        $similar = $this->similar($this->attributes['content'], strtolower(key($keywords)));
         $weight = $this->weight*($this->attributes['weight'] ?? 1)*pow(10, pow($similar, 3));
 
         return [
@@ -305,7 +305,7 @@ class NodeIndex extends ModelBase
         }
         $tokens = [];
         
-        if (strstr($content, strval(array_keys($keywords)[0])) === false) {
+        if (stristr($content, strval(array_keys($keywords)[0])) === false) {
             return false;
         }
 
@@ -385,18 +385,18 @@ class NodeIndex extends ModelBase
     protected function similar(string $str1, string $str2)
     {
         if ($str1 === $str2) {
-			return 1;
-		}
+            return 1;
+        }
 
-		$len1 = strlen($str1);
-		$len2 = strlen($str2);
-		if ($len1 === 0 || $len2 === 0) {
-			return 0;
-		}
+        $len1 = strlen($str1);
+        $len2 = strlen($str2);
+        if ($len1 === 0 || $len2 === 0) {
+            return 0;
+        }
 
-		$maxlen = max($len1, $len2);
-		if (strpos($str1, $str2) !== false || strpos($str2, $str1) !== false) {
-			return abs($len1 - $len2) / $maxlen;
+        $maxlen = max($len1, $len2);
+        if (strpos($str1, $str2) !== false || strpos($str2, $str1) !== false) {
+            return abs($len1 - $len2) / $maxlen;
         }
 
         // 长度相差 3 倍以上
@@ -404,9 +404,9 @@ class NodeIndex extends ModelBase
             return 0;
         }
 
-		$levenshtein = levenshtein($str1, $str2);
-		$levenshtein -= ($levenshtein - levenshtein(strtolower($str1), strtolower($str2))) / 2;
+        $levenshtein = levenshtein($str1, $str2);
+        $levenshtein -= ($levenshtein - levenshtein(strtolower($str1), strtolower($str2))) / 2;
 
-		return ($maxlen - $levenshtein) / $maxlen;
+        return ($maxlen - $levenshtein) / $maxlen;
     }
 }
