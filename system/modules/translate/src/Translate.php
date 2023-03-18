@@ -382,6 +382,8 @@ class Translate
     private function batchAfter(array $data): array
     {
         foreach ($data as $code => $html) {
+            $code = $this->code($code, false);
+
             if ($html === false) continue;
 
             // 切割成每个页面的翻译结果
@@ -548,7 +550,7 @@ class Translate
                 case 'page':
                 case 'tpl':
                     // 翻译结果
-                    $html = $this->result[$this->target[0]];
+                    $html = $this->result[$this->code($this->target[0], true)];
 
                     // 翻译失败的处理
                     if (!$html) return $this->error('翻译失败');
@@ -791,7 +793,7 @@ class Translate
         $pathinfo = pathinfo($path);
 
         // 创建不存在的路径
-        if (!is_dir($pathinfo['dirname'])) mkdir($pathinfo['dirname'], 0644, true);
+        if (!is_dir($pathinfo['dirname'])) mkdir($pathinfo['dirname'], 0755, true);
 
         // 创建文件 写入文件
         if (touch($path)) file_put_contents($path, $html);
