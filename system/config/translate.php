@@ -8,14 +8,14 @@ return [
 	'tool'		=> 'alibabacloud',
 	'mode'		=> 'task',
 	'code'		=> '[
-	\'alibabacloud\' => [
-		\'en\' => \'en\',
+	"alibabacloud" => [
+		"en" => "en",
 	],
-	\'tencentcloud\' => [
-		\'en\' => \'en\',
+	"tencentcloud" => [
+		"en" => "en",
 	],
-	\'azure\' => [
-		\'en\' => \'en\',
+	"azure" => [
+		"en" => "en",
 	],
 ]',
 	'list'		=> [
