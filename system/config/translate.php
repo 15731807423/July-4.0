@@ -1,7 +1,7 @@
 <?php
 
 return [
-	'fields'	=> '[\'url\',\'meta_canonical\',\'image_src\',\'timeout\']',
+	'fields'	=> '["url","meta_canonical","image_src","timeout"]',
 	'text'		=> '',
 	'replace'	=> '',
 
