@@ -382,7 +382,9 @@ class Translate
     private function batchAfter(array $data): array
     {
         foreach ($data as $code => $html) {
-            $code = $this->code($code, false);
+            $local = $this->code($code, false);
+
+            str_replace($code, $local, $html);
 
             if ($html === false) continue;
 
@@ -391,15 +393,15 @@ class Translate
 
             // 如果翻译后的页面数量和被翻译的页面数量不一致
             if (count($pages) != count($this->nodes)) {
-                $data[$code] = false;
+                $data[$local] = false;
                 continue;
             }
 
             foreach ($this->nodes as $key => $id) {
-                $this->setPageContent($id, explode($this->replace[0], $pages[$key]), $code);
+                $this->setPageContent($id, explode($this->replace[0], $pages[$key]), $local);
             }
 
-            $data[$code] = true;
+            $data[$local] = true;
         }
 
         return $data;
@@ -555,6 +557,10 @@ class Translate
                     } else {
                         $html = $this->result[$this->target[0]];
                     }
+
+                    $local = $this->target[0];
+                    $tool = $this->code($local, true);
+                    str_replace($tool, $local, $html);
 
                     // 翻译失败的处理
                     if (!$html) return $this->error('翻译失败');
