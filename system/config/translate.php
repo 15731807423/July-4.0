@@ -7,17 +7,7 @@ return [
 
 	'tool'		=> 'alibabacloud',
 	'mode'		=> 'task',
-	'code'		=> '[
-	"alibabacloud" => [
-		"en" => "en",
-	],
-	"tencentcloud" => [
-		"en" => "en",
-	],
-	"azure" => [
-		"en" => "en",
-	],
-]',
+	'code'		=> '{"alibabacloud": {"en": "en","cn": "cht"},"tencentcloud": {"en": "en","cn": "zh-TW"},"azure": {"en": "en","cn": "zh-Hant"}}',
 	'list'		=> [
 		'alibabacloud'	=> [
 			'name'			=> '阿里云',
