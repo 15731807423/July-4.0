@@ -550,7 +550,11 @@ class Translate
                 case 'page':
                 case 'tpl':
                     // 翻译结果
-                    $html = $this->result[$this->code($this->target[0], true)];
+                    if (isset($this->result[$this->code($this->target[0], true)])) {
+                        $html = $this->result[$this->code($this->target[0], true)];
+                    } else {
+                        $html = $this->result[$this->target[0]];
+                    }
 
                     // 翻译失败的处理
                     if (!$html) return $this->error('翻译失败');
@@ -696,7 +700,7 @@ class Translate
         $new = $old = $this->getPageContent($id, $code);
 
         // 判断字段数量是否一致
-        if ($html == $this->replace[3] && $old == [$this->replace[3]]) return null;
+        if ($html == $this->replace[3] && $old[0] == $this->replace[3]) return null;
 
         // 把翻以前的数据用翻译后的数据替换
         foreach ($new as $key => $value) {
