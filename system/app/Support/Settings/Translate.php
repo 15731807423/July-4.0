@@ -46,21 +46,21 @@ class Translate extends SettingGroupBase
             'key' => 'translate.fields',
             'label' => '全部不翻译的字段',
             'description' => '',
-            'placeholder' => "[\n    'url',\n    'image_src'\n]"
+            'placeholder' => "[\"url\",\"image_src\"]"
         ],
 
         'translate.text' => [
             'key' => 'translate.text',
             'label' => '全部不翻译的内容',
             'description' => '',
-            'placeholder' => "[\n    'text',\n    'name'\n]"
+            'placeholder' => "[\"text\",\"name\"]"
         ],
 
         'translate.replace' => [
             'key' => 'translate.replace',
             'label' => '指定翻译结果',
             'description' => '',
-            'placeholder' => "[\n    'cn' => [\n        'argger' => '雅格'\n    ]\n]"
+            'placeholder' => "[\"cn\":{\"argger\":\"雅格\"}]"
         ],
     ];
 }
