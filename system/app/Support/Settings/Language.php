@@ -42,6 +42,12 @@ class Language extends SettingGroupBase
             'description' => '后台添加内容时的默认语言。',
         ],
 
+        'lang.translate' => [
+            'key' => 'lang.translate',
+            'label' => '翻译目标默认语言',
+            'description' => '后台翻译时的默认源语言。',
+        ],
+
         'lang.icon' => [
             'key' => 'lang.icon',
             'label' => '显示语言图标',

@@ -84,6 +84,8 @@ class Translate
     {
         $this->domain       = request()->host();
 
+        $this->source       = config('lang.translate');
+
         $this->notFields    = json_decode(config('translate.fields'), true);
         $this->notText      = json_decode(config('translate.text'), true);
         $this->appoint      = json_decode(config('translate.replace'), true);
@@ -369,7 +371,7 @@ class Translate
             $data = $this->getPageContent($id);
             $html[] = implode($this->replace[0], $data);
         }
-
+var_dump($html);die;
         return count($html) == 0 ? null : implode($this->replace[1], $html);
     }
 
@@ -487,15 +489,15 @@ class Translate
 
         // 翻译后的模板文件写入内容
         foreach ($files as $key => $file) {
-            $file = str_replace($this->tplPath, $this->tplPath . $this->target[0] . '/', $file);
+            $file = str_replace($this->tplPath . ($this->source == 'en' ? '' : $this->source . '/'), $this->tplPath . $this->target[0] . '/', $file);
             $this->setTplFileContent($file, $html[$key]);
         }
 
-        $dir = $this->tplPath . 'message/content/';
+        $dir = $this->tplPath . ($this->source == 'en' ? '' : $this->source . '/') . 'message/content/';
         $list = array_slice(scandir($dir), 2);
         foreach ($list as $key => $file) {
             $source = $dir . $file;
-            $target = str_replace($this->tplPath, $this->tplPath . $this->target[0] . '/', $source);
+            $target = str_replace($this->tplPath . ($this->source == 'en' ? '' : $this->source . '/'), $this->tplPath . $this->target[0] . '/', $source);
             $this->setTplFileContent($target, file_get_contents($source));
         }
 
@@ -674,7 +676,11 @@ class Translate
 
         // 没有翻译版本 把内容放进结果里
         if (!$check) {
-            $list['title'] = Db::table('nodes')->where('id', $id)->value('title');
+            if ($this->source == 'en') {
+                $list['title'] = Db::table('nodes')->where('id', $id)->value('title');
+            } else {
+                $list['title'] = Db::table('node_translations')->where('entity_id', $id)->where('langcode', $this->source)->value('title');
+            }
         }
 
         // 循环每个字段
@@ -769,9 +775,9 @@ class Translate
     private function getTplFilePath(): array
     {
         $dirs = [
-            $this->tplPath . 'message/form/',
+            $this->tplPath . ($this->source == 'en' ? '' : $this->source . '/') . 'message/form/',
             // $this->tplPath . 'specs/',
-            $this->tplPath
+            $this->tplPath . ($this->source == 'en' ? '' : $this->source . '/')
         ];
 
         $files = [];
@@ -785,7 +791,9 @@ class Translate
             $files = array_merge($files, array_values($list));
         }
 
-        unset($files[array_search($this->tplPath . 'google-sitemap.twig', $files)]);
+        if (($i = array_search($this->tplPath . ($this->source == 'en' ? '' : $this->source . '/') . 'google-sitemap.twig', $files)) !== false) {
+            unset($files[$i]);
+        }
 
         return array_values($files);
     }
