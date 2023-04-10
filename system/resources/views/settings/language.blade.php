@@ -120,6 +120,18 @@
             <span class="jc-form-item-help"><i class="el-icon-info"></i> {{ $items['lang.icon']['description'] }}</span>
             @endif
         </el-form-item>
+        <el-form-item size="small" class="{{ $items['lang.translate']['description']?'has-helptext':'' }}" v-if="settings['lang.multiple']">
+            <el-tooltip slot="label" popper-class="jc-twig-output" effect="dark" content="{!! $items['lang.translate']['tips'] !!}" placement="right">
+                <span>{{ $items['lang.translate']['label'] }}</span>
+            </el-tooltip>
+            <el-select v-model="settings['lang.translate']">
+                <el-option v-for="langcode in translatableLangcodes" :key="langcode" :label="'['+langcode+'] '+ getInfoByCode(langcode).name" :value="langcode">
+                </el-option>
+            </el-select>
+            @if ($items['lang.translate']['description'])
+            <span class="jc-form-item-help"><i class="el-icon-info"></i> {{ $items['lang.translate']['description'] }}</span>
+            @endif
+        </el-form-item>
         <el-form-item size="small" class="{{ $items['lang.content']['description']?'has-helptext':'' }}" v-if="settings['lang.multiple']">
             <el-tooltip slot="label" popper-class="jc-twig-output" effect="dark" content="{!! $items['lang.content']['tips'] !!}" placement="right">
                 <span>{{ $items['lang.content']['label'] }}</span>

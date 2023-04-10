@@ -13,6 +13,9 @@ return [
     // 内容编辑默认语言
     'content' => 'en',
 
+    // 翻译目标默认语言
+    'translate' => 'en',
+
     // 可用语言（代码）列表
     'available' => [
         'en' => [
