@@ -360,19 +360,20 @@ class Translate
     /**
      * 批量翻译前处理页面数据返回需要翻译的内容
      * 
-     * @return ?string
+     * @return string
      */
-    private function batchBefore(): ?string
+    private function batchBefore(): string
     {
         $html = [];
 
         // 循环每个页面 获取每个页面需要翻译的内容
         foreach ($this->nodes as $id) {
             $data = $this->getPageContent($id);
+            if (!$data) continue;
             $html[] = implode($this->replace[0], $data);
         }
-var_dump($html);die;
-        return count($html) == 0 ? null : implode($this->replace[1], $html);
+
+        return count($html) == 0 ? '' : implode($this->replace[1], $html);
     }
 
     /**
@@ -519,7 +520,7 @@ var_dump($html);die;
         }
 
         // 没有要翻译的内容
-        if (is_null($html)) return $this->error('没有要翻译的内容');
+        if (!$html) return $this->error('没有要翻译的内容');
 
         // 创建任务并获取翻译的结果
         $this->mode ? $this->translate($html) : $this->create($html);
@@ -695,7 +696,7 @@ var_dump($html);die;
         }
 
         // 过滤空字符串 返回结果
-        return array_filter($list) ?: [$this->replace[3]];
+        return array_filter($list);
     }
 
     /**
@@ -710,6 +711,8 @@ var_dump($html);die;
     {
         // 获取翻译前的页面内容
         $new = $old = $this->getPageContent($id, $code);
+
+        if (!$new) return [];
 
         // 判断字段数量是否一致
         if ($html == $this->replace[3] && $old[0] == $this->replace[3]) return null;
