@@ -302,7 +302,7 @@ class Translate
 
         $result === false && $this->result = '翻译接口调用失败';
 
-        $result !== false && is_null(json_decode($result, true)) && exit($result);
+        $result !== false && is_null(json_decode($result, true)) && exit(json_encode(['status' => false, 'message' => $result]));
 
         $result = json_decode($result, true);
 
@@ -334,7 +334,7 @@ class Translate
 
         $result === false && $this->result = '翻译接口调用失败';
 
-        $result !== false && is_null(json_decode($result, true)) && exit($result);
+        $result !== false && is_null(json_decode($result, true)) && exit(json_encode(['status' => false, 'message' => $result]));
 
         $result = json_decode($result, true);
 
@@ -352,7 +352,7 @@ class Translate
 
         $result === false && $this->result = '翻译接口调用失败';
 
-        $result !== false && is_null(json_decode($result, true)) && exit($result);
+        $result !== false && is_null(json_decode($result, true)) && exit(json_encode(['status' => false, 'message' => $result]));
 
         $this->result = json_decode($result, true);
     }
