@@ -156,7 +156,11 @@ class NodeController extends Controller
         $node->translateTo($langcode);
 
         if ($node->isTranslated()) {
-            $node->update($request->all());
+            $data = $request->all();
+            foreach ($data as $key => $value) {
+                is_null($value) && $data[$key] = '';
+            }
+            $node->update($data);
         } else {
             $changed = (array) $request->input('_changed');
             if ($changed) {
