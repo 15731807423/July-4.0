@@ -79,7 +79,7 @@ class TaskController extends Controller
         $code = $request->input('code');
         $text = json_decode($request->input('text'), true);
 
-        if ($from == $code || count($text) == 0) return $this->translate->pageError('不需要翻译');
+        if ($from == $code || count($text) == 0) return $this->translate->error('不需要翻译');
 
         return $this->translate->setTo($code)->page($text);
     }
