@@ -22,6 +22,8 @@ function Swiper(data) {
     // 绑定的对象
     var bind;
 
+    var enable = true;
+
     init();
 
     this.setThumbsIndex = i => {
@@ -92,7 +94,7 @@ function Swiper(data) {
             case 'data':
                 if (type == 'object') {
                     return {
-                        selector                    : parseValue(value.selector, 'string'),
+                        selector                    : parseValue(value.selector, 'selector'),
 
                         initialSlide                : parseValue(value.initialSlide, 'int', 0, [0, 999]),
                         grabCursor                  : parseValue(value.grabCursor, 'boolean', false),
@@ -120,7 +122,7 @@ function Swiper(data) {
                         autoplay                    : parseValue(value.autoplay, 'boolean', false),
                         delay                       : parseValue(value.delay, 'number', 3000, [1, 10000]),
                         stopOnLastSlide             : parseValue(value.stopOnLastSlide, 'boolean', false),
-                        pauseOnMouseEnter           : parseValue(value.pauseOnMouseEnter, 'boolean', true),
+                        pauseOnMouseEnter           : parseValue(value.pauseOnMouseEnter, 'boolean', false),
 
                         freeMode                    : parseValue(value.freeMode, 'boolean', false),
 
@@ -136,6 +138,12 @@ function Swiper(data) {
 
                         thumbs                      : parseValue(value.thumbs, 'thumbs', false),
                     };
+                }
+                break;
+
+            case 'selector':
+                if (type == 'string' || type == 'object') {
+                    return value;
                 }
                 break;
 
@@ -236,8 +244,19 @@ function Swiper(data) {
     }
 
     // 初始化插件
-    function init(resize = false) {
+    function init() {
         container = $(data.selector);
+
+        if (container.length == 0) {
+            return false;
+        } else if (container.length > 1) {
+            for (let i = 0; i < container.length; i++) {
+                let params = data;
+                params.selector = container[i];
+                new Swiper(params);
+            }
+            return false;
+        }
 
         container.css('width', '100%');
 
@@ -250,16 +269,25 @@ function Swiper(data) {
 
         initSelfAdaption();
 
+        if (!wrapper) {
+            slide = $('.swiper-cell', container);
+            let html = '';
+            slide.each(function () {
+                html += $(this).prop('outerHTML');
+            });
+            slide.remove();
+            container.prepend('<div class="swiper-container"><div class="swiper-wrapper">' + html + '</div></div>');
+        }
+
         // wrapper                 = $('.swiper-wrapper', container);
         wrapper                 = container.children('.swiper-container').css('overflow', 'hidden').children('.swiper-wrapper');
         width                   = container.width();
         height                  = container.height();
         slideHeight             = [];
         wrapperPositionRange    = [0];
-        pagination              = $(data.pagination ? data.pagination.selector : '', data.pagination.actionScope ? 'body' : container);
         slide                   = $('.swiper-cell', wrapper).addClass('swiper-native');
         native                  = $('.swiper-native', wrapper);
-        index                   = resize ? index : data.initialSlide < slide.length ? data.initialSlide : slide.length - 1;
+        index                   = data.initialSlide < slide.length ? data.initialSlide : slide.length - 1;
         indexOld                = index;
 
         data.fitDistance = data.fitDistance < 1 ? width * data.fitDistance : data.fitDistance;
@@ -272,6 +300,8 @@ function Swiper(data) {
 
         // 初始化无限循环
         data.loop && initLoop();
+
+        pagination              = $(data.pagination ? data.pagination.selector : '', data.pagination.actionScope ? 'body' : container);
 
         // 初始化元素样式
         initElementStyle();
@@ -330,6 +360,22 @@ function Swiper(data) {
         initDrag();
     }
 
+    // 窗口大小变化初始化插件
+    function resize() {
+        container.css('width', '100%').html(container.html());
+
+        wrapper = wrapperWidth = width = height = slideWidth = slideHeight = wrapperPositionRange = prevButton = nextButton = pagination = [];
+        index = slide = native = null;
+        prevAll = nextAll = [];
+        nativeWidth = prevWidth = nextWidth = 0;
+        pageTotal = indexOld = animateId = dragDirection = thumbs = timer = null;
+        moveType = 0;
+        lock = false;
+        border = { left: [], right: [], center: [] };
+
+        init();
+    }
+
     // 初始化自适应
     function initSelfAdaption() {
         if (!data.selfAdaption) return false;
@@ -378,7 +424,7 @@ function Swiper(data) {
         let length = data.slidesPerView == 'auto' ? slide.length : (data.slidesPerView < 5 ? 5 : data.slidesPerView);
 
         // 复制到前面的滑块 移除‘原生’class 添加‘复制’和‘开始’class
-        let start = slide.slice(slide.length - length).clone(true).removeClass('swiper-native').addClass(['swiper-duplicate', 'swiper-start']);
+        let start = slide.slice(length * -1).clone(true).removeClass('swiper-native').addClass(['swiper-duplicate', 'swiper-start']);
 
         // 复制到后面的滑块 移除‘原生’class 添加‘复制’和‘结束’class
         let end = slide.slice(0, length).clone(true).removeClass('swiper-native').addClass(['swiper-duplicate', 'swiper-end']);
@@ -614,9 +660,10 @@ function Swiper(data) {
         let timer;
 
         $(window).resize(e => {
-            clearTimeout(timer);
-
-            timer = setTimeout(() => init(true), 500)
+            if (enable) {
+                clearTimeout(timer);
+                timer = setTimeout(() => resize(), 500)
+            }
         });
     }
 
