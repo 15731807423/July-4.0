@@ -120,7 +120,7 @@ function Swiper(data) {
                         resistanceRatio             : parseValue(value.resistanceRatio, 'number', 0.25, [0, 1]),
 
                         autoplay                    : parseValue(value.autoplay, 'boolean', false),
-                        delay                       : parseValue(value.delay, 'number', 3000, [1, 10000]),
+                        delay                       : parseValue(value.delay, 'number', 3000, [1, 100000]),
                         stopOnLastSlide             : parseValue(value.stopOnLastSlide, 'boolean', false),
                         pauseOnMouseEnter           : parseValue(value.pauseOnMouseEnter, 'boolean', false),
 
@@ -423,6 +423,8 @@ function Swiper(data) {
         // 需要复制的滑块的数量 如果显示的滑块为自动 则复制全部滑块
         let length = data.slidesPerView == 'auto' ? slide.length : (data.slidesPerView < 5 ? 5 : data.slidesPerView);
 
+        if (slide.length <= data.slidesPerView) return false;
+
         // 复制到前面的滑块 移除‘原生’class 添加‘复制’和‘开始’class
         let start = slide.slice(length * -1).clone(true).removeClass('swiper-native').addClass(['swiper-duplicate', 'swiper-start']);
 
@@ -694,11 +696,13 @@ function Swiper(data) {
             if (data.centeredSlides) {
                 // 如果无缺口 则不能拖动 因为左侧要贴边
                 if (data.centeredSlidesBounds) status = false;
+            } else {
+                // status = false;
             }
         }
 
         // 无限循环时可以拖动
-        if (data.loop) status = true;
+        if (status && data.loop) status = true;
 
         // 禁止拖动
         if (!data.allowTouchMove) status = false;
@@ -706,7 +710,7 @@ function Swiper(data) {
         if (!status) return false;
 
         // 内容不足一屏幕且不居中 或关闭拖动时 没有拖动事件
-        // if ((nativeWidth <= width && !data.centeredSlides && !data.loop) || (!data.allowTouchMove && !data.loop)) return false;
+        if ((nativeWidth <= width && !data.centeredSlides) || !data.allowTouchMove) return false;
 
         // 鼠标悬停设置成手
         data.grabCursor && wrapper.css('cursor', 'grab');
@@ -1337,11 +1341,12 @@ function Swiper(data) {
 
         if (type == 'prev') {
             return data.loop ? list[list.indexOf(index) - 1] : (index == 0 ? (data.rewind ? pageTotal - 1 : index) : list[list.indexOf(index) - 1]);
-        } else if (type == 'next') {
+        } else if (type == 'next') {console.log(pageTotal)
             // 倒带和移动类型前进后退
             let rewind = this == window ? !data.stopOnLastSlide : data.rewind;
 
-            return data.loop ? list[list.indexOf(index) + 1] : (index == list[list.length - 1] ? (rewind ? 0 : index) : list[list.indexOf(index) + 1]);
+            // return data.loop ? list[list.indexOf(index) + 1] : (index == list[list.length - 1] ? (rewind ? 0 : index) : list[list.indexOf(index) + 1]);
+            return data.loop ? list[list.indexOf(index) + 1] : (index == pageTotal - 1 ? (rewind ? 0 : index) : list[list.indexOf(index) + 1]);
         } else if (type == 'pagination') {
             return page * data.slidesPerGroup;
         } else if (type == 'freeMode') {
