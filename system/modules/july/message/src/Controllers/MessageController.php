@@ -61,9 +61,9 @@ class MessageController extends Controller
             }
 
             return view('message::failed', [
-                        'errors' => $validator->errors()->messages(),
-                        'fields' => $fields,
-                    ]);
+                'errors' => $validator->errors()->messages(),
+                'fields' => $fields,
+            ]);
         }
 
         // 补全字段值
@@ -75,6 +75,15 @@ class MessageController extends Controller
             'trails' => $attributes['trails'] ?? $attributes['track_report'] ?? $attributes['trace_report'] ?? null,
             '_server' => $request->server(),
         ]);
+
+        $count = Message::whereDate('created_at', date('Y-m-d'))->where('ip', $request->ip())->count();
+
+        if ($count >= 3) {
+            return view('message::failed', [
+                'errors' => ['verify' => ['The maximum number of emails sent has been reached.']],
+                'fields' => [],
+            ]);
+        }
 
         // 保存消息到数据库
         $message = Message::create($attributes);
