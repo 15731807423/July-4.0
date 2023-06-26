@@ -61,6 +61,11 @@
             <span>@{{ scope.row.is_sent ? '已发送' : '未发送' }}</span>
           </template>
         </el-table-column>
+        <el-table-column label="IP地址" prop="mold_id" width="200" sortable>
+          <template slot-scope="scope">
+            <span>@{{ scope.row.ip }}</span>
+          </template>
+        </el-table-column>
         <el-table-column label="创建时间" prop="created_at" width="240" sortable>
           <template slot-scope="scope">
             <span>@{{ diffForHumans(scope.row.created_at) }}</span>
