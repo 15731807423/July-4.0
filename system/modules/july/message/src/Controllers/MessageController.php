@@ -76,17 +76,17 @@ class MessageController extends Controller
             '_server' => $request->server(),
         ]);
 
+        // 保存消息到数据库
+        $message = Message::create($attributes);
+
         $count = Message::whereDate('created_at', date('Y-m-d'))->where('ip', $request->ip())->count();
 
-        if ($count >= 3) {
+        if ($count > 3) {
             return view('message::failed', [
                 'errors' => ['verify' => ['The maximum number of emails sent has been reached.']],
                 'fields' => [],
             ]);
         }
-
-        // 保存消息到数据库
-        $message = Message::create($attributes);
 
         // 以邮件方式发送消息
         if (! $message->sendMail()) {
