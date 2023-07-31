@@ -22,7 +22,8 @@ function Swiper(data) {
     // 绑定的对象
     var bind;
 
-    var enable = true;
+    // 不知道 是否工作
+    var enable = true, work = true;
 
     init();
 
@@ -255,11 +256,24 @@ function Swiper(data) {
                 params.selector = container[i];
                 new Swiper(params);
             }
-            return false;
+
+            return work = false;
         }
 
-        container.css('width', '100%');
+        const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    run();
+                    observer.unobserve(container[0]);
+                }
+            });
+        });
 
+        // 开始观察轮播图容器
+        observer.observe(container[0]);
+    }
+
+    function run() {
         container.width(parseInt(container.width()));
 
         // 移除之前复制的元素
@@ -362,6 +376,8 @@ function Swiper(data) {
 
     // 窗口大小变化初始化插件
     function resize() {
+        if (!work) return false;
+
         container.css('width', '100%').html(container.html());
 
         wrapper = wrapperWidth = width = height = slideWidth = slideHeight = wrapperPositionRange = prevButton = nextButton = pagination = [];
@@ -1341,7 +1357,7 @@ function Swiper(data) {
 
         if (type == 'prev') {
             return data.loop ? list[list.indexOf(index) - 1] : (index == 0 ? (data.rewind ? pageTotal - 1 : index) : list[list.indexOf(index) - 1]);
-        } else if (type == 'next') {console.log(pageTotal)
+        } else if (type == 'next') {
             // 倒带和移动类型前进后退
             let rewind = this == window ? !data.stopOnLastSlide : data.rewind;
 
