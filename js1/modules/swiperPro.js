@@ -8,7 +8,7 @@ function Swiper(data) {
     var container, wrapper, wrapperWidth, width, height, slideWidth, slideHeight, wrapperPositionRange, prevButton, nextButton, pagination;
 
     // 当前索引 滑块 原生滑块 前面复制的滑块 后面复制的滑块 原生滑块的总宽 前面复制的滑块的总宽 后面复制的滑块的总宽 分页数量 旧的索引
-    var index, slide, native, prevAll = [], nextAll = [], nativeWidth = 0, prevWidth = 0, nextWidth = 0, pageTotal, indexOld;
+    var index = 0, slide, native, prevAll = [], nextAll = [], nativeWidth = 0, prevWidth = 0, nextWidth = 0, pageTotal, indexOld;
 
     // 当前动画id   移动类型 0静止 1自动播放切换 2鼠标拖动 3惯性运动 4两侧超出反弹 5贴边 6分页切换 7前进切换 8后退切换 9绑定轮播图切换时带动
     var animateId, moveType = 0;
@@ -22,8 +22,8 @@ function Swiper(data) {
     // 绑定的对象
     var bind;
 
-    // 不知道 是否工作
-    var enable = true, work = true;
+    // 不知道 是否工作 自己
+    var enable = true, work = true, self = this;
 
     init();
 
@@ -46,6 +46,8 @@ function Swiper(data) {
     this.bind = list => {
         bind = Array.isArray(list) ? list : [list];
     }
+
+    this.index = () => index;
 
     // 窗口大小变化
     initWindowResize();
@@ -138,6 +140,9 @@ function Swiper(data) {
                         selfAdaption                : parseValue(value.selfAdaption, 'object'),
 
                         thumbs                      : parseValue(value.thumbs, 'thumbs', false),
+                        image                       : parseValue(value.image, 'image', 'img'),
+                        text                        : parseValue(value.text, 'text', ''),
+                        parent                      : parseValue(value.parent, 'object', null),
                     };
                 }
                 break;
@@ -158,7 +163,8 @@ function Swiper(data) {
 
             case 'slidesPerView':
                 if (value == 'auto') return 'auto';
-                return parseValue(value, 'int', 1, [1, 9]);
+                if (value === false) return false;
+                return parseValue(value, 'int', 1);
                 break;
 
             case 'slidesPerGroup':
@@ -239,6 +245,10 @@ function Swiper(data) {
                     return thumbs;
                 }
                 break;
+
+            case 'image':
+            case 'text':
+                return value;
         }
 
         return defaultValue;
@@ -276,6 +286,8 @@ function Swiper(data) {
     function run() {
         container.width(parseInt(container.width()));
 
+        setThumbs();
+
         // 移除之前复制的元素
         $('.swiper-duplicate', container).remove();
 
@@ -303,6 +315,15 @@ function Swiper(data) {
         native                  = $('.swiper-native', wrapper);
         index                   = data.initialSlide < slide.length ? data.initialSlide : slide.length - 1;
         indexOld                = index;
+
+        if (data.slidesPerView > slide.length) {
+            data.slidesPerView = slide.length;
+        }
+
+        if (data.slidesPerView === false) {
+            container.css('overflow', 'unset');
+            wrapper.css('width', '100%');
+        }
 
         data.fitDistance = data.fitDistance < 1 ? width * data.fitDistance : data.fitDistance;
 
@@ -374,6 +395,20 @@ function Swiper(data) {
         initDrag();
     }
 
+    function setThumbs() {
+        container.addClass('swiper');
+
+        if (data.text) {
+            $('.swiper-container .swiper-wrapper .swiper-cell ' + data.text, data.parent).each(function () {
+                container.append('<div class="swiper-cell"><span>' + $(this).html() + '</span></div>');
+            });
+        } else if (data.image) {
+            $('.swiper-container .swiper-wrapper .swiper-cell ' + data.image, data.parent).each(function () {
+                container.append('<div class="swiper-cell"><img src="' + $(this).attr('src') + '"></div>');
+            });
+        }
+    }
+
     // 窗口大小变化初始化插件
     function resize() {
         if (!work) return false;
@@ -436,6 +471,8 @@ function Swiper(data) {
 
     // 初始化无限循环
     function initLoop() {
+        if (data.slidesPerView === false) return false;
+
         // 需要复制的滑块的数量 如果显示的滑块为自动 则复制全部滑块
         let length = data.slidesPerView == 'auto' ? slide.length : (data.slidesPerView < 5 ? 5 : data.slidesPerView);
 
@@ -669,8 +706,16 @@ function Swiper(data) {
             setPositionByNativeIndex(true, () => (moveType = 0));
         }
 
+        data.thumbs.parent = container;
+
+        let selector = $(data.thumbs.selector, container);
+        if (selector.length == 0) {
+            selector = $(data.thumbs.selector);
+        }
+        data.thumbs.selector = selector;
         thumbs = new Swiper(data.thumbs);
-        thumbs.setThumbsIndex(0);
+        thumbs.bind(self);
+        setTimeout(() => thumbs.setThumbsIndex(0), 600);
     }
 
     // 初始化监听窗口大小变化
@@ -1455,10 +1500,12 @@ function Swiper(data) {
 
         indexOld = index;
 
-        // 位置没有变化不执行
-        if (x == (current = getPosition())) return callback && callback();
+        callback && callback();
 
-        thumbs && thumbs.setThumbsIndex(index);
+        moveType != 9 && thumbs && index !== thumbs.index() && thumbs.setThumbsIndex(index);
+
+        // 位置没有变化不执行
+        if (x == (current = getPosition())) return false;
 
         // 移动
         // wrapper.stop().animation({ marginLeft: x }, animation ? (animation === true ? data.speed : animation) : 0, easing, callback);
