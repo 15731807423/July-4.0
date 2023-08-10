@@ -19,22 +19,33 @@ function Swiper(data) {
     // 锁 缩略图对象 自动播放的定时任务 边缘
     var lock = false, thumbs, timer, border = { left: [], right: [], center: [] };
 
-    // 绑定的对象
-    var bind;
+    // 绑定的对象 待办列队
+    var bind, queue = [];
 
     // 不知道 是否工作 自己
     var enable = true, work = true, self = this;
 
+    // 实例化完成
+    this.complete = false;
+
     init();
 
     this.setThumbsIndex = i => {
-        native.removeClass('swiper-thumbs-index');
-        native.eq(i).addClass('swiper-thumbs-index');
+        let callback = () => {
+            native.removeClass('swiper-thumbs-index');
+            native.eq(i).addClass('swiper-thumbs-index');
 
-        // if (!checkShowByElement(native.eq(i))) {
-            index = i;
-            setPositionByNativeIndex();
-        // }
+            // if (!checkShowByElement(native.eq(i))) {
+                index = i;
+                setPositionByNativeIndex();
+            // }
+        };
+
+        this.complete ? callback() : queue.push(callback);
+    };
+
+    this.queue = callback => {
+        queue.push(callback);
     };
 
     this.setIndex = i => {
@@ -283,7 +294,7 @@ function Swiper(data) {
         observer.observe(container[0]);
     }
 
-    function run() {
+    function run(resize = false) {
         container.width(parseInt(container.width()));
 
         setThumbs();
@@ -295,7 +306,7 @@ function Swiper(data) {
 
         initSelfAdaption();
 
-        if (!wrapper) {
+        if (resize === false) {
             slide = $('.swiper-cell', container);
             let html = '';
             slide.each(function () {
@@ -305,7 +316,6 @@ function Swiper(data) {
             container.prepend('<div class="swiper-container"><div class="swiper-wrapper">' + html + '</div></div>');
         }
 
-        // wrapper                 = $('.swiper-wrapper', container);
         wrapper                 = container.children('.swiper-container').css('overflow', 'hidden').children('.swiper-wrapper');
         width                   = container.width();
         height                  = container.height();
@@ -378,7 +388,7 @@ function Swiper(data) {
         initThumbs();
 
         // 设置当前显示的滑块的索引 因为可能有默认值 默认不是第一个滑块
-        setPositionByNativeIndex(false);
+        resize || setPositionByNativeIndex(false);
 
         // 拖动时不触发a标签点击事件
         $('a').click(function (e) {
@@ -393,17 +403,26 @@ function Swiper(data) {
 
         // 初始化拖动事件
         initDrag();
+
+        for (let i = 0; i < queue.length; i++) {
+            queue[i]()
+        }
+        queue = [];
+
+        self.complete = true;
     }
 
     function setThumbs() {
-        container.addClass('swiper');
+        if (!data.parent) return false;
+
+        container.addClass('swiper').html('');
 
         if (data.text) {
-            $('.swiper-container .swiper-wrapper .swiper-cell ' + data.text, data.parent).each(function () {
+            $('.swiper-container .swiper-wrapper .swiper-cell.swiper-native ' + data.text, data.parent).each(function () {
                 container.append('<div class="swiper-cell"><span>' + $(this).html() + '</span></div>');
             });
         } else if (data.image) {
-            $('.swiper-container .swiper-wrapper .swiper-cell ' + data.image, data.parent).each(function () {
+            $('.swiper-container .swiper-wrapper .swiper-cell.swiper-native ' + data.image, data.parent).each(function () {
                 container.append('<div class="swiper-cell"><img src="' + $(this).attr('src') + '"></div>');
             });
         }
@@ -412,6 +431,8 @@ function Swiper(data) {
     // 窗口大小变化初始化插件
     function resize() {
         if (!work) return false;
+
+        self.complete = false;
 
         container.css('width', '100%').html(container.html());
 
@@ -424,7 +445,7 @@ function Swiper(data) {
         lock = false;
         border = { left: [], right: [], center: [] };
 
-        init();
+        run(true);
     }
 
     // 初始化自适应
@@ -637,6 +658,11 @@ function Swiper(data) {
         prevButton = $(data.navigation.prev, data.navigation.actionScope ? 'body' : container);
         nextButton = $(data.navigation.next, data.navigation.actionScope ? 'body' : container);
 
+        if (typeof data.slidesPerView === 'number' && data.slidesPerView >= native.length) {
+            prevButton.addClass('disabled');
+            nextButton.addClass('disabled');
+        }
+
         // 前进后退按钮点击事件 禁止用户选择 防止双击时选中内容
         prevButton.click(prev).css('user-select', 'none');
         nextButton.click(next).css('user-select', 'none');
@@ -712,10 +738,14 @@ function Swiper(data) {
         if (selector.length == 0) {
             selector = $(data.thumbs.selector);
         }
+        selector = selector.filter(':visible');
+        if (selector.length == 0) {
+            return false;
+        }
         data.thumbs.selector = selector;
         thumbs = new Swiper(data.thumbs);
         thumbs.bind(self);
-        setTimeout(() => thumbs.setThumbsIndex(0), 600);
+        thumbs.queue(() => thumbs.setThumbsIndex(data.initialSlide));
     }
 
     // 初始化监听窗口大小变化
@@ -779,33 +809,6 @@ function Swiper(data) {
         //  正在移动       元素位置     开始时鼠标坐标  开始时间    上次鼠标坐标   第一次移动方向   上次移动方向    整体移动距离 整体移动方向 惯性
         var move = false, elPosition, startPosition, startTime, lastPosition, firstDirection, lastDirection, distance, direction, momentum;
 
-        // 鼠标按下 开始处理移动 获取鼠标当前坐标 获取滑动元素当前移动距离
-        wrapper.on('pointerdown', function (e) {
-            // 贴边时不能拖动
-            // if (moveType == 5) return false;
-
-            // 鼠标按下后鼠标悬停设置成抓手
-            data.grabCursor && wrapper.css('cursor', 'grabbing');
-
-            // 此时元素可能正在移动 停止移动
-            stop()
-
-            // 开始拖动 元素位置 开始时鼠标坐标 开始时间 上次鼠标坐标 整体移动距离 整体移动方向 惯性
-            move = true;
-            elPosition = getPosition();
-            startPosition = e.clientX;
-            startTime = time();
-            lastPosition = e.clientX;
-            firstDirection = null;
-            lastDirection = null;
-            distance = 0;
-            direction = null;
-            momentum = !!data.momentum;
-
-            // 移动类型鼠标拖动
-            moveType = 2;
-        });
-
         // 鼠标移动 获取移动距离 设置滑动元素移动距离
         let moveFunction = e => {
             // 没有开始事件不执行
@@ -846,6 +849,8 @@ function Swiper(data) {
             // 该方向上的移动距离
             distance = Math.abs(x - startPosition);
 
+            if (distance == 0) return move = false;
+
             // 上次鼠标坐标 上次移动方向 整体移动方向
             lastPosition = x;
             lastDirection = currentDirection;
@@ -854,20 +859,20 @@ function Swiper(data) {
             // 设置轮播图位置 根据鼠标移动距离计算轮播图位置
             setPosition(getWrapperPositionByDrag(elPosition, distance, currentDirection));
         }
-        $('html').on('touchmove', moveFunction);
-        $('html').on('pointermove', moveFunction);
+        // $('html').on('touchmove', moveFunction);
+        // $('html').on('pointermove', moveFunction);
 
         // 鼠标松开
         let endFunction = e => {
-            if (move) {
+            // 鼠标松开后鼠标悬停设置成松手
+            data.grabCursor && wrapper.css('cursor', 'grab');
+
+            if (move && distance > 0) {
                 // 松开后关闭状态
                 move = false;
 
                 // 移动类型静止
                 moveType = 0;
-
-                // 鼠标松开后鼠标悬停设置成松手
-                data.grabCursor && wrapper.css('cursor', 'grab');
 
                 // 没有移动 贴边
                 if (distance == 0) {
@@ -878,10 +883,10 @@ function Swiper(data) {
                 // 倒带模式且没有无限循环
                 if (data.rewind && !data.loop) {
                     let position = getPosition();
-                    if (position > wrapperPositionRange[1] && distance > width / 3 * 2) {
+                    if (position > wrapperPositionRange[1] && distance > data.fitDistance) {
                         return moveType = 5, index = 0, setPositionByNativeIndex(true, () => moveType = 0);
                     }
-                    if (position < wrapperPositionRange[0] && distance > width / 3 * 2) {
+                    if (position < wrapperPositionRange[0] && distance > data.fitDistance) {
                         return moveType = 5, index = pageTotal - 1, setPositionByNativeIndex(true, () => moveType = 0);
                     }
                 }
@@ -942,10 +947,48 @@ function Swiper(data) {
                         setPosition(left, duration = data.momentum.ratio, () => (dragCallback(direction)), 3);
                     })() : dragCallback(direction);
                 })() : dragCallback(direction);
+            } else {
+                moveType = 0;
             }
+
+            $('html').off('pointermove', moveFunction);
+            $('html').off('pointerup', endFunction);
         }
-        $('html').on('touchend', endFunction);
-        $('html').on('pointerup', endFunction);
+
+        // 鼠标按下 开始处理移动 获取鼠标当前坐标 获取滑动元素当前移动距离
+        wrapper.on('pointerdown', function (e) {
+            e.preventDefault();
+            if (!((e.pointerType == 'mouse' && e.button == 0) || e.pointerType == 'touch')) return false;
+
+            $('html').on('pointermove', moveFunction);
+            $('html').on('pointerup', endFunction);
+
+            // 贴边时不能拖动
+            // if (moveType == 5) return false;
+
+            // 鼠标按下后鼠标悬停设置成抓手
+            data.grabCursor && wrapper.css('cursor', 'grabbing');
+
+            // 此时元素可能正在移动 停止移动
+            stop()
+
+            // 开始拖动 元素位置 开始时鼠标坐标 开始时间 上次鼠标坐标 整体移动距离 整体移动方向 惯性
+            move = true;
+            elPosition = getPosition();
+            startPosition = e.clientX;
+            startTime = time();
+            lastPosition = e.clientX;
+            firstDirection = null;
+            lastDirection = null;
+            distance = 0;
+            direction = null;
+            momentum = !!data.momentum;
+
+            // 移动类型鼠标拖动
+            moveType = 2;
+        });
+        // $('html').on('touchend', endFunction);
+        // $('html').on('pointerup', endFunction);
     }
 
     // 拖动事件的回调函数 如果存在惯性运动 则在运动完成后执行
