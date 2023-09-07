@@ -25,6 +25,8 @@ function Swiper(data) {
     // 不知道 是否工作 自己
     var enable = true, work = true, self = this;
 
+    var original = JSON.parse(JSON.stringify(data));
+
     // 实例化完成
     this.complete = false;
 
@@ -326,9 +328,9 @@ function Swiper(data) {
         index                   = data.initialSlide < slide.length ? data.initialSlide : slide.length - 1;
         indexOld                = index;
 
-        if (data.slidesPerView > slide.length) {
-            data.slidesPerView = slide.length;
-        }
+        // if (data.slidesPerView > slide.length) {
+        //     data.slidesPerView = slide.length;
+        // }
 
         if (data.slidesPerView === false) {
             container.css('overflow', 'unset');
@@ -444,6 +446,8 @@ function Swiper(data) {
         moveType = 0;
         lock = false;
         border = { left: [], right: [], center: [] };
+
+        data = JSON.parse(JSON.stringify(original));
 
         run(true);
     }
@@ -661,6 +665,9 @@ function Swiper(data) {
         if (typeof data.slidesPerView === 'number' && data.slidesPerView >= native.length) {
             prevButton.addClass('disabled');
             nextButton.addClass('disabled');
+        } else {
+            prevButton.removeClass('disabled');
+            nextButton.removeClass('disabled');
         }
 
         // 前进后退按钮点击事件 禁止用户选择 防止双击时选中内容
@@ -809,10 +816,15 @@ function Swiper(data) {
         //  正在移动       元素位置     开始时鼠标坐标  开始时间    上次鼠标坐标   第一次移动方向   上次移动方向    整体移动距离 整体移动方向 惯性
         var move = false, elPosition, startPosition, startTime, lastPosition, firstDirection, lastDirection, distance, direction, momentum;
 
+        // 被拖动元素       移动过（点击一下不会触发移动）
+        var target = null, moved = false;
+
         // 鼠标移动 获取移动距离 设置滑动元素移动距离
         let moveFunction = e => {
             // 没有开始事件不执行
             if (!move) return $('html').select();
+
+            moved = true;
 
             let x = typeof e.clientX == 'number' ? e.clientX : e.touches[0].clientX;
 
@@ -849,7 +861,11 @@ function Swiper(data) {
             // 该方向上的移动距离
             distance = Math.abs(x - startPosition);
 
-            if (distance == 0) return move = false;
+            if (distance == 0 || moved === false) {
+                moved = false;
+                // aClickEnabled();
+                return move = false;
+            }
 
             // 上次鼠标坐标 上次移动方向 整体移动方向
             lastPosition = x;
@@ -864,6 +880,25 @@ function Swiper(data) {
 
         // 鼠标松开
         let endFunction = e => {
+            if (!target) {
+                return false;
+            }console.log(moved, 1, target)
+
+            if (!moved) {
+                if (target.tagName === 'A') {
+                    aClickEnabled(target);
+                    $(target).click();
+                } else if ($(target).parents('a').length) {
+                    aClickEnabled($(target).parents('a')[0]);
+                    $(target).parents('a').click();
+                }
+
+                move = false;
+                moveType = 0;
+                target = null;
+                return false;
+            }
+
             // 鼠标松开后鼠标悬停设置成松手
             data.grabCursor && wrapper.css('cursor', 'grab');
 
@@ -953,12 +988,25 @@ function Swiper(data) {
 
             $('html').off('pointermove', moveFunction);
             $('html').off('pointerup', endFunction);
+
+            return false;
         }
 
         // 鼠标按下 开始处理移动 获取鼠标当前坐标 获取滑动元素当前移动距离
         wrapper.on('pointerdown', function (e) {
-            e.preventDefault();
             if (!((e.pointerType == 'mouse' && e.button == 0) || e.pointerType == 'touch')) return false;
+
+            moved = false;
+
+            target = e.target;
+
+            if (target.tagName === 'A') {
+                aClickDisabled(target);
+            } else if ($(target).parents('a').length) {
+                aClickDisabled($(target).parents('a')[0]);
+            }
+
+            e.preventDefault();
 
             $('html').on('pointermove', moveFunction);
             $('html').on('pointerup', endFunction);
@@ -989,6 +1037,21 @@ function Swiper(data) {
         });
         // $('html').on('touchend', endFunction);
         // $('html').on('pointerup', endFunction);
+    }
+
+    // 阻止默认事件
+    function aClickHandler(e) {
+        e.preventDefault();
+    }
+
+    // 禁用
+    function aClickDisabled(el) {
+        el.addEventListener('click', aClickHandler);
+    }
+
+    // 启用
+    function aClickEnabled(el) {
+        el.removeEventListener('click', aClickHandler);
     }
 
     // 拖动事件的回调函数 如果存在惯性运动 则在运动完成后执行
