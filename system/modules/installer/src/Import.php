@@ -259,7 +259,7 @@ class Import
                 $node = Node::create($info);
 
                 if ($page['deleted_at']) {
-                    $node->delete();var_dump(1)
+                    $node->delete();
                 }
             }
         }
