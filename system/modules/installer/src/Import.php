@@ -256,7 +256,11 @@ class Import
                 $info = array_merge($info, array_diff_key($page, array_flip($diff)));
                 $info['_changed'] = array_keys($info);
 
-                Node::create($info);
+                $node = Node::create($info);
+
+                if ($page['deleted_at']) {
+                    $node->delete();var_dump(1)
+                }
             }
         }
     }
