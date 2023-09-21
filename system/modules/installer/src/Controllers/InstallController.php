@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Storage;
 use Installer\Installer;
+use Installer\Import;
 
 class InstallController extends Controller
 {
@@ -59,6 +60,7 @@ class InstallController extends Controller
     public function migrate(Request $request)
     {
         Installer::migrate();
+        Import::run();
         return response('');
     }
 }
