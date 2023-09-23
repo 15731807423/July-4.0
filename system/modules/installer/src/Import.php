@@ -60,6 +60,7 @@ class Import
         self::page();
         self::catalog();
         self::mail();
+        self::translate();
 
         return true;
     }
@@ -241,26 +242,37 @@ class Import
         NodeIndex::truncate();
         NodeTranslation::truncate();
 
-        foreach ($data as $code => $list) {
-            foreach ($list as $page) {
-                $diff = [ 'id', 'type_id', 'created_at', 'updated_at', 'deleted_at', 'title', 'view', 'is_red', 'is_green', 'is_blue', 'exists', 'type'];
+        foreach ($data as $page) {
+            $info = [
+                'id' => $page['id'],
+                'mold_id' => $page['type']['name'],
+                'langcode' => self::$defaultLanguage['code']
+            ];
+
+            $info = array_merge($info, array_diff_key($page, array_flip(['id', 'type_id', 'created_at', 'updated_at', 'deleted_at', 'exists', 'type', 'languages'])));
+            $info['_changed'] = array_keys($info);
+
+            $node = Node::create($info);
+
+            foreach ($page['languages'] as $code => $language) {
+                if (is_null($language)) {
+                    continue;
+                }
+
+                $node->translateTo($code);
+
                 $info = [
                     'mold_id' => $page['type']['name'],
-                    'title' => $page['title'],
-                    'view' => $page['view'],
-                    'is_red' => $page['is_red'],
-                    'is_green' => $page['is_green'],
-                    'is_blue' => $page['is_blue'],
                     'langcode' => $code
                 ];
-                $info = array_merge($info, array_diff_key($page, array_flip($diff)));
+
+                $info = array_merge($info, array_diff_key($language, array_flip(['id', 'type_id', 'created_at', 'updated_at', 'deleted_at', 'exists'])));
                 $info['_changed'] = array_keys($info);
+                $node->update($info);
+            }
 
-                $node = Node::create($info);
-
-                if ($page['deleted_at']) {
-                    $node->delete();
-                }
+            if ($page['deleted_at']) {
+                $node->delete();
             }
         }
     }
@@ -305,31 +317,34 @@ class Import
         }
     }
 
+    private static function translate()
+    {
+        $data = self::$data['translate'];
+
+        app()->make('settings.translate')->save([
+            'translate.code' => $data['code'],
+            'translate.fields' => $data['fields'],
+            'translate.text' => $data['text'],
+            'translate.replace' => $data['replace'],
+        ]);
+    }
+
     private static function treeConvert(array $list, ?int $parent_id = null)
     {
         $positions = [];
 
         foreach ($list as $key => $data) {
-            $id = self::idConvert($data['id']);
-
             $positions[] = [
-                'id' => $id,
+                'id' => $data['id'],
                 'parent_id' => $parent_id,
                 'prev_id' => $list[$key - 1]['id'] ?? null
             ];
 
             if (isset($data['children'])) {
-                $positions = array_merge($positions, self::treeConvert($data['children'], $id));
+                $positions = array_merge($positions, self::treeConvert($data['children'], $data['id']));
             }
         }
 
         return $positions;
-    }
-
-    private static function idConvert(int $id)
-    {
-        $title = collect(self::$data['pages'][self::$defaultLanguage['code']])->filter(fn ($page) => $page['id'] == $id)->first()['title'];
-
-        return Node::where('title', $title)->where('langcode', self::$defaultLanguage['code'])->first()->id;
     }
 }
