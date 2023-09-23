@@ -15,6 +15,8 @@ abstract class ActionBase extends Controller
 
     protected static $title = null;
 
+    protected static $download = false;
+
     public static function getRouteUrl()
     {
         $url = static::$routeUrl ?? Str::kebab(class_basename(static::class));
@@ -30,6 +32,11 @@ abstract class ActionBase extends Controller
     public static function getTitle()
     {
         return static::$title ?? ucwords(Str::snake(class_basename(static::class)));
+    }
+
+    public static function getDownload()
+    {
+        return static::$download;
     }
 
     public static function defineRoutes()
