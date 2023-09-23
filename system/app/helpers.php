@@ -9,8 +9,9 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Specs\spec;
 use Illuminate\Support\Facades\Artisan;
+// use ZipArchive;
 
-if (! function_exists('backend_path')) {
+if (!function_exists('backend_path')) {
     /**
      * 后台主题路径
      *
@@ -26,7 +27,7 @@ if (! function_exists('backend_path')) {
     }
 }
 
-if (! function_exists('frontend_path')) {
+if (!function_exists('frontend_path')) {
     /**
      * 前端主题路径
      *
@@ -42,7 +43,7 @@ if (! function_exists('frontend_path')) {
     }
 }
 
-if (! function_exists('base64_decode_array')) {
+if (!function_exists('base64_decode_array')) {
     /**
      * 递归解码 base64 编码过的数组
      *
@@ -68,7 +69,7 @@ if (! function_exists('base64_decode_array')) {
     }
 }
 
-if (! function_exists('lang')) {
+if (!function_exists('lang')) {
     /**
      * 获取语言操作对象
      *
@@ -81,7 +82,7 @@ if (! function_exists('lang')) {
     }
 }
 
-if (! function_exists('langcode')) {
+if (!function_exists('langcode')) {
     /**
      * 获取语言代码
      *
@@ -94,7 +95,7 @@ if (! function_exists('langcode')) {
     }
 }
 
-if (! function_exists('langname')) {
+if (!function_exists('langname')) {
     /**
      * 获取语言名称
      *
@@ -108,7 +109,7 @@ if (! function_exists('langname')) {
     }
 }
 
-if (! function_exists('langname_by_chinese')) {
+if (!function_exists('langname_by_chinese')) {
     /**
      * 返回已添加语言的中文名称
      *
@@ -122,7 +123,7 @@ if (! function_exists('langname_by_chinese')) {
     }
 }
 
-if (! function_exists('current_lang_code')) {
+if (!function_exists('current_lang_code')) {
     /**
      * 获取当前语言代码
      *
@@ -142,14 +143,14 @@ if (! function_exists('current_lang_code')) {
     }
 }
 
-if (! function_exists('cast')) {
+if (!function_exists('cast')) {
     function cast($value, $caster, $force = true)
     {
         return Types::cast($value, $caster, $force);
     }
 }
 
-if (! function_exists('short_url')) {
+if (!function_exists('short_url')) {
     /**
      * 生成一个短 url （不带域名）
      *
@@ -167,7 +168,7 @@ if (! function_exists('short_url')) {
     }
 }
 
-if (! function_exists('under_route')) {
+if (!function_exists('under_route')) {
     function under_route($route, $path)
     {
         $url = short_url($route);
@@ -176,7 +177,7 @@ if (! function_exists('under_route')) {
     }
 }
 
-if (! function_exists('view_with_langcode')) {
+if (!function_exists('view_with_langcode')) {
     /**
      * Get the evaluated view contents for the given view.
      *
@@ -201,7 +202,7 @@ if (! function_exists('view_with_langcode')) {
     }
 }
 
-if (! function_exists('is_json')) {
+if (!function_exists('is_json')) {
     function is_json($value)
     {
         if (! is_scalar($value) && ! method_exists($value, '__toString')) {
@@ -214,7 +215,7 @@ if (! function_exists('is_json')) {
     }
 }
 
-if (! function_exists('last_modified')) {
+if (!function_exists('last_modified')) {
     function last_modified($path)
     {
         if (is_file($path)) {
@@ -236,7 +237,7 @@ if (! function_exists('last_modified')) {
     }
 }
 
-if (! function_exists('str_diff')) {
+if (!function_exists('str_diff')) {
     function str_diff($str1, $str2)
     {
         $diff = str_replace(str_split($str1), '', $str2);
@@ -244,7 +245,7 @@ if (! function_exists('str_diff')) {
     }
 }
 
-if (! function_exists('real_args')) {
+if (!function_exists('real_args')) {
     /**
      * 格式化传入参数
      *
@@ -262,7 +263,7 @@ if (! function_exists('real_args')) {
     }
 }
 
-if (! function_exists('short_md5')) {
+if (!function_exists('short_md5')) {
     /**
      * @return string
      */
@@ -272,7 +273,7 @@ if (! function_exists('short_md5')) {
     }
 }
 
-if (! function_exists('safe_get_contents')) {
+if (!function_exists('safe_get_contents')) {
     /**
      * @param  string $file
      * @return string
@@ -283,7 +284,7 @@ if (! function_exists('safe_get_contents')) {
     }
 }
 
-if (! function_exists('get_field_types')) {
+if (!function_exists('get_field_types')) {
     /**
      * 获取所有字段类型
      *
@@ -296,7 +297,7 @@ if (! function_exists('get_field_types')) {
     }
 }
 
-if (! function_exists('gather')) {
+if (!function_exists('gather')) {
     /**
      * 在模型或模型集上执行 gather
      *
@@ -317,7 +318,7 @@ if (! function_exists('gather')) {
     }
 }
 
-if (! function_exists('html_compress')) {
+if (!function_exists('html_compress')) {
     /**
      * 压缩 html（简单的去除每行前导空白）
      *
@@ -330,7 +331,7 @@ if (! function_exists('html_compress')) {
     }
 }
 
-if (! function_exists('format_value')) {
+if (!function_exists('format_value')) {
     /**
      * 格式化数据
      *
@@ -347,7 +348,7 @@ if (! function_exists('format_value')) {
     }
 }
 
-if (! function_exists('specs_name')) {
+if (!function_exists('specs_name')) {
     /**
      * 全部规格名称
      *
@@ -509,5 +510,95 @@ if (!function_exists('check_array_type')) {
         $values = array_values($data);
         $diff = array_diff_key($data, $values);
         return $diff ? 'associative' : 'index';
+    }
+}
+
+if (!function_exists('compress')) {
+    function compress(string $source, string $target)
+    {
+        $source = rtrim($source, "/\\");
+
+        // 压缩包实例和名称
+        $zip = new ZipArchive;
+
+        // 创建压缩文件
+        $zip->open($target, ZipArchive::CREATE) === true || abort(500, '创建压缩文件失败');
+
+        // 获取目录下内容
+        $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($source), \RecursiveIteratorIterator::LEAVES_ONLY);
+
+        // 循环处理目录下内容
+        foreach ($files as $name => $file) {
+            if (!$file->isDir()) {
+                $filePath = $file->getRealPath();
+                $relativePath = substr($filePath, strlen($source) + 1);
+                $relativePath = str_replace('\\', '/', $relativePath);
+
+                $zip->addFile($filePath, $relativePath);
+            }
+        }
+
+        // 关闭
+        $zip->close();
+    }
+}
+
+if (!function_exists('decompress')) {
+    function decompress(string $source, string $target)
+    {
+        // 压缩包实例
+        $zip = new ZipArchive();
+
+        // 打开压缩包
+        $zip->open($source) || abort(500, '无法打开压缩包');
+
+        // 转码
+        for ($i = 0; $i < $zip->numFiles; $i++) { 
+            $info = $zip->statIndex($i, ZipArchive::FL_ENC_RAW);
+            $zip->renameIndex($i, iconv('GBK', 'utf-8//IGNORE', $info['name']));
+        }
+        $zip->close();
+        $zip->open($source) || abort(500, '无法打开压缩包');
+
+        // 解压并关闭
+        $zip->extractTo($target);
+        $zip->close();
+    }
+}
+
+if (!function_exists('compressByFile')) {
+    function compressByFile(string $root, array $source, string $target)
+    {
+        $root = realpath($root);
+
+        if (!$root) {
+            return false;
+        }
+
+        // 压缩包实例和名称
+        $zip = new ZipArchive;
+
+        // 创建压缩文件
+        if ($zip->open($target, ZipArchive::CREATE) !== true) {
+            return false;
+        };
+
+        foreach ($source as $path) {
+
+            $path = realpath($path);
+            if (!$path) {
+                continue;
+            }
+
+            $relativePath = substr($path, strlen($root) + 1);
+            $relativePath = str_replace('\\', '/', $relativePath);
+
+            $zip->addFile($path, $relativePath);    
+        }
+
+        // 关闭
+        $zip->close();
+
+        return true;
     }
 }
