@@ -138,6 +138,7 @@ class AppServiceProvider extends ServiceProvider
         return [
             \App\Http\Actions\ClearCache::class,
             \App\Http\Actions\BuildGoogleSitemap::class,
+            \App\Http\Actions\Export::class,
         ];
     }
 }
