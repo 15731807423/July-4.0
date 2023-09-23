@@ -87,11 +87,11 @@
                 </button>
 
                 @foreach (array_unique(config('app.actions')) as $action)
-                <button type="button" class="md-button md-small md-primary md-theme-default" @click.stop="doAction('{{ short_url($action::getRouteName()) }}', '{{ $action::getTitle() }}')">
-                    <div class="md-ripple">
-                        <div class="md-button-content">{{ $action::getTitle() }}</div>
-                    </div>
-                </button>
+                    <button type="button" class="md-button md-small md-primary md-theme-default" @click.stop="doAction('{{ short_url($action::getRouteName()) }}', '{{ $action::getTitle() }}', {{ $action::getDownload() }})">
+                        <div class="md-ripple">
+                            <div class="md-button-content">{{ $action::getTitle() }}</div>
+                        </div>
+                    </button>
                 @endforeach
 
                 {{-- <button type="button" class="md-button md-small md-primary md-theme-default" @click.stop="rebuildIndex">
@@ -302,7 +302,7 @@
                         background: 'rgba(255, 255, 255, 0.7)',
                     });
 
-                    return axios[(config.method || 'get')](config.action).then(response => {
+                    return axios[(config.method || 'get')](config.action, {}, { responseType: 'blob' }).then(response => {
                         loading.close();
                         return response;
                     }).catch(error => {
@@ -313,12 +313,26 @@
                     });
                 },
 
-                doAction(action, title) {console.log(action, title)
+                doAction(action, title, download) {
                     this.process({
                         text: `正在${title} ...`,
                         method: 'post',
                         action: action,
+                        download: download
                     }).then(response => {
+                        if (download) {
+                            let blob = new Blob([response.data]);
+                            let href = window.URL.createObjectURL(blob);
+                            let a = document.createElement('a');
+
+                            a.href = href;
+                            a.download = '导出.zip';
+                            a.click();
+                            a.remove();
+
+                            window.URL.revokeObjectURL(href);
+                        }
+
                         status = response.status;
                         if (status && status >= 200 && status <= 299) {
                             this.$message.success(`已完成：${title}`);
