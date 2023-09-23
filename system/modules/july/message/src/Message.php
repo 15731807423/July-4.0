@@ -228,6 +228,10 @@ class Message extends EntityBase
     {
         $report = json_decode(stripslashes($report), true);
 
+        if (!$report) {
+            return [];
+        }
+
         $trails = array_map(function ($record) {
             $min = strval(intval($record[1]/60));
             $sec = strval(intval($record[1]%60));
