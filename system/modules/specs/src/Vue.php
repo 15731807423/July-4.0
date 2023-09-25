@@ -720,10 +720,10 @@ class Vue
 			is_null($value['screen_default']) || $item['default'] = format_value($value['screen_default']);
 			$value['screen_item_order'] = $value['screen_item_order'] ?? null;
 			is_null($value['screen_item_order']) || $item['itemOrder'] = array_values(array_unique(explode('|', format_value($value['screen_item_order']))));
-			$value['screen_config'] = $value['screen_config'] ?? null;
-			is_null($value['screen_config']) || (($item['config'] = $value['screen_config']) && $this->handleConfigValue($item['config']));
-			$value['screen_config_group'] = $value['screen_config_group'] ?? null;
-			is_null($value['screen_config_group']) || (($item['configGroup'] = $value['screen_config_group']) && $this->handleConfigValue($item['configGroup']));
+			$item['config'] = $value['screen_config'] ?? null;
+			$item['config'] = $item['config'] ? $this->handleConfigValue($item['config']) : ['a' => 1];
+			$item['configGroup'] = $value['screen_config_group'] ?? null;
+			$item['configGroup'] = $item['configGroup'] ? $this->handleConfigValue($item['configGroup']) : ['a' => 1];
 
 			$screen[$key] = $item;
 		}
