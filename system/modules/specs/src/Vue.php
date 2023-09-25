@@ -716,9 +716,13 @@ class Vue
 			];
 
 			// 不为空的属性处理后加进来
+			$value['screen_default'] = $value['screen_default'] ?? null;
 			is_null($value['screen_default']) || $item['default'] = format_value($value['screen_default']);
+			$value['screen_item_order'] = $value['screen_item_order'] ?? null;
 			is_null($value['screen_item_order']) || $item['itemOrder'] = array_values(array_unique(explode('|', format_value($value['screen_item_order']))));
+			$value['screen_config'] = $value['screen_config'] ?? null;
 			is_null($value['screen_config']) || (($item['config'] = $value['screen_config']) && $this->handleConfigValue($item['config']));
+			$value['screen_config_group'] = $value['screen_config_group'] ?? null;
 			is_null($value['screen_config_group']) || (($item['configGroup'] = $value['screen_config_group']) && $this->handleConfigValue($item['configGroup']));
 
 			$screen[$key] = $item;
