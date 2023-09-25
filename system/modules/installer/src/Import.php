@@ -322,6 +322,8 @@ class Import
         $data = self::$data['translate'];
 
         app()->make('settings.translate')->save([
+            'translate.tool' => 'alibabacloud',
+            'translate.mode' => 'task',
             'translate.code' => $data['code'],
             'translate.fields' => $data['fields'],
             'translate.text' => $data['text'],
