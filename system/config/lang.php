@@ -48,6 +48,10 @@ return [
             'native' => 'français',
             'dir' => 'ltr',
         ],
+        'fil' => [
+            'native' => 'Pilipino',
+            'dir' => 'ltr',
+        ],
         'hi' => [
             'native' => 'हिन्दी, हिंदी',
             'dir' => 'ltr',
@@ -58,6 +62,10 @@ return [
         ],
         'ja' => [
             'native' => '日本語',
+            'dir' => 'ltr',
+        ],
+        'pt-PT' => [
+            'native' => 'Português',
             'dir' => 'ltr',
         ],
         'ru' => [
