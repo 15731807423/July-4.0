@@ -12,7 +12,12 @@ const translate = {
 	},
 
 	error(message = '翻译失败') {
-		this.message.error(message);
+		this.message({
+			message: message,
+			type: 'error',
+			duration: 0,
+			showClose: true
+		});
 	},
 
 	frame(loading, message) {
@@ -29,7 +34,12 @@ const translate = {
 			for (let key in data) {
 				status.push(key + '：' + data[key].message);
 			}
-			this.message.success(status.join('、'));
+			this.message({
+				message: status.join('、'),
+				type: 'success',
+				duration: 0,
+				showClose: true
+			});
 			success ? success(data) : '';
 		}
 
@@ -44,7 +54,7 @@ const translate = {
 			var status = response.data;
 
 			if (!status.status) {
-				this.message.error(status.message);
+				this.error(status.message);
 				return false;
 			}
 
@@ -92,7 +102,7 @@ const translate = {
 			var status = response.data;
 
 			if (!status.status) {
-				this.message.error(status.message);
+				this.error(status.message);
 				return false;
 			}
 
@@ -130,7 +140,12 @@ const translate = {
 
 	tpl(code, success = null) {
 		this.success = function (data) {
-			this.message.success(data.message ? data.message : '翻译成功');
+			this.message({
+				message: data.message ? data.message : '翻译成功',
+				type: 'success',
+				duration: 0,
+				showClose: true
+			});
 			success ? success(data) : '';
 		}
 
@@ -145,7 +160,7 @@ const translate = {
 			var status = response.data;
 
 			if (!status.status) {
-				this.message.error(status.message);
+				this.error(status.message);
 				return false;
 			}
 
