@@ -444,13 +444,32 @@ background-color: rgba(0,0,0, .12);
     margin-bottom: 0;
 }
 
+#navbar_right .search {
+    position: relative;
+}
+
+#navbar_right .search > i {
+    cursor: pointer;
+}
+
+#navbar_right .search form {
+    display: none;
+    position: absolute;
+    right: 0;
+    opacity: 1;
+}
+
+#navbar_right .search form input {
+    background-color: #ddd;
+}
+
 #navbar_toggle {
     margin-left: 0;
 }
 
 #navbar_search {
     position: relative;
-    margin: 0 8px;
+/*    margin: 0 8px;*/
 }
 
 #navbar_search input {
