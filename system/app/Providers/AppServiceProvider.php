@@ -136,9 +136,9 @@ class AppServiceProvider extends ServiceProvider
     protected function discoverActions()
     {
         return [
+            \App\Http\Actions\Export::class,
             \App\Http\Actions\ClearCache::class,
             \App\Http\Actions\BuildGoogleSitemap::class,
-            \App\Http\Actions\Export::class,
         ];
     }
 }
