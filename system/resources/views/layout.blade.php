@@ -119,10 +119,13 @@
             <!-- 导航栏右侧菜单 -->
             <div id="navbar_right">
                 <!-- 搜索栏框 -->
-                <form action="{{ short_url('action.search') }}" method="GET" id="navbar_search">
-                    <input type="text" name="keywords" placeholder="搜索">
-                    <i class="md-icon md-icon-font md-theme-default">search</i>
-                </form>
+                <div class="search">
+                    <i class="md-icon md-icon-font md-theme-default" id="search-button" @click="toggleSearch">search</i>
+
+                    <form action="{{ short_url('action.search') }}" method="GET" id="navbar_search">
+                        <input type="text" name="keywords" placeholder="搜索">
+                    </form>
+                </div>
 
                 <!-- 打开网站首页 -->
                 <a href="/" target="_blank" class="md-button md-icon-button md-theme-default" title="网站首页">
@@ -291,6 +294,10 @@
             },
 
             methods: {
+                toggleSearch() {
+                    $('#navbar_search').toggle();
+                },
+
                 toggleSidebar() {
                     $('#layout_left').toggleClass('is-collapsed');
                 },
