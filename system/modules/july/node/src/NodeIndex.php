@@ -143,7 +143,7 @@ class NodeIndex extends ModelBase
             $str = $h1 ? DB::table('node__h1')->where('entity_id',$node_id)->value('h1') : null;
             $ss = DB::table('entity_path_aliases')->where('entity_id',$node_id)->value('entity_id');
             // foreach ($ss  as $key => $value) {
-                Log::info( $ss);
+                // Log::info( $ss);
             // }
             if(stripos($str,$key)!== false){
                 $index =  stripos($str,$key);
