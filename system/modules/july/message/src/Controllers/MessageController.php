@@ -66,10 +66,20 @@ class MessageController extends Controller
             ]);
         }
 
+        $referer = $request->header('referer');
+        $referer = parse_url($referer, PHP_URL_PATH);
+        $referer = explode('/', $referer)[1] ?? null;
+
+        if (in_array($referer, array_keys(config('lang.available')))) {
+            $langcode = $referer;
+        } else {
+            $langcode = langcode('frontend');
+        }
+
         // 补全字段值
         $attributes = array_merge($attributes, [
             'mold_id' => $form->getKey(),
-            'langcode' => langcode('request') ?? langcode('frontend'),
+            'langcode' => $langcode,
             'ip' => $request->ip(),
             'user_agent' => $this->getUserAgent(),
             'trails' => $attributes['trails'] ?? $attributes['track_report'] ?? $attributes['trace_report'] ?? null,
