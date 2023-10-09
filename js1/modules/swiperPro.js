@@ -13,8 +13,8 @@ function Swiper(data) {
     // 当前动画id   移动类型 0静止 1自动播放切换 2鼠标拖动 3惯性运动 4两侧超出反弹 5贴边 6分页切换 7前进切换 8后退切换 9绑定轮播图切换时带动
     var animateId, moveType = 0;
 
-    // 拖拽方向
-    var dragDirection;
+    // 拖拽方向 开始监听窗口变化
+    var dragDirection, windowResize = false;
 
     // 锁 缩略图对象 自动播放的定时任务 边缘
     var lock = false, thumbs, timer, border = { left: [], right: [], center: [] };
@@ -61,9 +61,6 @@ function Swiper(data) {
     }
 
     this.index = () => index;
-
-    // 窗口大小变化
-    initWindowResize();
 
     // 解析参数
     function parseValue(value, name, defaultValue = null, range = null) {
@@ -297,6 +294,9 @@ function Swiper(data) {
     }
 
     function run(resize = false) {
+        // 窗口大小变化
+        windowResize || initWindowResize();
+
         container.width(parseInt(container.width()));
 
         setThumbs();
@@ -325,7 +325,7 @@ function Swiper(data) {
         wrapperPositionRange    = [0];
         slide                   = $('.swiper-cell', wrapper).addClass('swiper-native');
         native                  = $('.swiper-native', wrapper);
-        index                   = data.initialSlide < slide.length ? data.initialSlide : slide.length - 1;
+        index                   = resize ? index : (data.initialSlide < slide.length ? data.initialSlide : slide.length - 1);
         indexOld                = index;
 
         // if (data.slidesPerView > slide.length) {
@@ -390,7 +390,7 @@ function Swiper(data) {
         initThumbs();
 
         // 设置当前显示的滑块的索引 因为可能有默认值 默认不是第一个滑块
-        resize || setPositionByNativeIndex(false);
+        setPositionByNativeIndex(false);
 
         // 拖动时不触发a标签点击事件
         $('a').click(function (e) {
@@ -439,7 +439,7 @@ function Swiper(data) {
         container.css('width', '100%').html(container.html());
 
         wrapper = wrapperWidth = width = height = slideWidth = slideHeight = wrapperPositionRange = prevButton = nextButton = pagination = [];
-        index = slide = native = null;
+        slide = native = null;
         prevAll = nextAll = [];
         nativeWidth = prevWidth = nextWidth = 0;
         pageTotal = indexOld = animateId = dragDirection = thumbs = timer = null;
@@ -757,13 +757,15 @@ function Swiper(data) {
 
     // 初始化监听窗口大小变化
     function initWindowResize() {
+        windowResize = true;
+
         let timer;
 
         $(window).resize(e => {
-            if (enable) {
+            // if (enable) {
                 clearTimeout(timer);
                 timer = setTimeout(() => resize(), 500)
-            }
+            // }
         });
     }
 
@@ -816,15 +818,60 @@ function Swiper(data) {
         //  正在移动       元素位置     开始时鼠标坐标  开始时间    上次鼠标坐标   第一次移动方向   上次移动方向    整体移动距离 整体移动方向 惯性
         var move = false, elPosition, startPosition, startTime, lastPosition, firstDirection, lastDirection, distance, direction, momentum;
 
-        // 被拖动元素       移动过（点击一下不会触发移动）
-        var target = null, moved = false;
+        // 被拖动元素
+        var target = null;
+
+        // 鼠标按下
+        let startFunction = e => {
+            // if (!((e.pointerType == 'mouse' && e.button == 0) || e.pointerType == 'touch')) return false;
+
+            target = e.target;
+
+            if (target.tagName === 'A') {
+                aClickDisabled(target);
+            } else if ($(target).parents('a').length) {
+                aClickDisabled($(target).parents('a')[0]);
+            }
+
+            e.preventDefault();
+
+            if (isMobile()) {
+                $('html').on('touchmove', moveFunction);
+                $('html').on('touchend', endFunction);
+            } else {
+                $('html').on('pointermove', moveFunction);
+                $('html').on('pointerup', endFunction);
+            }
+
+            // 贴边时不能拖动
+            // if (moveType == 5) return false;
+
+            // 鼠标按下后鼠标悬停设置成抓手
+            data.grabCursor && wrapper.css('cursor', 'grabbing');
+
+            // 此时元素可能正在移动 停止移动
+            stop()
+
+            // 开始拖动 元素位置 开始时鼠标坐标 开始时间 上次鼠标坐标 整体移动距离 整体移动方向 惯性
+            move = true;
+            elPosition = getPosition();
+            startPosition = typeof e.clientX == 'number' ? e.clientX : e.touches[0].clientX;
+            startTime = time();
+            lastPosition = typeof e.clientX == 'number' ? e.clientX : e.touches[0].clientX;
+            firstDirection = null;
+            lastDirection = null;
+            distance = 0;
+            direction = null;
+            momentum = !!data.momentum;
+
+            // 移动类型鼠标拖动
+            moveType = 2;
+        }
 
         // 鼠标移动 获取移动距离 设置滑动元素移动距离
         let moveFunction = e => {
             // 没有开始事件不执行
             if (!move) return $('html').select();
-
-            moved = true;
 
             let x = typeof e.clientX == 'number' ? e.clientX : e.touches[0].clientX;
 
@@ -861,12 +908,6 @@ function Swiper(data) {
             // 该方向上的移动距离
             distance = Math.abs(x - startPosition);
 
-            if (distance == 0 || moved === false) {
-                moved = false;
-                // aClickEnabled();
-                return move = false;
-            }
-
             // 上次鼠标坐标 上次移动方向 整体移动方向
             lastPosition = x;
             lastDirection = currentDirection;
@@ -875,16 +916,14 @@ function Swiper(data) {
             // 设置轮播图位置 根据鼠标移动距离计算轮播图位置
             setPosition(getWrapperPositionByDrag(elPosition, distance, currentDirection));
         }
-        // $('html').on('touchmove', moveFunction);
-        // $('html').on('pointermove', moveFunction);
 
         // 鼠标松开
         let endFunction = e => {
             if (!target) {
                 return false;
-            }console.log(moved, 1, target)
+            }
 
-            if (!moved) {
+            if (time() - startTime < 150 && distance == 0) {
                 if (target.tagName === 'A') {
                     aClickEnabled(target);
                     $(target).click();
@@ -979,64 +1018,30 @@ function Swiper(data) {
                         moveType = 3;
 
                         // 移动到这里 记录运动持续时间
-                        setPosition(left, duration = data.momentum.ratio, () => (dragCallback(direction)), 3);
+                        setPosition(left, duration = data.momentum.ratio, () => dragCallback(direction), 3);
                     })() : dragCallback(direction);
                 })() : dragCallback(direction);
             } else {
                 moveType = 0;
             }
 
-            $('html').off('pointermove', moveFunction);
-            $('html').off('pointerup', endFunction);
+            if (isMobile()) {
+                $('html').off('touchmove', moveFunction);
+                $('html').off('touchend', endFunction);
+            } else {
+                $('html').off('pointermove', moveFunction);
+                $('html').off('pointerup', endFunction);
+            }
 
             return false;
         }
 
         // 鼠标按下 开始处理移动 获取鼠标当前坐标 获取滑动元素当前移动距离
-        wrapper.on('pointerdown', function (e) {
-            if (!((e.pointerType == 'mouse' && e.button == 0) || e.pointerType == 'touch')) return false;
-
-            moved = false;
-
-            target = e.target;
-
-            if (target.tagName === 'A') {
-                aClickDisabled(target);
-            } else if ($(target).parents('a').length) {
-                aClickDisabled($(target).parents('a')[0]);
-            }
-
-            e.preventDefault();
-
-            $('html').on('pointermove', moveFunction);
-            $('html').on('pointerup', endFunction);
-
-            // 贴边时不能拖动
-            // if (moveType == 5) return false;
-
-            // 鼠标按下后鼠标悬停设置成抓手
-            data.grabCursor && wrapper.css('cursor', 'grabbing');
-
-            // 此时元素可能正在移动 停止移动
-            stop()
-
-            // 开始拖动 元素位置 开始时鼠标坐标 开始时间 上次鼠标坐标 整体移动距离 整体移动方向 惯性
-            move = true;
-            elPosition = getPosition();
-            startPosition = e.clientX;
-            startTime = time();
-            lastPosition = e.clientX;
-            firstDirection = null;
-            lastDirection = null;
-            distance = 0;
-            direction = null;
-            momentum = !!data.momentum;
-
-            // 移动类型鼠标拖动
-            moveType = 2;
-        });
-        // $('html').on('touchend', endFunction);
-        // $('html').on('pointerup', endFunction);
+        if (isMobile()) {
+            wrapper.on('touchstart', startFunction);
+        } else {
+            wrapper.on('pointerdown', startFunction);
+        }
     }
 
     // 阻止默认事件
@@ -1804,11 +1809,5 @@ function Swiper(data) {
         }
 
         return false;
-    }
-
-    function reduce(array) {
-        return array.reduce((accumulator, currentValue) => {
-            return accumulator + currentValue;
-        }, 0);
     }
 }
