@@ -823,6 +823,7 @@ function Swiper(data) {
 
         // 鼠标按下
         let startFunction = e => {
+            if (e.pointerType == 'mouse' && e.button != 0) return false;
             // if (!((e.pointerType == 'mouse' && e.button == 0) || e.pointerType == 'touch')) return false;
 
             target = e.target;
