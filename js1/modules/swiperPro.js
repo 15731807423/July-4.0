@@ -282,7 +282,7 @@ function Swiper(data) {
 
         const observer = new IntersectionObserver(function(entries) {
             entries.forEach(entry => {
-                if (entry.isIntersecting) {
+                if (entry.isIntersecting && entry.target === container[0]) {
                     run();
                     observer.unobserve(container[0]);
                 }
@@ -393,11 +393,11 @@ function Swiper(data) {
         setPositionByNativeIndex(false);
 
         // 拖动时不触发a标签点击事件
-        $('a').click(function (e) {
-            if (moveType != 0) {
+        $('a', wrapper).click(function (e) {
+            // if (moveType == 2) {
                 event.preventDefault();
                 return false;
-            }
+            // }
         });
 
         // 初始化定时器
@@ -689,7 +689,7 @@ function Swiper(data) {
 
     // 初始化滑块点击事件
     function initClick() {
-        slide.click(function () {
+        slide.click(function (e) {
             moveType == 0 && (() => {
                 let key = $(this).data('index');
 
@@ -827,22 +827,6 @@ function Swiper(data) {
 
             target = e.target;
 
-            if (target.tagName === 'A') {
-                aClickDisabled(target);
-            } else if ($(target).parents('a').length) {
-                aClickDisabled($(target).parents('a')[0]);
-            }
-
-            e.preventDefault();
-
-            if (isMobile()) {
-                $('html').on('touchmove', moveFunction);
-                $('html').on('touchend', endFunction);
-            } else {
-                $('html').on('pointermove', moveFunction);
-                $('html').on('pointerup', endFunction);
-            }
-
             // 贴边时不能拖动
             // if (moveType == 5) return false;
 
@@ -863,9 +847,6 @@ function Swiper(data) {
             distance = 0;
             direction = null;
             momentum = !!data.momentum;
-
-            // 移动类型鼠标拖动
-            moveType = 2;
         }
 
         // 鼠标移动 获取移动距离 设置滑动元素移动距离
@@ -908,6 +889,11 @@ function Swiper(data) {
             // 该方向上的移动距离
             distance = Math.abs(x - startPosition);
 
+            if (distance) {
+                // 移动类型鼠标拖动
+                moveType = 2;
+            }
+
             // 上次鼠标坐标 上次移动方向 整体移动方向
             lastPosition = x;
             lastDirection = currentDirection;
@@ -923,13 +909,17 @@ function Swiper(data) {
                 return false;
             }
 
-            if (time() - startTime < 150 && distance == 0) {
+            // 鼠标松开后鼠标悬停设置成松手
+            data.grabCursor && wrapper.css('cursor', 'grab');
+
+            // 单击
+            if (time() - startTime < 200 && distance == 0) {
                 if (target.tagName === 'A') {
-                    aClickEnabled(target);
-                    $(target).click();
+                    window.location.href = $(target).attr('href');
                 } else if ($(target).parents('a').length) {
-                    aClickEnabled($(target).parents('a')[0]);
-                    $(target).parents('a').click();
+                    window.location.href = $(target).parents('a').attr('href');
+                } else {
+                    isMobile() && $(target).click();
                 }
 
                 move = false;
@@ -938,8 +928,11 @@ function Swiper(data) {
                 return false;
             }
 
-            // 鼠标松开后鼠标悬停设置成松手
-            data.grabCursor && wrapper.css('cursor', 'grab');
+            if (target.tagName === 'A') {
+                aClickDisabled(target);
+            } else if ($(target).parents('a').length) {
+                aClickDisabled($(target).parents('a')[0]);
+            }
 
             if (move && distance > 0) {
                 // 松开后关闭状态
@@ -949,10 +942,10 @@ function Swiper(data) {
                 moveType = 0;
 
                 // 没有移动 贴边
-                if (distance == 0) {
-                    dragCallback(null);
-                    return false;
-                }
+                // if (distance == 0) {
+                //     dragCallback(null);
+                //     return false;
+                // }
 
                 // 倒带模式且没有无限循环
                 if (data.rewind && !data.loop) {
@@ -1025,22 +1018,20 @@ function Swiper(data) {
                 moveType = 0;
             }
 
-            if (isMobile()) {
-                $('html').off('touchmove', moveFunction);
-                $('html').off('touchend', endFunction);
-            } else {
-                $('html').off('pointermove', moveFunction);
-                $('html').off('pointerup', endFunction);
-            }
-
-            return false;
+            move = false;
+            moveType = 0;
+            target = null;
         }
 
         // 鼠标按下 开始处理移动 获取鼠标当前坐标 获取滑动元素当前移动距离
         if (isMobile()) {
             wrapper.on('touchstart', startFunction);
+            $('html').on('touchmove', moveFunction);
+            $('html').on('touchend', endFunction);
         } else {
             wrapper.on('pointerdown', startFunction);
+            $('html').on('pointermove', moveFunction);
+            $('html').on('pointerup', endFunction);
         }
     }
 
@@ -1123,7 +1114,9 @@ function Swiper(data) {
     }
 
     // 切换到上一个滑块
-    function prev() {
+    function prev(e) {
+        e.stopPropagation();
+
         // 按钮被禁用
         if (prevButton.hasClass('disabled')) return false;
 
@@ -1134,7 +1127,9 @@ function Swiper(data) {
     }
 
     // 切换到下一个滑块
-    function next() {
+    function next(e) {
+        e.stopPropagation();
+
         let type = this != window, callback = () => {
             moveType = 0;
             type || (() => {
@@ -1201,7 +1196,7 @@ function Swiper(data) {
             x = getPositionBySlide(el);
 
             let func = callback;
-            callback = () => (func && func(), setPositionByNativeIndex(false));
+            // callback = () => (func && func(), setPositionByNativeIndex(false));
         }
 
         // 无限循环时切换到了右侧的复制滑块
@@ -1213,7 +1208,7 @@ function Swiper(data) {
             x = getPositionBySlide(el);
 
             let func = callback;
-            callback = () => (func && func(), setPositionByNativeIndex(false));
+            // callback = () => (func && func(), setPositionByNativeIndex(false));
         }
 
         // 设置位置
@@ -1290,11 +1285,11 @@ function Swiper(data) {
                 if (data.slidesPerView > 1 && data.slidesPerGroup == 1 && data.centeredSlides) {
                     if (z >= screen && z <= next) number = screen + (direction == 'right' ? 30 : 0);
                 } else {
-                    if (x >= screen && x <= next) {
+                    if (x >= screen && x < next) {
                         // let j = getSlideIndexByPosition(x + fit);
 
                         if (direction == 'left') {
-                            if (x >= screen + fit && x <= next) {
+                            if (x >= screen + fit && x < next) {
                                 number = next;
                                 break;
                             } else {
@@ -1302,7 +1297,7 @@ function Swiper(data) {
                                 break;
                             }
                         } else {
-                            if (x >= next - fit && x <= next) {
+                            if (x >= next - fit && x < next) {
                                 number = next + data.spaceBetween;
                                 break;
                             } else {
@@ -1376,7 +1371,7 @@ function Swiper(data) {
         // });
 
         // 因为存在 key + 1 所以会超出上限 超出后减回来
-        return number == slide.length ? number - 1 : number;
+        // return number == slide.length ? number - 1 : number;
     }
 
     // 根据位置获取原生滑块中当前滑块的索引
