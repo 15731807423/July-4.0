@@ -819,7 +819,7 @@ function Swiper(data) {
         var move = false, elPosition, startPosition, startTime, lastPosition, firstDirection, lastDirection, distance, direction, momentum;
 
         // 被拖动元素
-        var target = null;
+        var target = null, otherTime = 0, otherPosition = [0, 0];
 
         // 鼠标按下
         let startFunction = e => {
@@ -835,7 +835,7 @@ function Swiper(data) {
             data.grabCursor && wrapper.css('cursor', 'grabbing');
 
             // 此时元素可能正在移动 停止移动
-            stop()
+            stop();
 
             // 开始拖动 元素位置 开始时鼠标坐标 开始时间 上次鼠标坐标 整体移动距离 整体移动方向 惯性
             move = true;
@@ -907,6 +907,9 @@ function Swiper(data) {
         // 鼠标松开
         let endFunction = e => {
             if (!target) {
+                if (time() - otherTime < 200 && otherPosition[0] == e.changedTouches[0].clientX && otherPosition[1] == e.changedTouches[0].clientY) {
+                    isMobile() && $(e.target).click();
+                }
                 return false;
             }
 
@@ -926,7 +929,7 @@ function Swiper(data) {
                 move = false;
                 moveType = 0;
                 target = null;
-                return false;
+                return dragCallback(direction);
             }
 
             if (target.tagName === 'A') {
@@ -1027,6 +1030,13 @@ function Swiper(data) {
         // 鼠标按下 开始处理移动 获取鼠标当前坐标 获取滑动元素当前移动距离
         if (isMobile()) {
             wrapper.on('touchstart', startFunction);
+            $('html').on('touchstart', e => {
+                otherTime = time();
+                otherPosition = [
+                    typeof e.clientX == 'number' ? e.clientX : e.touches[0].clientX,
+                    typeof e.clientY == 'number' ? e.clientY : e.touches[0].clientY
+                ];
+            })
             $('html').on('touchmove', moveFunction);
             $('html').on('touchend', endFunction);
         } else {
@@ -1116,8 +1126,6 @@ function Swiper(data) {
 
     // 切换到上一个滑块
     function prev(e) {
-        e.stopPropagation();
-
         // 按钮被禁用
         if (prevButton.hasClass('disabled')) return false;
 
@@ -1129,8 +1137,6 @@ function Swiper(data) {
 
     // 切换到下一个滑块
     function next(e) {
-        e.stopPropagation();
-
         let type = this != window, callback = () => {
             moveType = 0;
             type || (() => {
