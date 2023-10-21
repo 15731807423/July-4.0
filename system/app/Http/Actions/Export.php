@@ -302,20 +302,9 @@ class Export extends ActionBase
 
             $tree = $catalog->nodes->map(fn ($node) => $node->pivot->toArray());
 
-            $data['tree'] = $tree->filter(fn ($node) => $node['parent_id'] == 0)->map(function ($node) use ($tree) {
-                $data = ['id' => $node['node_id']];
-                if ($children = $this->treeConvert($node['node_id'], $tree)) {
-                    $data['children'] = collect($children)->map(function ($node) use ($tree) {
-                        if ($children = $this->treeConvert($node['id'], $tree)) {
-                            $node['children'] = $children;
-                        }
+            $data['tree'] = $tree->filter(fn ($node) => $node['parent_id'] == 0)->map(fn ($node) => ['id' => $node['node_id']])->values()->toArray();
 
-                        return $node;
-                    })->toArray();
-                }
-
-                return $data;
-            })->values()->toArray();
+            $data['tree'] = $this->treeBuild($data['tree'], $tree);
 
             return $data;
         })->toArray();
@@ -346,6 +335,17 @@ class Export extends ActionBase
             'text' => config('translate.text'),
             'replace' => collect(json_decode(config('translate.replace'), true))->mapWithKeys(fn ($list, $code) => [config('lang.frontend') . '_to_' . $code => $list])->toJson(),
         ];
+    }
+
+    private function treeBuild($list, $tree)
+    {
+        foreach ($list as $key => $value) {
+            if ($children = $this->treeConvert($value['id'], $tree)) {
+                $list[$key]['children'] = $this->treeBuild($children, $tree);
+            }
+        }
+
+        return $list;
     }
 
     private function treeConvert(int $id, $list)
