@@ -139,14 +139,13 @@ class Export extends ActionBase
 
     private function language()
     {
-        $this->data['languages'] = collect(config('lang.available'))->values()->map(fn ($language, $key) => [
+        $this->data['languages'] = collect(config('lang.available'))->values()->map(fn ($language, $code) => [
             'name' => $language['name'],
-            'code' => $language['code'],
+            'code' => $code,
             'status' => $language['accessible'],
-            'icon' => $language['code'],
-            'is_default' => $language['code'] == config('lang.frontend'),
-            'order' => $key
-        ])->toArray();
+            'icon' => $code,
+            'is_default' => $code == config('lang.frontend'),
+        ])->map(fn ($language, $key) => array_merge($language, ['order' => $key + 1]))->toArray();
     }
 
     private function page_field()
