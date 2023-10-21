@@ -42,13 +42,13 @@ class Export extends ActionBase
 
     public function __invoke(Request $request)
     {
-        $this->site();
-        $this->language();
-        $this->page_field();
-        $this->page_type();
-        $this->mail_field();
-        $this->mail_type();
-        $this->page();
+        // $this->site();
+        // $this->language();
+        // $this->page_field();
+        // $this->page_type();
+        // $this->mail_field();
+        // $this->mail_type();
+        // $this->page();
         $this->catalog();
         $this->mail();
         $this->translate();
@@ -305,7 +305,13 @@ class Export extends ActionBase
             $data['tree'] = $tree->filter(fn ($node) => $node['parent_id'] == 0)->map(function ($node) use ($tree) {
                 $data = ['id' => $node['node_id']];
                 if ($children = $this->treeConvert($node['node_id'], $tree)) {
-                    $data['children'] = $children;
+                    $data['children'] = collect($children)->map(function ($node) use ($tree) {
+                        if ($children = $this->treeConvert($node['id'], $tree)) {
+                            $node['children'] = $children;
+                        }
+
+                        return $node;
+                    })->toArray();
                 }
 
                 return $data;
