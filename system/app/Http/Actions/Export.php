@@ -139,13 +139,13 @@ class Export extends ActionBase
 
     private function language()
     {
-        $this->data['languages'] = collect(config('lang.available'))->values()->map(fn ($language, $code) => [
+        $this->data['languages'] = collect(config('lang.available'))->map(fn ($language, $code) => [
             'name' => $language['name'],
             'code' => $code,
             'status' => $language['accessible'],
             'icon' => $code,
             'is_default' => $code == config('lang.frontend'),
-        ])->map(fn ($language, $key) => array_merge($language, ['order' => $key + 1]))->toArray();
+        ])->values()->map(fn ($language, $key) => array_merge($language, ['order' => $key + 1]))->toArray();
     }
 
     private function page_field()
@@ -309,7 +309,7 @@ class Export extends ActionBase
                 }
 
                 return $data;
-            })->toArray();
+            })->values()->toArray();
 
             return $data;
         })->toArray();
