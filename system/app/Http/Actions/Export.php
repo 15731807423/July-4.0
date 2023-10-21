@@ -42,13 +42,13 @@ class Export extends ActionBase
 
     public function __invoke(Request $request)
     {
-        // $this->site();
-        // $this->language();
-        // $this->page_field();
-        // $this->page_type();
-        // $this->mail_field();
-        // $this->mail_type();
-        // $this->page();
+        $this->site();
+        $this->language();
+        $this->page_field();
+        $this->page_type();
+        $this->mail_field();
+        $this->mail_type();
+        $this->page();
         $this->catalog();
         $this->mail();
         $this->translate();
