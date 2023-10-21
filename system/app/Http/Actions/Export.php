@@ -57,12 +57,12 @@ class Export extends ActionBase
         $disk->deleteDirectory('_export');
         $allPages = $pages = Node::indexWith(['url'])->pluck('url')->filter()->toArray();
 
-        foreach (config('lang.available') as $language) {
-            if ($language['code'] == config('lang.frontend')) {
+        foreach (config('lang.available') as $code => $language) {
+            if ($code == config('lang.frontend')) {
                 continue;
             }
 
-            $allPages = array_merge($allPages, array_map(fn ($page) => '/' . $language['code'] . $page, $pages));
+            $allPages = array_merge($allPages, array_map(fn ($page) => '/' . $code . $page, $pages));
         }
 
         $allPages = array_map(fn ($page) => substr($page, 1), $allPages);
@@ -89,29 +89,29 @@ class Export extends ActionBase
             $disk->copy($file, '_export/file/' . $file);
         }
 
-        foreach (config('lang.available') as $language) {
-            $path = 'themes/frontend/template/' . ($language['code'] == config('lang.frontend') ? '' : ($language['code'] . '/'));
+        foreach (config('lang.available') as $code => $language) {
+            $path = 'themes/frontend/template/' . ($code == config('lang.frontend') ? '' : ($code . '/'));
 
             foreach ($disk->files($path) as $file) {
                 $content = $disk->get($file);
 
                 $content = str_replace([
-                    '{% extends "' . $language['code'] . '/_layout.twig" %}',
-                    '{% use "' . $language['code'] . '/_blocks.twig" %}'
+                    '{% extends "' . $code . '/_layout.twig" %}',
+                    '{% use "' . $code . '/_blocks.twig" %}'
                 ], [
                     '{% extends "_layout.twig" %}',
                     '{% use "_blocks.twig" %}'
                 ], $content);
 
-                $disk->put('_export/tpl/' . $language['code'] . '/' . basename($file), $content);
+                $disk->put('_export/tpl/' . $code . '/' . basename($file), $content);
             }
 
             foreach ($disk->files($path . 'message/content/') as $file) {
-                $disk->copy($file, '_export/tpl/' . $language['code'] . '/mail_content_' . basename($file));
+                $disk->copy($file, '_export/tpl/' . $code . '/mail_content_' . basename($file));
             }
 
             foreach ($disk->files($path . 'message/form/') as $file) {
-                $disk->copy($file, '_export/tpl/' . $language['code'] . '/mail_form_' . basename($file));
+                $disk->copy($file, '_export/tpl/' . $code . '/mail_form_' . basename($file));
             }
         }
 
