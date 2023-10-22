@@ -135,13 +135,18 @@ class Message extends EntityBase
         $attachments = $this->getAttachments();
         $subject = $this->subject ?? 'New Message';
 
+        $mails = $this->mails();
+
         try {
-            Mail::raw($content, function(MailMessage $message) use($subject, $attachments) {
-                $message->subject($subject)->to(config('mail.to.address'), config('mail.to.name'));
-                foreach ($attachments as $attachment) {
-                    $message->attach($attachment['path'], $attachment['options']);
-                }
-            });
+            foreach ($mails as $mail) {
+                Mail::raw($content, function(MailMessage $message) use($subject, $attachments) {
+                    $message->subject($subject)->to($mail['address'], $mail['name']);
+                    foreach ($attachments as $attachment) {
+                        $message->attach($attachment['path'], $attachment['options']);
+                    }
+                });
+            }
+
             $success = true;
         } catch (\Throwable $th) {
             Log::error($th->getMessage());
@@ -149,7 +154,9 @@ class Message extends EntityBase
         }
 
         if (! $success) {
-            $success = mail(config('mail.to.address'), $subject, $content);
+            foreach ($mails as $mail) {
+                $success = mail($mail['address'], $subject, $content);
+            }
         }
 
         if ($success && !$this->is_sent) {
@@ -241,6 +248,39 @@ class Message extends EntityBase
         $trails[] = '[-] '.$report['refer'];
 
         return $trails;
+    }
+
+    private function mails()
+    {
+        $mails = [];
+
+        foreach (config('site.mails') as $mail) {
+            if (!$mail['receive']) {
+                continue;
+            }
+
+            if (!$mail['rules']) {
+                $mails[] = $mail;
+                continue;
+            }
+
+            foreach ($mail['rules'] as $rule) {
+                $status = true;
+                foreach ($rule as $condition) {
+                    $condition = explode(':', $condition, 2);
+                    if ($condition[0] == 'language' && $condition[1] != $this->langcode) {
+                        $status = false;
+                    }
+                }
+
+                if ($status) {
+                    $mails[] = $mail;
+                    break;
+                }
+            }
+        }
+
+        return $mails;
     }
 
     /**
