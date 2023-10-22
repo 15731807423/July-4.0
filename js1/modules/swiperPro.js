@@ -394,10 +394,10 @@ function Swiper(data) {
 
         // 拖动时不触发a标签点击事件
         $('a', wrapper).click(function (e) {
-            // if (moveType == 2) {
+            if (moveType == 2) {
                 event.preventDefault();
                 return false;
-            // }
+            }
         });
 
         // 初始化定时器
@@ -788,7 +788,11 @@ function Swiper(data) {
 
     // 初始化拖动事件
     function initDrag() {
-        var status = true;
+        var status = true, disabled = () => {
+            $('img', slide).css('-webkit-user-drag', 'auto');
+            $('a', slide).css('-webkit-user-drag', 'auto');
+            container.css('user-select', 'auto');
+        };
 
         // 全部内容小于一屏时
         if (nativeWidth <= width) {
@@ -807,10 +811,10 @@ function Swiper(data) {
         // 禁止拖动
         if (!data.allowTouchMove) status = false;
 
-        if (!status) return false;
+        if (!status) return disabled();
 
         // 内容不足一屏幕且不居中 或关闭拖动时 没有拖动事件
-        if ((nativeWidth <= width && !data.centeredSlides) || !data.allowTouchMove) return false;
+        if ((nativeWidth <= width && !data.centeredSlides) || !data.allowTouchMove) return disabled();
 
         // 鼠标悬停设置成手
         data.grabCursor && wrapper.css('cursor', 'grab');
