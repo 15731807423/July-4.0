@@ -247,9 +247,10 @@ abstract class TranslatableEntityBase extends EntityBase implements Translatable
         foreach (Lang::getAccessibleLangnames($langcode) as $code => $langname) {
             $languages[$code] = [
                 'is_active' => $code === $langcode,
-                'url' => '/'.strtolower($code).$url,
-                'langname' => $langname,
-                'native' => $nativeNames[$code] ?? $code,
+                'url' => ($code === langcode('frontend') ? '' : '/'.strtolower($code)).$url,
+                'code' => $code,
+                'icon' => '/images/' . $code . '.svg',
+                'name' => $langname,
             ];
         }
 
