@@ -230,6 +230,7 @@ class Node extends TranslatableEntityBase
             '_path' => $this->get_path(),
             '_canonical' => $this->getCanonical($url),
             '_languages' => $this->getLanguageOptions($url),
+            '_multilingual' => $multiple
         ];
 
         $jit->mergeGlobals($globals);
