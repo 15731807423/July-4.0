@@ -72,7 +72,7 @@ class Import
         app()->make('settings.site_information')->save([
             'app.url' => $data['url'],
             'site.subject' => $data['subject'],
-            'mail.to.address' => $data['mails'][0]
+            'site.mails' => $data['mails']
         ]);
     }
 

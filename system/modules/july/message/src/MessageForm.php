@@ -76,6 +76,8 @@ class MessageForm extends EntityMoldBase
             $field['value'] = $values[$key] ?? null;
         }
 
+        $data['hidden_field'] = '';
+
         return $twig->render($view, $data);
     }
 

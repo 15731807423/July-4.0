@@ -36,8 +36,8 @@ class SiteInformation extends SettingGroupBase
             'description' => '网站所服务的主体（企业或个人）的名称',
         ],
 
-        'mail.to.address' => [
-            'key' => 'mail.to.address',
+        'site.mails' => [
+            'key' => 'site.mails',
             'label' => '邮箱',
             'description' => '联系表单的默认接收邮箱',
         ],
