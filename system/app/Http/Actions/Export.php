@@ -133,7 +133,7 @@ class Export extends ActionBase
         $this->data['site'] = [
             'url' => config('app.url'),
             'subject' => config('site.subject'),
-            'mail' => config('mail.to.address'),
+            'mails' => config('site.mails'),
         ];
     }
 
