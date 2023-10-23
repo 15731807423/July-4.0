@@ -293,6 +293,9 @@ class NodeController extends Controller
             abort(500);
         }
 
+        config(['site.url' => config('app.url')]);
+        config(['site.show_mails' => array_filter(config('site.mails'), fn ($mail) => !isset($mail['receive']) || !$mail['receive'])]);
+
         $frontendLangcode = langcode('frontend');
 
         // 多语言生成
