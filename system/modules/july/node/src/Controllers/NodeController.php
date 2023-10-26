@@ -294,7 +294,7 @@ class NodeController extends Controller
         }
 
         config(['site.url' => config('app.url')]);
-        config(['site.show_mails' => array_filter(config('site.mails'), fn ($mail) => !isset($mail['receive']) || !$mail['receive'])]);
+        config(['site.show_mails' => array_filter(config('site.mails') ?? [], fn ($mail) => !isset($mail['receive']) || !$mail['receive'])]);
 
         $frontendLangcode = langcode('frontend');
 
@@ -352,7 +352,26 @@ class NodeController extends Controller
     {
         $multiple = config('lang.multiple');
         $nodes = NodeSet::fetchAll()->keyBy('id');
-        $lang = $multiple ? $request->input('lang', langcode('frontend')) : langcode('frontend');
+
+        if (!$multiple) {
+            $lang = langcode('frontend');
+        } elseif ($request->lang) {
+            $lang = $request->lang;
+        } elseif ($request->header('referer') === null) {
+            $lang = langcode('frontend');
+        } else {
+            $referer = $request->header('referer');
+            $referer = parse_url($referer, PHP_URL_PATH);
+            $referer = explode('/', $referer);
+
+            if (isset($referer[1]) && $referer[1] && config('lang.available.' . $referer[1])) {
+                $lang = $referer[1];
+            } else {
+                $lang = langcode('frontend');
+            }
+        }
+
+        // $lang = $multiple ? $request->input('lang', langcode('frontend')) : langcode('frontend');
 
         $results = NodeIndex::search($request->input('keywords'), $lang);
         $results['lang'] = $lang;
