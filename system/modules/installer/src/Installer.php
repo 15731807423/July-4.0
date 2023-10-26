@@ -105,6 +105,8 @@ class Installer
      */
     protected static function generateEnv($settings)
     {
+        config(['site.mails' => ['name' => $settings['mail_to_address'], 'address' => $settings['mail_to_address']]]);
+
         switch ($settings['type']) {
             case 'sqlite':
                 return implode("\n", [
