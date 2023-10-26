@@ -30,12 +30,12 @@ const translate = {
 		this.nodes = nodes;
 
 		this.success = function (data) {
-			var status = [];
-			for (let key in data) {
-				status.push(key + '：' + data[key].message);
-			}
+			// var status = [];
+			// for (let key in data) {
+			// 	status.push(key + '：' + data[key].message);
+			// }
 			this.message({
-				message: status.join('、'),
+				message: data,
 				type: 'success',
 				duration: 0,
 				showClose: true

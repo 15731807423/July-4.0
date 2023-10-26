@@ -29,13 +29,14 @@ const translate = {
 	// 直接翻译 获取翻译结果
 	batch(nodes, success = null) {
 		this.nodes = nodes;
+
 		this.success = function (data) {
-			var status = [];
-			for (let key in data) {
-				status.push(key + '：' + data[key].message);
-			}
+			// var status = [];
+			// for (let key in data) {
+			// 	status.push(key + '：' + data[key].message);
+			// }
 			this.message({
-				message: status.join('、'),
+				message: data,
 				type: 'success',
 				duration: 0,
 				showClose: true
@@ -62,9 +63,9 @@ const translate = {
             }
 
             // 整理每个语言的结果
-        	for (let key in data.data) {
-        		status.push(key + ':' + data.data[key].message);
-        	}
+        	// for (let key in data.data) {
+        	// 	status.push(key + ':' + data.data[key].message);
+        	// }
 
         	// 弹出结果 执行回调函数
         	this.success(data.data);
