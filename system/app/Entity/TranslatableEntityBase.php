@@ -249,7 +249,7 @@ abstract class TranslatableEntityBase extends EntityBase implements Translatable
                 'is_active' => $code === $langcode,
                 'url' => ($code === langcode('frontend') ? '' : '/'.strtolower($code)).$url,
                 'code' => $code,
-                'icon' => '/images/' . $code . '.svg',
+                'icon' => config('lang.available.' . $code . '.icon'),
                 'name' => $langname,
             ];
         }
