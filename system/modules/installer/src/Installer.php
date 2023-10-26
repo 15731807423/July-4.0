@@ -105,7 +105,20 @@ class Installer
      */
     protected static function generateEnv($settings)
     {
-        config(['site.mails' => ['name' => $settings['mail_to_address'], 'address' => $settings['mail_to_address']]]);
+        if ($group = app()->make('settings.site_information')) {
+            $group->save([
+                'app.url' => $settings['app_url'] ?? '',
+                'site.subject' => $settings['site_subject'] ?? '',
+                'site.mails' => [
+                    [
+                        'name' => $settings['mail_to_address'],
+                        'address' => $settings['mail_to_address'],
+                        'receive' => true,
+                        'rules' => []
+                    ]
+                ]
+            ]);
+        }
 
         switch ($settings['type']) {
             case 'sqlite':
