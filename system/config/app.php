@@ -251,7 +251,8 @@ return [
         \App\Support\Settings\Redirections::class,
         \App\Support\Settings\SpecList::class,
         \App\Support\Settings\Db::class,
-        \App\Support\Settings\Translate::class
+        \App\Support\Settings\Translate::class,
+        \App\Support\Settings\Export::class
     ],
 
     'twig_extensions' => [
