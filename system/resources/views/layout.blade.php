@@ -57,11 +57,22 @@
                         <div class="md-list-expand">
                             <ul class="md-list md-theme-default">
                                 @foreach (array_unique_two($item['children']) as $child)
-                                <li class="md-list-item md-inset{{ under_route($child['route'], Request::getPathInfo())?' is-active':'' }}">
-                                    <a href="{{ short_url($child['route']) }}" class="md-list-item-link md-list-item-container md-button-clean">
-                                        <div class="md-list-item-content">{{ $child['title'] }}</div>
-                                    </a>
-                                </li>
+                                    @if ($child['title'] == '导出数据')
+                                        <li class="md-list-item md-inset{{ under_route($child['route'], Request::getPathInfo())?' is-active':'' }}">
+                                            <a
+                                                class="md-list-item-link md-list-item-container md-button-clean"
+                                                @click.stop="doAction('/manage/actions/export', '导出数据', true)"
+                                            >
+                                                <div class="md-list-item-content">{{ $child['title'] }}</div>
+                                            </a>
+                                        </li>
+                                    @else
+                                        <li class="md-list-item md-inset{{ under_route($child['route'], Request::getPathInfo())?' is-active':'' }}">
+                                            <a href="{{ short_url($child['route']) }}" class="md-list-item-link md-list-item-container md-button-clean">
+                                                <div class="md-list-item-content">{{ $child['title'] }}</div>
+                                            </a>
+                                        </li>
+                                    @endif
                                 @endforeach
                             </ul>
                         </div>
@@ -87,11 +98,13 @@
                 </button>
 
                 @foreach (array_unique(config('app.actions')) as $action)
-                    <button type="button" class="md-button md-small md-primary md-theme-default" @click.stop="doAction('{{ short_url($action::getRouteName()) }}', '{{ $action::getTitle() }}', {{ $action::getDownload() }})">
-                        <div class="md-ripple">
-                            <div class="md-button-content">{{ $action::getTitle() }}</div>
-                        </div>
-                    </button>
+                    @if ($action::getTitle() != '导出数据')
+                        <button type="button" class="md-button md-small md-primary md-theme-default" @click.stop="doAction('{{ short_url($action::getRouteName()) }}', '{{ $action::getTitle() }}', {{ $action::getDownload() }})">
+                            <div class="md-ripple">
+                                <div class="md-button-content">{{ $action::getTitle() }}</div>
+                            </div>
+                        </button>
+                    @endif
                 @endforeach
 
                 {{-- <button type="button" class="md-button md-small md-primary md-theme-default" @click.stop="rebuildIndex">
@@ -215,6 +228,56 @@
     <script src="/themes/backend/vendor/element-ui/index.js"></script>
     <script src="/themes/backend/js/utils.js"></script>
     <script>
+        const layout_left = new Vue({
+            el: '#layout_left',
+            methods: {
+                process(config) {
+                    const loading = this.$loading({
+                        lock: true,
+                        text: config.text || '正在处理 ...',
+                        background: 'rgba(255, 255, 255, 0.7)',
+                    });
+
+                    return axios[(config.method || 'get')](config.action, {}, { responseType: 'blob' }).then(response => {
+                        loading.close();
+                        return response;
+                    }).catch(error => {
+                        loading.close();
+                        console.error(error);
+                        this.$message.error('发生错误！请查看控制台');
+                        return error;
+                    });
+                },
+
+                doAction(action, title, download) {
+                    this.process({
+                        text: `正在${title} ...`,
+                        method: 'post',
+                        action: action,
+                        download: download
+                    }).then(response => {
+                        if (download) {
+                            let blob = new Blob([response.data]);
+                            let href = window.URL.createObjectURL(blob);
+                            let a = document.createElement('a');
+
+                            a.href = href;
+                            a.download = '导出.zip';
+                            a.click();
+                            a.remove();
+
+                            window.URL.revokeObjectURL(href);
+                        }
+
+                        status = response.status;
+                        if (status && status >= 200 && status <= 299) {
+                            this.$message.success(`已完成：${title}`);
+                        }
+                    });
+                },
+            }
+        });
+
         // 左侧边栏有下级菜单项的点击展开效果
         $('#app_sidebar .md-list-item-expand').each(function() {
             const $item = $(this);
