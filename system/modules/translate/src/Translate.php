@@ -1,6 +1,7 @@
 <?php
 namespace Translate;
 
+use July\Node\Node;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 
@@ -14,9 +15,9 @@ class Translate
 
     // api
     // private $api = [
-    //     'https://api.vip/api/translate/translate',
-    //     'https://api.vip/api/translate/create',
-    //     'https://api.vip/api/translate/get'
+    //     'https://shouqibucuo.vip/api/translate/translate',
+    //     'https://shouqibucuo.vip/api/translate/create',
+    //     'https://shouqibucuo.vip/api/translate/get'
     // ];
     private $api = [
         'https://www.shouqibucuo.com/api/translate/translate',
@@ -110,25 +111,15 @@ class Translate
      * @param  string $code 翻译语言
      * @return $this
      */
-    public function setTo(string|array $code)
+    public function setTo(string $code)
     {
-        if (is_string($code)) {
-            // 源语言不能和翻译语言一致
-            if ($code == $this->source) return $this;
+        // 源语言不能和翻译语言一致
+        if ($code == $this->source) return $this;
 
-            // 翻译语言必须在后台配置才能翻译
-            if (!in_array($code, array_keys(config('lang.available')))) return $this;
+        // 翻译语言必须在后台配置才能翻译
+        if (!in_array($code, array_keys(config('lang.available')))) return $this;
 
-            $this->target = [$code];
-        }
-
-        if (is_array($code)) {
-            $code = array_values(array_intersect(array_keys(config('lang.available')), array_diff($code, [$this->source])));
-
-            if (count($code) == 0) return $this;
-
-            $this->target = $code;
-        }
+        $this->target = $code;
 
         return $this;
     }
@@ -214,12 +205,6 @@ class Translate
 
         if ($this->result['status'] === true) {
             $this->result = $this->result['data'];
-            $result = [];
-            foreach ($this->result as $code => $data) {
-                $code = $this->code($code, false);
-                $result[$code] = $data;
-            }
-            $this->result = $result;
             return $this->end($type, true);
         }
 
@@ -232,14 +217,9 @@ class Translate
         }
     }
 
-    public function batchSuccess(array $list)
+    public function batchSuccess(string $message)
     {
-        foreach ($list as $key => $value) {
-            $list[$key] = $value === true
-            ? ['status' => true, 'message' => '翻译成功']
-            : ['status' => false, 'message' => '翻译失败'];
-        }
-        return response()->json(['status' => true, 'data' => $list])->setEncodingOptions(JSON_UNESCAPED_UNICODE);
+        return response()->json(['status' => true, 'data' => $message])->setEncodingOptions(JSON_UNESCAPED_UNICODE);
     }
 
     public function pageSuccess(array $data)
@@ -284,15 +264,10 @@ class Translate
      */
     private function translate(string $html): void
     {
-        $target = $this->target;
-        foreach ($target as $key => $value) {
-            $target[$key] = $this->code($value);
-        }
-
         $result = post($this->api[0], [
             'html'          => $html,
             'source'        => $this->source,
-            'target'        => $target,
+            'target'        => $this->code($this->target),
             'not'           => $this->getNotText(),
             'appoint'       => $this->getAppoint(),
             'domain'        => $this->domain,
@@ -316,15 +291,10 @@ class Translate
      */
     private function create(string $html): void
     {
-        $target = $this->target;
-        foreach ($target as $key => $value) {
-            $target[$key] = $this->code($value);
-        }
-
         $result = post($this->api[1], [
             'html'          => $html,
             'source'        => $this->source,
-            'target'        => $target,
+            'target'        => $this->code($this->target),
             'not'           => $this->getNotText(),
             'appoint'       => $this->getAppoint(),
             'domain'        => $this->domain,
@@ -382,32 +352,28 @@ class Translate
      * @param  array $data
      * @return array
      */
-    private function batchAfter(array $data): array
+    private function batchAfter(string $html): string
     {
-        foreach ($data as $code => $html) {
-            $local = $this->code($code, false);
+        // $local = $this->code($this->target);
 
-            str_replace($code, $local, $html);
+        $pages = explode($this->replace[1], $html);
 
-            if ($html === false) continue;
-
-            // 切割成每个页面的翻译结果
-            $pages = explode($this->replace[1], $html);
-
-            // 如果翻译后的页面数量和被翻译的页面数量不一致
-            if (count($pages) != count($this->nodes)) {
-                $data[$local] = false;
-                continue;
+        $nodes = [];
+        foreach ($this->nodes as $id) {
+            if ($this->getPageContent($id)) {
+                $nodes[] = $id;
             }
-
-            foreach ($this->nodes as $key => $id) {
-                $this->setPageContent($id, explode($this->replace[0], $pages[$key]), $local);
-            }
-
-            $data[$local] = true;
         }
 
-        return $data;
+        if (count($pages) != count($nodes)) {
+            return '翻译前后页面数量不一致';
+        }
+
+        foreach ($nodes as $key => $id) {
+            $this->setPageContent($id, explode($this->replace[0], $pages[$key]), $this->target);
+        }
+
+        return '翻译成功';
     }
 
     /**
@@ -539,7 +505,10 @@ class Translate
         // 直接返回结果
         if ($this->mode || $result) {
             // 返回错误信息
-            if (is_string($this->result)) return $this->error($this->result);
+            // if (is_string($this->result)) return $this->error($this->result);
+
+            $this->result = $this->linkAddCode($this->result, $this->target);
+            $this->result = $this->tplIncludePath($this->result, $this->target);
 
             switch ($type) {
                 case 'batch':
@@ -547,7 +516,7 @@ class Translate
                     $result = $this->batchAfter($this->result);
 
                     // 所有页面都不需要翻译
-                    if (!$result) return $this->error('没有要翻译的内容');
+                    // if (!$result) return $this->error('没有要翻译的内容');
 
                     return $this->batchSuccess($result);
                     break;
@@ -555,11 +524,7 @@ class Translate
                 case 'page':
                 case 'tpl':
                     // 翻译结果
-                    if (isset($this->result[$this->code($this->target[0], true)])) {
-                        $html = $this->result[$this->code($this->target[0], true)];
-                    } else {
-                        $html = $this->result[$this->target[0]];
-                    }
+                    $html = $this->result;
 
                     $local = $this->target[0];
                     $tool = $this->code($local, true);
@@ -598,15 +563,7 @@ class Translate
         if (count($this->notFields) == count($this->notFields, 1)) {
             return $this->notFields;
         } else {
-            if (is_string($this->target)) return $this->notFields[$this->target] ?? [];
-
-            $list = [];
-            foreach ($this->target as $key => $value) {
-                if (isset($this->notFields[$value])) {
-                    $list[$value] = $this->notFields[$value];
-                }
-            }
-            return $list;
+            return $this->notFields[$this->target] ?? [];
         }
     }
 
@@ -663,6 +620,16 @@ class Translate
      */
     private function getPageContent(int $id, ?string $code = null): array
     {
+        $front = config('lang.frontend');
+
+        $node = Node::find($id);
+
+        $code = $code ?? $this->target;
+
+        if ($node->title != $node->translateTo($code)->title) {
+            return [];
+        }
+
         // 结果
         $list = [];
 
@@ -673,7 +640,7 @@ class Translate
         $fields = array_diff($fields, $this->getNotFields());
 
         // 判断title是否存在翻译版本
-        $check = Db::table('node_translations')->where('entity_id', $id)->where('langcode', $code ?? $this->target[0])->exists();
+        $check = Db::table('node_translations')->where('entity_id', $id)->where('langcode', $code)->exists();
 
         // 没有翻译版本 把内容放进结果里
         if (!$check) {
@@ -687,7 +654,7 @@ class Translate
         // 循环每个字段
         foreach ($fields as $key => $value) {
             // 判断字段是否存在翻译版本
-            $check = Db::table('node__' . $value)->where('entity_id', $id)->where('langcode', $code ?? $this->target[0])->exists();
+            $check = Db::table('node__' . $value)->where('entity_id', $id)->where('langcode', $code)->exists();
 
             // 没有翻译版本 把内容放进结果里
             if (!$check) {
@@ -827,7 +794,7 @@ class Translate
      * @param  bool|boolean $type true表示从后台代码转换到翻译平台代码 false相反
      * @return string
      */
-    private function code(string $code, bool $type = true) : string
+    private function code(string $code, bool $type = true): string
     {
         if ($type) {
             return $this->code[$code] ?? $code;
@@ -839,5 +806,62 @@ class Translate
             }
             return $code;
         }
+    }
+
+    /**
+     * a标签的链接前加上语言代码
+     */
+    private function linkAddCode(string $html, string $code): string
+    {
+        $dom = $this->DOMDocument($html);
+        $as = $dom->getElementsByTagName('a');
+
+        $list = [];
+        foreach ($as as $a) {
+            $href = $a->getAttribute('href');
+            
+            if (in_array($href, $list)) continue;
+            
+            if (substr($href, 0, 1) != '/') continue;
+
+            if (substr($href, -5) !== '.html' && stripos($href, '.html#') === false) continue;
+            
+            $list[$href] = '/' . $code . $href;
+        }
+        
+        foreach ($list as $old => $new) {
+            $html = str_replace('href="' . $old . '"', 'href="' . $new . '"', $html);
+        }
+
+        return $html;
+    }
+
+    /**
+     * 模板文件引入文件的路径前加上语言代码
+     */
+    private function tplIncludePath(string $html, string $code): string
+    {
+        return str_replace([
+            '{% extends "_layout.twig" %}',
+            '{% use "_blocks.twig" %}'
+        ], [
+            '{% extends "' . $code . '/_layout.twig" %}',
+            '{% use "' . $code . '/_blocks.twig" %}'
+        ], $html);
+    }
+
+    /**
+     * PHP操作HTML的dom
+     * 
+     * @return DOMDocument
+     */
+    private function DOMDocument(string $html): \DOMDocument
+    {
+        // 构建dom
+        $dom = new \DOMDocument();
+        $libxml_previous_state = libxml_use_internal_errors(true);
+        $dom->loadHTML(mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8'));
+        libxml_use_internal_errors($libxml_previous_state);
+        return $dom;
     }
 }

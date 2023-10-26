@@ -35,15 +35,13 @@ class TaskController extends Controller
         $front  = config('lang.frontend');
 
         // 后台配置的语言
-        foreach (config('lang.available') as $key => $value) {
-            if ($value['translatable'] && $key != $front) $list[] = $key;
-        }
+        $code = collect(config('lang.available'))->filter(fn ($info, $code) => $code != $front && $info['translatable'])->keys()->get(0);
 
         // 没有要翻译的语言
-        if (count($list) == 0) return $this->translate->error('没有要翻译的语言');
+        if (!$code) return $this->translate->error('没有要翻译的语言');
 
         // 调用并获取结果
-        return $this->translate->setTo($list)->setNodes($id)->batch();
+        return $this->translate->setTo($code)->setNodes($id)->batch();
     }
 
     /**
@@ -56,15 +54,12 @@ class TaskController extends Controller
 
         if (!json_decode($data, true)) return $this->error('参数有误');
 
-        $list   = [];
         $front  = config('lang.frontend');
 
         // 后台配置的语言
-        foreach (config('lang.available') as $key => $value) {
-            if ($value['translatable'] && $key != $front) $list[] = $key;
-        }
+        $code = collect(config('lang.available'))->filter(fn ($info, $code) => $code != $front && $info['translatable'])->keys()->get(0);
 
-        return $this->translate->setTo($list)->setNodes($id)->result('batch', $data);
+        return $this->translate->setTo($code)->setNodes($id)->result('batch', $data);
     }
 
     /**
