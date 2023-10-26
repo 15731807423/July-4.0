@@ -13,8 +13,12 @@
 
                     @if ($key == 'site.mails')
                         <div v-for="(item, key) in settings['site.mails']" class="mail">
-                            <el-input v-model="item.name" placeholder="收件人姓名"></el-input>
-                            <el-input v-model="item.address" placeholder="收件人地址"></el-input>
+                            <el-tooltip slot="label" :content="mailTooltip(key, 'name')" popper-class="jc-twig-output" effect="dark" placement="top">
+                                <el-input v-model="item.name" placeholder="收件人姓名"></el-input>
+                            </el-tooltip>
+                            <el-tooltip slot="label" :content="mailTooltip(key, 'address')" popper-class="jc-twig-output" effect="dark" placement="top">
+                                <el-input v-model="item.address" placeholder="收件人地址"></el-input>
+                            </el-tooltip>
                             <el-button type="primary" :disabled="!item.name || !item.address" @click="drawerOpen(key)">收件规则</el-button>
                             <el-button type="danger" :disabled="settings['site.mails'].length < 2" @click="settings['site.mails'].splice(key, 1)">删除</el-button>
                             <el-button
@@ -236,6 +240,10 @@
                 }
 
                 return true;
+            },
+
+            mailTooltip(key, name) {
+                return "@{{ config('site.mails." + key + "." + name + "') }}";
             },
 
             submit() {
