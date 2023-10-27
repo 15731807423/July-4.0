@@ -287,11 +287,11 @@
 
           const category = path.replace(/\/.*/, '');
           if (category === 'files') {
-            return '{{ implode(config("media.categories.files.valid_mime"), ",") }}';
+            return '{{ implode(",", config("media.categories.files.valid_mime")) }}';
           }
 
           if (category === 'images') {
-            return '{{ implode(config("media.categories.images.valid_mime"), ",") }}';
+            return '{{ implode(",", config("media.categories.images.valid_mime")) }}';
           }
         },
       },
