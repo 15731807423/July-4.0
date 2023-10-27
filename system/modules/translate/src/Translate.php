@@ -181,7 +181,7 @@ class Translate
     {
         // 翻译
         $result = $this->start($this->tplBefore(), function () {
-            if (is_dir($this->tplPath . $this->target[0])) return $this->error('目录已存在，请先删除目录');
+            if (is_dir($this->tplPath . $this->target)) return $this->error('目录已存在，请先删除目录');
         });
 
         if ($result !== true) return $result;
@@ -456,7 +456,7 @@ class Translate
 
         // 翻译后的模板文件写入内容
         foreach ($files as $key => $file) {
-            $file = str_replace($this->tplPath . ($this->source == 'en' ? '' : $this->source . '/'), $this->tplPath . $this->target[0] . '/', $file);
+            $file = str_replace($this->tplPath . ($this->source == 'en' ? '' : $this->source . '/'), $this->tplPath . $this->target . '/', $file);
             $this->setTplFileContent($file, $html[$key]);
         }
 
@@ -464,7 +464,7 @@ class Translate
         $list = array_slice(scandir($dir), 2);
         foreach ($list as $key => $file) {
             $source = $dir . $file;
-            $target = str_replace($this->tplPath . ($this->source == 'en' ? '' : $this->source . '/'), $this->tplPath . $this->target[0] . '/', $source);
+            $target = str_replace($this->tplPath . ($this->source == 'en' ? '' : $this->source . '/'), $this->tplPath . $this->target . '/', $source);
             $this->setTplFileContent($target, file_get_contents($source));
         }
 
@@ -526,7 +526,7 @@ class Translate
                     // 翻译结果
                     $html = $this->result;
 
-                    $local = $this->target[0];
+                    $local = $this->target;
                     $tool = $this->code($local, true);
                     str_replace($tool, $local, $html);
 
