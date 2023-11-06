@@ -380,6 +380,32 @@ class NodeController extends Controller
         $results['meta_keywords'] = 'Search';
         $results['meta_description'] = 'Search Result';
 
+        $url = parse_url($request->fullUrl());
+        $url = $url['path'] . '?' . $url['query'];
+
+        $results['_languages'] = collect(config('lang.available'))->map(function ($language, $code) use ($lang, $url) {
+            $currentUrl = $url;
+            if (stripos($currentUrl, 'lang=' . $lang) !== false) {
+                if ($code == langcode('frontend')) {
+                    $currentUrl = str_replace('lang=' . $lang, '', $currentUrl);
+                } else {
+                    $currentUrl = str_replace('lang=' . $lang, 'lang=' . $code, $currentUrl);
+                }
+            } else {
+                if ($code != langcode('frontend')) {
+                    $currentUrl .= '&lang=' . $code;
+                }
+            }
+
+            return [
+                'is_active' => $code == $lang,
+                'url' => $currentUrl,
+                'code' => $code,
+                'icon' => config('lang.available.' . $code . '.icon'),
+                'name' => $language['name']
+            ];
+        })->toArray();
+
         foreach ($results['results'] as &$result) {
             if ($nodes->get($result['node_id'])) $result['node'] = $nodes->get($result['node_id'])->translateTo($lang);
         }
