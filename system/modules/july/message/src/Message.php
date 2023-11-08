@@ -139,7 +139,7 @@ class Message extends EntityBase
 
         try {
             foreach ($mails as $mail) {
-                Mail::raw($content, function(MailMessage $message) use($subject, $attachments) {
+                Mail::raw($content, function(MailMessage $message) use($subject, $attachments, $mail) {
                     $message->subject($subject)->to($mail['address'], $mail['name']);
                     foreach ($attachments as $attachment) {
                         $message->attach($attachment['path'], $attachment['options']);
