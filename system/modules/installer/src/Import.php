@@ -4,6 +4,8 @@ namespace Installer;
 
 use Illuminate\Support\Facades\Schema;
 
+use App\EntityValue\EntityPathAlias;
+
 use July\Node\Node;
 use July\Node\Catalog;
 use July\Node\NodeType;
@@ -241,6 +243,7 @@ class Import
         Node::truncate();
         NodeIndex::truncate();
         NodeTranslation::truncate();
+        EntityPathAlias::truncate();
 
         foreach ($data as $page) {
             $info = [
