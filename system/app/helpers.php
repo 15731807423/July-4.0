@@ -434,17 +434,7 @@ if (!function_exists('custom_migration')) {
         $down = 'Schema::dropIfExists(\'' . $table . '\');';
 
         // 替换文件内容
-        $file = str_replace(
-            '    public function up()' . PHP_EOL . '    {' . PHP_EOL . '        //' . PHP_EOL . '    }',
-            '    public function up()' . PHP_EOL . '    {' . PHP_EOL . '        ' . $up . PHP_EOL . '    }',
-            $file
-        );
-
-        $file = str_replace(
-            '    public function down()' . PHP_EOL . '    {' . PHP_EOL . '        //' . PHP_EOL . '    }',
-            '    public function down()' . PHP_EOL . '    {' . PHP_EOL . '        ' . $down . PHP_EOL . '    }',
-            $file
-        );
+        $file = str_replace(['// $up', '// $down'], [$up, $down], $file);
 
         // 设置文件内容
         file_put_contents($path, $file);
