@@ -6,6 +6,7 @@ use Illuminate\Encryption\Encrypter;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\File;
 
 class Installer
 {
@@ -88,6 +89,10 @@ class Installer
      */
     public static function migrate()
     {
+        if (File::exists($folderPath = database_path('custom'))) {
+            File::deleteDirectory($folderPath);
+        }
+
         Artisan::call('migrate', [
             '--seed' => true,
             '--force' => true,

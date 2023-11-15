@@ -397,7 +397,7 @@ if (!function_exists('custom_migration')) {
     function custom_migration(string $table, array $data, array $column)
     {
         // 文件存放路径
-        $dir = base_path('database/custom');
+        $dir = database_path('custom');
 
         // 如果路径不存在 创建
         if (!is_dir($dir)) {
@@ -405,24 +405,28 @@ if (!function_exists('custom_migration')) {
         }
 
         // 生成表的迁移文件
-        Artisan::call('make:migration ' . $table . ' --path=database/custom');
+        // Artisan::call('make:migration ' . $table . ' --path=database/custom');
 
-        // 获取文件名称
-        $list = scandir($dir);
-        foreach ($list as $key => $value) {
-            if (strpos($value, $table . '.php') == 18) {
-                $name = $value;
-            }
-        }
+        // file_put_contents(database_path('custom/' . date('Y_m_d_His_') . $table . '.php'), file_get_contents(database_path('migration.php')));
+
+        // // 获取文件名称
+        // $list = scandir($dir);
+        // foreach ($list as $key => $value) {
+        //     if (strpos($value, $table . '.php') == 18) {
+        //         $name = $value;
+        //     }
+        // }
+
+        $name = date('Y_m_d_His_') . $table . '.php';
 
         // 定义文件路径
-        $path = base_path('database/custom/' . $name);
+        $path = database_path('custom/' . $name);
 
         // 获取文件内容
-        $file = file_get_contents($path);
+        $file = file_get_contents(database_path('migration.php'));
 
         // 定义表信息
-        $up = implode("\n", array_merge([
+        $up = implode(PHP_EOL, array_merge([
             'Schema::create(\'' . $table . '\', function (Blueprint $table) {',
             '            $column = json_decode(\'' . json_encode($column) . '\', true);'
         ], $data, ['        });']));
@@ -431,14 +435,14 @@ if (!function_exists('custom_migration')) {
 
         // 替换文件内容
         $file = str_replace(
-            '    public function up()' . "\n" . '    {' . "\n" . '        //' . "\n" . '    }',
-            '    public function up()' . "\n" . '    {' . "\n" . '        ' . $up . "\n" . '    }',
+            '    public function up()' . PHP_EOL . '    {' . PHP_EOL . '        //' . PHP_EOL . '    }',
+            '    public function up()' . PHP_EOL . '    {' . PHP_EOL . '        ' . $up . PHP_EOL . '    }',
             $file
         );
 
         $file = str_replace(
-            '    public function down()' . "\n" . '    {' . "\n" . '        //' . "\n" . '    }',
-            '    public function down()' . "\n" . '    {' . "\n" . '        ' . $down . "\n" . '    }',
+            '    public function down()' . PHP_EOL . '    {' . PHP_EOL . '        //' . PHP_EOL . '    }',
+            '    public function down()' . PHP_EOL . '    {' . PHP_EOL . '        ' . $down . PHP_EOL . '    }',
             $file
         );
 
