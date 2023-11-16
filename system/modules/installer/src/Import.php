@@ -26,6 +26,7 @@ class Import
     private static $root;
 
     private static $field_types = [
+        'url' => 'App\EntityField\FieldTypes\PathAlias',
         'text' => 'App\EntityField\FieldTypes\Input',
         'textarea' => 'App\EntityField\FieldTypes\Text',
         'html' => 'App\EntityField\FieldTypes\Html',
@@ -112,8 +113,24 @@ class Import
         NodeFieldNodeType::truncate();
 
         foreach ($data as $field) {
+            $field_group = null;
+
+            if ($field['is_preset'] && $field['is_global'] && $field['name'] == 'url') {
+                $field_group = '网址';
+            }
+
+            if ($field['is_preset'] && $field['is_global'] && in_array($field['name'], ['meta_title', 'meta_keywords', 'meta_description', 'meta_canonical'])) {
+                $field_group = 'SEO 信息';
+            }
+
+            $field_type = self::$field_types[$field['type']];
+
+            if ($field['name'] == 'url') {
+                $field_type = self::$field_types['url'];
+            }
+
             NodeField::create([
-                'field_type' => self::$field_types[$field['type']],
+                'field_type' => $field_type,
                 'id' => $field['name'],
                 'label' => $field['label'],
                 'description' => $field['description'],
