@@ -255,6 +255,9 @@ class Import
             $info = array_merge($info, array_diff_key($page, array_flip(['id', 'type_id', 'created_at', 'updated_at', 'deleted_at', 'exists', 'type', 'languages'])));
             $info['_changed'] = array_keys($info);
 
+            $info['url'] = $info['url'] ?: null;
+            $info['view'] = $info['url'] && $info['view'] ? $info['view'] : null;
+
             $node = Node::create($info);
 
             foreach ($page['languages'] as $code => $language) {
