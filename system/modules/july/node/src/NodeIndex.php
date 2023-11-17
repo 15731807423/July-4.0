@@ -169,7 +169,7 @@ class NodeIndex extends ModelBase
             if($ss != $node_id){
                 unset($results[$node_id]);
             }
-        }var_dump($results);die;
+        }
 
         // 对结果排序
         array_multisort(
