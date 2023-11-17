@@ -57,6 +57,16 @@ class NodeIndex extends ModelBase
             ]);
         });
 
+        NodeTranslation::all(['entity_id','title','langcode'])->each(function(NodeTranslation $node) {
+            DB::table('node_index')->insert([
+                'entity_id' => $node->entity_id,
+                'field_id' => 'title',
+                'content' => trim($node->title),
+                'langcode' => $node->langcode,
+                'weight' => 10,
+            ]);
+        });
+
 
         // 索引其它字段
         NodeField::searchable()->each(function (NodeField $field) {
@@ -159,7 +169,7 @@ class NodeIndex extends ModelBase
             if($ss != $node_id){
                 unset($results[$node_id]);
             }
-        }
+        }var_dump($results);die;
 
         // 对结果排序
         array_multisort(
@@ -273,11 +283,11 @@ class NodeIndex extends ModelBase
         }
 
         $similar = $this->similar($this->attributes['content'], strtolower(key($keywords)));
-        $weight = $this->weight*($this->attributes['weight'] ?? 1)*pow(10, pow($similar, 3));
+        $this->weight *= substr_count(strtolower($this->attributes['content']), strtolower(key($keywords)));
 
         return [
             'content' => $this->joinTokens($tokens),
-            'weight' => $weight,
+            'weight' => $this->weight,
         ];
     }
 
@@ -289,7 +299,7 @@ class NodeIndex extends ModelBase
      */
     protected function tokenizer(array $keywords)
     {
-        $this->weight = 0;
+        // $this->weight = 0;
         $content = trim($this->attributes['content']);
         $pattern = '/{{([\w\W]*?)}}/';
         $matches = [];
@@ -319,7 +329,7 @@ class NodeIndex extends ModelBase
                 if ($word !== $keyword) {
                     $weight *= 1 - str_diff($word, $keyword)*.5/strlen($keyword);
                 }
-                $this->weight += $weight;
+                // $this->weight += $weight;
                 $tokens[] = '<span class="keyword">'.$word.'</span>';
 
                 $content = substr($content, $pos + strlen($keyword));
