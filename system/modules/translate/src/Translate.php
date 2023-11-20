@@ -15,14 +15,14 @@ class Translate
 
     // api
     // private $api = [
-    //     'https://shouqibucuo.vip/api/translate/translate',
-    //     'https://shouqibucuo.vip/api/translate/create',
-    //     'https://shouqibucuo.vip/api/translate/get'
+    //     'https://wangke006.vip/api/translate/translate',
+    //     'https://wangke006.vip/api/translate/create',
+    //     'https://wangke006.vip/api/translate/get'
     // ];
     private $api = [
-        'https://www.shouqibucuo.com/api/translate/translate',
-        'https://www.shouqibucuo.com/api/translate/create',
-        'https://www.shouqibucuo.com/api/translate/get'
+        'http://wangke006.top/api/translate/translate',
+        'http://wangke006.top/api/translate/create',
+        'http://wangke006.top/api/translate/get'
     ];
 
     // 源语言
