@@ -65,6 +65,7 @@ class MessageForm extends EntityMoldBase
         $twig = app('twig');
 
         // 默认模板
+        $langcode = $langcode ?? config('lang.rendering');
         $view = ($langcode ? $langcode . '/' : '') . 'message/form/'.$this->getKey().'.twig';
 
         // 数据
