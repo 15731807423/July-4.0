@@ -634,7 +634,7 @@ class Translate
         $list = [];
 
         // 获取页面的全部字段
-        $fields = Db::table('node_fields')->pluck('id')->toArray();
+        $fields = Db::table('node_fields')->where('id' , '<>', 'url')->pluck('id')->toArray();
 
         // 过滤不翻译的字段
         $fields = array_diff($fields, $this->getNotFields());
