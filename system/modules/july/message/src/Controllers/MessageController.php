@@ -44,7 +44,7 @@ class MessageController extends Controller
     public function send(Request $request, MessageForm $form)
     {
         // 是否接口请求
-        $api = $request->boolean('api', false);
+        $api = $request->boolean('api', true);
 
         // 获取验证规则
         [$rules, $messages, $fields] = $form->resolveFieldRules();
@@ -57,7 +57,7 @@ class MessageController extends Controller
         // 执行验证，如果未通过，则返回验证错误页
         if ($validator->fails()) {
             if ($api) {
-                return ['status' => 0, 'errors' => $validator->errors()->messages(), 'fields' => $fields];
+                return $validator->errors()->messages();
             }
 
             return view('message::failed', [
@@ -92,6 +92,10 @@ class MessageController extends Controller
         $count = Message::whereDate('created_at', date('Y-m-d'))->where('ip', $request->ip())->count();
 
         if ($count > 3) {
+            if ($api) {
+                return 'The maximum number of emails sent has been reached.';
+            }
+
             return view('message::failed', [
                 'errors' => ['verify' => ['The maximum number of emails sent has been reached.']],
                 'fields' => [],
@@ -104,7 +108,7 @@ class MessageController extends Controller
         }
 
         if ($api) {
-            return ['status' => 1];
+            return 'Message has been sent! We will contact you soon.';
         }
 
         // 获取返回网址
