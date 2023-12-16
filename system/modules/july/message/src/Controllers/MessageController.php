@@ -57,7 +57,7 @@ class MessageController extends Controller
         // 执行验证，如果未通过，则返回验证错误页
         if ($validator->fails()) {
             if ($api) {
-                return $validator->errors()->messages();
+                return $validator->errors()->first();
             }
 
             return view('message::failed', [
