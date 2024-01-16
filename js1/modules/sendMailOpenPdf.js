@@ -22,7 +22,7 @@ LazyScript.load('jquery', function (global) {
 		    });
 
 		    this.form.submit(() => {
-		    	var data = {}, value = $(this).serializeArray();
+		    	var data = {}, value = this.form.serializeArray();
 
 		    	for (var i = 0; i < value.length; i++) {
 		    		data[value[i].name] = value[i].value;
@@ -30,12 +30,12 @@ LazyScript.load('jquery', function (global) {
 
 		    	data.api = 1;
 
-		    	$.post($(this).attr('action'), data, result => {
-		    		if (result.status === 1) {
+		    	$.post(this.form.attr('action'), data, result => {
+		    		if (result.status) {
 		    			this.form.hide();
 		    			this.success(data.pdf);
 		    		} else {
-		    			this.error(result.errors);
+		    			this.error(result.message);
 		            }
 		    	});
 		    });
