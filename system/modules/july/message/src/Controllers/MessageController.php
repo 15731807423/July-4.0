@@ -57,7 +57,7 @@ class MessageController extends Controller
         // 执行验证，如果未通过，则返回验证错误页
         if ($validator->fails()) {
             if ($api) {
-                return $validator->errors()->first();
+                return ['status' => false, 'message' => $validator->errors()->first()];
             }
 
             return view('message::failed', [
@@ -93,7 +93,7 @@ class MessageController extends Controller
 
         if ($count > 3) {
             if ($api) {
-                return 'The maximum number of emails sent has been reached.';
+                return ['status' => false, 'message' => 'The maximum number of emails sent has been reached.'];
             }
 
             return view('message::failed', [
@@ -108,7 +108,7 @@ class MessageController extends Controller
         }
 
         if ($api) {
-            return 'Message has been sent! We will contact you soon.';
+            return ['status' => true, 'message' => 'Message has been sent! We will contact you soon.'];
         }
 
         // 获取返回网址
