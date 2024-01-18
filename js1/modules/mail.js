@@ -2,6 +2,7 @@ $('form[name=mail]').each(function () {
     $(this).submit(function (event) {
         event.preventDefault();
         const formData = new FormData();
+        formData.append('api', true);
         $(this).find('input, textarea, select').each(function () {
             if ($(this).attr('type') == 'file') {
                 if ($(this).prop('multiple')) {
@@ -27,7 +28,7 @@ $('form[name=mail]').each(function () {
             processData: false,
             url: $(this).attr('action'),
             success: data => {
-                alert(data)
+                alert(data.message)
             },
             error: (jqXHR, textStatus, errorThrown) => {
                 alert(errorThrown)
