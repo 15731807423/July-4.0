@@ -44,7 +44,7 @@ class MessageController extends Controller
     public function send(Request $request, MessageForm $form)
     {
         // 是否接口请求
-        $api = $request->boolean('api', true);
+        $api = $request->boolean('api', false);
 
         // 获取验证规则
         [$rules, $messages, $fields] = $form->resolveFieldRules();
