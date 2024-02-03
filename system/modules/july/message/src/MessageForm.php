@@ -80,6 +80,8 @@ class MessageForm extends EntityMoldBase
 
         $data['hidden_field'] = '';
 
+        $data = array_merge($data, config('rendering.data'));
+
         return $twig->render($view, $data);
     }
 
