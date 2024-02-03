@@ -253,6 +253,8 @@ class Node extends TranslatableEntityBase
             $view = $renderingLangcode . '/' . $view;
         }
 
+        config()->set('rendering.data', $data);
+
         // 生成 html
         $html = $twig->render($view, $data);
 
