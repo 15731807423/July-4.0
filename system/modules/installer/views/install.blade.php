@@ -197,6 +197,7 @@
                     ],
                     db_database: [
                         { required: true, message: '数据库名称', trigger: 'blur' },
+                        { validator: this.checkDatabase, message: '数据库名称不合法', trigger: 'blur' }
                     ],
                     site_subject: [
                         { required: true, message: '企业名不能为空', trigger: 'blur' },
@@ -247,6 +248,14 @@
                     this.randomDatabase();
                     this.currentStep = 2;
                 }
+            },
+
+            checkDatabase(rule, value, callback) {
+                if (this.database == 'sqlite' && value.slice(-4) != '.db3') {
+                    return callback(new Error('数据库名称不合法'));
+                }
+
+                return true;
             },
 
             randomDatabase() {
