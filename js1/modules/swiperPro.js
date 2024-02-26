@@ -25,7 +25,7 @@ function Swiper(data) {
     // 不知道 是否工作 自己
     var enable = true, work = true, self = this;
 
-    var original = JSON.parse(JSON.stringify(data));
+    var original = deepClone(data);
 
     // 实例化完成
     this.complete = false;
@@ -447,7 +447,7 @@ function Swiper(data) {
         lock = false;
         border = { left: [], right: [], center: [] };
 
-        data = JSON.parse(JSON.stringify(original));
+        data = deepClone(original);
 
         run(true);
     }
@@ -612,7 +612,6 @@ function Swiper(data) {
 
         // 一页多个后的最大页码
         pageTotal = roundUp(pageTotal / data.slidesPerGroup);
-
 
         // 分页按钮和点击事件
         data.pagination && !data.thumbs ? (() => {
@@ -1815,5 +1814,19 @@ function Swiper(data) {
         }
 
         return false;
+    }
+
+    function deepClone(value) {
+        if (typeof value !== 'object' || value === null) {
+            return value;
+        }
+
+        let data = {};
+
+        for (let key in value) {
+            data[key] = deepClone(value[key]);
+        }
+
+        return data;
     }
 }
