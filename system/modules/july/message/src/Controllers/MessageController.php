@@ -80,7 +80,7 @@ class MessageController extends Controller
         $attributes = array_merge($attributes, [
             'mold_id' => $form->getKey(),
             'langcode' => $langcode,
-            'ip' => $request->ip(),
+            'ip' => $request->header('CF-Connecting-IP') ?? $request->ip(),
             'user_agent' => $this->getUserAgent(),
             'trails' => $attributes['trails'] ?? $attributes['track_report'] ?? $attributes['trace_report'] ?? null,
             '_server' => $request->server(),
