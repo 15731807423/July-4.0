@@ -255,7 +255,7 @@
                     return callback(new Error('数据库名称不合法'));
                 }
 
-                return true;
+                return callback();
             },
 
             randomDatabase() {
