@@ -88,7 +88,7 @@ class PathAliasController extends Controller
 
             $first = EntityPathAlias::ofAlias($value)->where([
                 ['entity_name', '!=', $entityName, 'and'],
-                ['entity_id', '!=', $entityId, 'and'],
+                ['entity_id', '!=', $entityId, 'or'],
             ])->first();
         } else {
             $first = EntityPathAlias::ofAlias($value)->first();
