@@ -76,11 +76,13 @@ class MessageController extends Controller
             $langcode = langcode('frontend');
         }
 
+        $ip = $request->header('CF-Connecting-IP') ?? $request->ip();
+
         // 补全字段值
         $attributes = array_merge($attributes, [
             'mold_id' => $form->getKey(),
             'langcode' => $langcode,
-            'ip' => $request->header('CF-Connecting-IP') ?? $request->ip(),
+            'ip' => $ip,
             'user_agent' => $this->getUserAgent(),
             'trails' => $attributes['trails'] ?? $attributes['track_report'] ?? $attributes['trace_report'] ?? null,
             '_server' => $request->server(),
@@ -89,7 +91,7 @@ class MessageController extends Controller
         // 保存消息到数据库
         $message = Message::create($attributes);
 
-        $count = Message::whereDate('created_at', date('Y-m-d'))->where('ip', $request->ip())->count();
+        $count = Message::whereDate('created_at', date('Y-m-d'))->where('ip', $ip)->count();
 
         if ($count > 3) {
             if ($api) {
