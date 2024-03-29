@@ -1,5 +1,5 @@
-$('form[name=mail]').each(function () {
-    $(this).submit(function (event) {
+function init_mail(selector) {
+    $(selector).submit(function (event) {
         event.preventDefault();
         const formData = new FormData();
         formData.append('api', true);
@@ -35,4 +35,8 @@ $('form[name=mail]').each(function () {
             }
         });
     });
+}
+
+$('form[name=mail]').each(function () {
+    init_mail($(this));
 });
