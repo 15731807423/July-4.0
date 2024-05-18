@@ -1289,7 +1289,7 @@ function Swiper(data) {
         // 循环每个坐标
         for (let i = 0; i < list.length; i++) {
             // 上一个的开头 当前的开头 下一个的开头 中点 对比坐标
-            let prev = list[i - 1], screen = list[i], next = list[i + 1], y = x + width / 2, z = direction == 'left' ? x + width : x;
+            let prev = list[i - 1], screen = list[i], next = list[i + 1], y = x + width / 2, z = direction && direction == 'left' ? x + width : x;
 
             if (direction) {
                 if (data.slidesPerView > 1 && data.slidesPerGroup == 1 && data.centeredSlides) {
@@ -1328,11 +1328,27 @@ function Swiper(data) {
         }
 
         list = slide.get();
-        for (var i = 0; i < list.length; i++) {
-            let all = i == list.length - 1 ? $(list[i]).prevAll() : $(list[i]).next().prevAll();
 
-            if (getWidthByElement(all, 3) + all.length * data.spaceBetween == number) {
-                return $(list[i + 1]).index();
+        if (data.centeredSlides) {
+            if (number < 0) {
+                return 0;
+            }
+
+            for (var i = 0; i < list.length; i++) {
+                let all = i == list.length - 1 ? $(list[i]).prevAll() : $(list[i]).next().prevAll();
+
+                if (getWidthByElement(all, 3) + all.length * data.spaceBetween - width / 2 == number) {
+                    return $(list[i + 1]).index();
+                }
+            }
+
+        } else {
+            for (var i = 0; i < list.length; i++) {
+                let all = i == list.length - 1 ? $(list[i]).prevAll() : $(list[i]).next().prevAll();
+
+                if (getWidthByElement(all, 3) + all.length * data.spaceBetween == number) {
+                    return $(list[i + 1]).index();
+                }
             }
         }
 
