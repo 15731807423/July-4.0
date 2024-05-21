@@ -32,6 +32,8 @@ function Swiper(data) {
 
     init();
 
+    // setInterval(() => console.log(index), 30)
+
     this.setThumbsIndex = i => {
         let callback = () => {
             native.removeClass('swiper-thumbs-index');
@@ -611,7 +613,9 @@ function Swiper(data) {
         pageTotal = data.loop || data.centeredSlides ? native.length : (data.slidesPerView == 'auto' ? (nativeWidth <= width ? 1 : getNativeIndexByPosition(nativeWidth - width) + 2) : (native.length - data.slidesPerView + 1));
 
         // 一页多个后的最大页码
-        pageTotal = roundUp(pageTotal / data.slidesPerGroup);
+        if (data.slidesPerGroup > 1) {
+            pageTotal = roundUp(native.length / data.slidesPerGroup);
+        }
 
         // 分页按钮和点击事件
         data.pagination && !data.thumbs ? (() => {
@@ -919,8 +923,16 @@ function Swiper(data) {
             // 鼠标松开后鼠标悬停设置成松手
             data.grabCursor && wrapper.css('cursor', 'grab');
 
+            if (time() - startTime < 200 && distance == 0 && move) {
+                move = false;
+                moveType = 0;
+                setPositionByNativeIndex(true);
+
+                return false;
+            }
+
             // 单击
-            if (time() - startTime < 200 && distance == 0) {
+            if (time() - startTime < 200 && distance == 0 && !move) {
                 if (target.tagName === 'A') {
                     window.location.href = $(target).attr('href');
                 } else if ($(target).parents('a').length) {
@@ -941,7 +953,7 @@ function Swiper(data) {
                 aClickDisabled($(target).parents('a')[0]);
             }
 
-            if (move && distance > 0) {
+            if (move) {
                 // 松开后关闭状态
                 move = false;
 
@@ -1092,6 +1104,7 @@ function Swiper(data) {
             // 不是自由模式 贴边 根据方向找出切换到哪个滑块 根据滑块设置位置
             else {
                 // 根据位置获取全部滑块中当前滑块的索引
+                // console.log(position, getSlideIndexByPosition(position, direction))
                 index = getSlideIndexByPosition(position, direction);
 
                 // 移动类型贴边
@@ -1276,9 +1289,6 @@ function Swiper(data) {
 
     // 根据位置获取全部滑块中当前滑块的索引
     function getSlideIndexByPosition(x, direction = null) {
-        // 滑块索引
-        var number = null, fit = data.fitDistance;
-
         // 小于最小值说明左侧没有滑块了 应该定义为在最左侧 右侧 同理
         if (x < wrapperPositionRange[0]) return 0;
         if (x > wrapperPositionRange[1]) return slide.length - 1;
@@ -1286,118 +1296,110 @@ function Swiper(data) {
         // 根据方向获取边缘坐标
         let list = direction ? border[direction] : border.center;
 
+        return data.centeredSlides ? getSlideIndexByPositionInCenter(x, list, direction) : getSlideIndexByPositionInLeft(x, list, direction);
+    }
+
+    // 根据位置获取全部滑块中当前滑块的索引 居左
+    function getSlideIndexByPositionInLeft(x, list, direction) {
+        // 滑块位置 切换阈值
+        var position = null, fit = data.fitDistance;
+
         // 循环每个坐标
         for (let i = 0; i < list.length; i++) {
-            // 上一个的开头 当前的开头 下一个的开头 中点 对比坐标
-            let prev = list[i - 1], screen = list[i], next = list[i + 1], y = x + width / 2, z = direction && direction == 'left' ? x + width : x;
+            if (x < list[i]) {
+                continue;
+            }
+
+            // 当前的开头 下一个的开头
+            let screen = list[i], next = list[i + 1];
 
             if (direction) {
-                if (data.slidesPerView > 1 && data.slidesPerGroup == 1 && data.centeredSlides) {
-                    if (z >= screen && z <= next) number = screen + (direction == 'right' ? 30 : 0);
-                } else {
-                    if (x >= screen && x < next) {
-                        // let j = getSlideIndexByPosition(x + fit);
-
-                        if (direction == 'left') {
-                            if (x >= screen + fit && x < next) {
-                                number = next;
-                                break;
-                            } else {
-                                number = screen;
-                                break;
-                            }
+                if (x >= screen && x < next) {
+                    if (direction == 'left') {
+                        if (x >= screen + fit && x < next) {
+                            position = next;
                         } else {
-                            if (x >= next - fit && x < next) {
-                                number = next + data.spaceBetween;
-                                break;
-                            } else {
-                                number = screen + data.spaceBetween;
-                                break;
-                            }
+                            position = screen;
+                        }
+                    } else {
+                        if (x >= next - fit && x < next) {
+                            position = next + data.spaceBetween;
+                        } else {
+                            position = screen + data.spaceBetween;
                         }
                     }
+
+                    break;
                 }
             } else {
                 // 找到当前组后 获取当前组的最左侧
-                if (data.centeredSlides) {
-                    y >= screen && y < next && (number = screen - width / 2);
-                } else {
-                    x >= screen && x < next && (number = screen + data.spaceBetween / 2);
+                if (x >= screen && x < next) {
+                    position = screen + data.spaceBetween / 2;
                 }
             }
         }
 
         list = slide.get();
+        for (var i = 0; i < list.length; i++) {
+            let all = i == list.length - 1 ? $(list[i]).prevAll() : $(list[i]).next().prevAll();
 
-        if (data.centeredSlides) {
-            if (number < 0) {
-                return 0;
-            }
-
-            for (var i = 0; i < list.length; i++) {
-                let all = i == list.length - 1 ? $(list[i]).prevAll() : $(list[i]).next().prevAll();
-
-                if (getWidthByElement(all, 3) + all.length * data.spaceBetween - width / 2 == number) {
-                    return $(list[i + 1]).index();
-                }
-            }
-
-        } else {
-            for (var i = 0; i < list.length; i++) {
-                let all = i == list.length - 1 ? $(list[i]).prevAll() : $(list[i]).next().prevAll();
-
-                if (getWidthByElement(all, 3) + all.length * data.spaceBetween == number) {
-                    return $(list[i + 1]).index();
-                }
+            if (getWidthByElement(all, 3) + all.length * data.spaceBetween == position) {
+                return $(list[i + 1]).index();
             }
         }
 
         return 0;
+    }
 
-        // // 如果有方向 需要区分1/3或2/3处 否则直接找在哪个滑块
-        // direction ? slide.each((key, value) => {
-        //     // 居中还是居左
-        //     data.centeredSlides ? (() => {
-        //         // 当前滑块 开始坐标用滑块的最左侧坐标 结束坐标用滑块的最右侧坐标
-        //         let el = slide.eq(key), start = 0, end = 0;
+    // 根据位置获取全部滑块中当前滑块的索引 居中
+    function getSlideIndexByPositionInCenter(x, list, direction = null) {
+        // 滑块位置 切换阈值 间隔 中间
+        var position = null, fit = data.fitDistance, spaceBetween = data.spaceBetween, y = Math.round(x + width / 2);
 
-        //         // 开始坐标
-        //         el.prevAll().each((index, value) => start += el.prevAll().eq(index).outerWidth(true));
-        //         // start += 1;
+        for (var i = 0; i < list.length - 1; i++) {
+            let center = 0;
+            for (var j = 0; j < i * data.slidesPerGroup; j++) {
+                center += slideWidth[j] + spaceBetween;
+            }
 
-        //         // 结束坐标
-        //         end = start + el.outerWidth(true);
+            center += slideWidth[i] / 2;
+            center = Math.round(center);
 
-        //         x + width / 2 >= start && x + width / 2 < end && (number = key);
-        //     })() : (() => {
-        //         // 当前滑块 开始坐标用滑块的最左侧坐标 结束坐标用下一个滑块的最左侧坐标
-        //         let el = slide.eq(key), start = getPositionBySlide(el), end = start + slideWidth[key] + data.spaceBetween;
+            if (direction == 'left') {
+                if (y <= center + fit) {
+                    position = list[i];
+                    break;
+                } else {
+                    if (i == list.length - 2) {
+                        position = list[i];
+                        break;
+                    }
+                }
+            } else if (direction == 'right') {
+                if (y >= center - fit) {
+                    continue;
+                } else {
+                    position = list[i - 1] + spaceBetween;
+                    break;
+                }
+            } else {
+                if (center == y) {
+                    position =  list[i];
+                    break;
+                }
+            }
+        }
 
-        //         if (x >= start && x <= end) {
-        //             if (direction == 'left') {
-        //                 if (x >= start && x <= start + fit) {
-        //                     number = key;
-        //                 } else {
-        //                     number = key + 1;
-        //                 }
-        //             } else {
-        //                 if (x >= end - fit && x <= end) {
-        //                     number = key + 1;
-        //                 } else {
-        //                     number = key;
-        //                 }
-        //             }
-        //         }
-        //     })();
-        // }) : slide.each((key, value) => {
-        //     // 当前滑块 开始坐标用滑块的最左侧坐标 结束坐标用下一个滑块的最左侧坐标
-        //     let el = slide.eq(key), start = getPositionBySlide(el), end = start + slideWidth[key] + data.spaceBetween;
+        list = slide.get();
+        for (var i = 0; i < list.length; i++) {
+            let all = i == list.length - 1 ? $(list[i]).prevAll() : $(list[i]).next().prevAll();
 
-        //     x >= start && x <= end && (number = key);
-        // });
+            if (getWidthByElement(all, 3) + all.length * data.spaceBetween == position) {
+                return $(list[i + 1]).index();
+            }
+        }
 
-        // 因为存在 key + 1 所以会超出上限 超出后减回来
-        // return number == slide.length ? number - 1 : number;
+        return 0;
     }
 
     // 根据位置获取原生滑块中当前滑块的索引
@@ -1539,7 +1541,7 @@ function Swiper(data) {
             let rewind = this == window ? !data.stopOnLastSlide : data.rewind;
 
             // return data.loop ? list[list.indexOf(index) + 1] : (index == list[list.length - 1] ? (rewind ? 0 : index) : list[list.indexOf(index) + 1]);
-            return data.loop ? list[list.indexOf(index) + 1] : (index == pageTotal - 1 ? (rewind ? 0 : index) : list[list.indexOf(index) + 1]);
+            return data.loop ? list[list.indexOf(index) + 1] : (index == list[list.length - 1] ? (rewind ? 0 : index) : list[list.indexOf(index) + 1]);
         } else if (type == 'pagination') {
             return page * data.slidesPerGroup;
         } else if (type == 'freeMode') {
