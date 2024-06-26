@@ -660,7 +660,12 @@ function Swiper(data) {
 
     // 初始化前进后退按钮
     function initNavigation() {
-        if (!data.navigation) return prevButton = $(), nextButton = $();
+        if (!data.navigation || (typeof data.slidesPerView == 'number' && data.slidesPerView >= native.length)) {
+            data.navigation.prev && $(data.navigation.prev, data.navigation.actionScope ? 'body' : container).hide();
+            data.navigation.next && $(data.navigation.next, data.navigation.actionScope ? 'body' : container).hide();
+
+            return prevButton = $(), nextButton = $();
+        }
 
         prevButton = $(data.navigation.prev, data.navigation.actionScope ? 'body' : container);
         nextButton = $(data.navigation.next, data.navigation.actionScope ? 'body' : container);
