@@ -928,16 +928,11 @@ function Swiper(data) {
             // 鼠标松开后鼠标悬停设置成松手
             data.grabCursor && wrapper.css('cursor', 'grab');
 
-            if (time() - startTime < 200 && distance == 0 && move) {
+            if (time() - startTime < 200 && distance == 0) {
                 move = false;
                 moveType = 0;
                 setPositionByNativeIndex(true);
 
-                return false;
-            }
-
-            // 单击
-            if (time() - startTime < 200 && distance == 0 && !move) {
                 if (target.tagName === 'A') {
                     window.location.href = $(target).attr('href');
                 } else if ($(target).parents('a').length) {
@@ -957,6 +952,8 @@ function Swiper(data) {
             } else if ($(target).parents('a').length) {
                 aClickDisabled($(target).parents('a')[0]);
             }
+
+            console.log(move)
 
             if (move) {
                 // 松开后关闭状态
