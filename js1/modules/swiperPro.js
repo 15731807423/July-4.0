@@ -953,8 +953,6 @@ function Swiper(data) {
                 aClickDisabled($(target).parents('a')[0]);
             }
 
-            console.log(move)
-
             if (move) {
                 // 松开后关闭状态
                 move = false;
