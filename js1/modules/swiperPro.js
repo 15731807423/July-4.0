@@ -1624,12 +1624,14 @@ function Swiper(data) {
                 }
             }
 
-            data.change && data.change(index);
-            bind && (() => {
-                for (let i = 0; i < bind.length; i++) {
-                    bind[i].setIndex(target);
-                }
-            })();
+            setTimeout(() => {
+                data.change && data.change(self.index());
+                bind && (() => {
+                    for (let i = 0; i < bind.length; i++) {
+                        bind[i].setIndex(self.index());
+                    }
+                })();
+            }, 30);
         }
 
         indexOld = index;
