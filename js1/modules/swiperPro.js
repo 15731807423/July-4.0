@@ -1343,7 +1343,7 @@ function Swiper(data) {
         for (var i = 0; i < list.length; i++) {
             let all = i == list.length - 1 ? $(list[i]).prevAll() : $(list[i]).next().prevAll();
 
-            if (getWidthByElement(all, 3) + all.length * data.spaceBetween == position) {
+            if (parseInt(getWidthByElement(all, 3) + all.length * data.spaceBetween) == parseInt(position)) {
                 return $(list[i + 1]).index();
             }
         }
