@@ -395,7 +395,7 @@ function Swiper(data) {
         setPositionByNativeIndex(false);
 
         // 拖动时不触发a标签点击事件
-        $('a', wrapper).click(function (e) {
+        data.clickToEnlarge || $('a', wrapper).click(function (e) {
             if (moveType == 2) {
                 event.preventDefault();
                 return false;
@@ -697,7 +697,7 @@ function Swiper(data) {
 
     // 初始化滑块点击事件
     function initClick() {
-        slide.click(function (e) {
+        data.clickToEnlarge || slide.click(function (e) {
             moveType == 0 && (() => {
                 let key = $(this).data('index');
 
@@ -723,8 +723,19 @@ function Swiper(data) {
         let name = 'lightbox-' + data.selector.substr(1)
 
         slide.each((index, value) => {
-            let e = slide.eq(index), href = $(data.clickToEnlarge.selector, e).attr('src') || '';
-            e.html('<a data-lightbox="' + name + '" href="' + href + '">' + e.html() + '</a>');
+            let e = slide.eq(index);
+            let href = $(data.clickToEnlarge.selector, e).attr('src') || '';
+            let title = $(data.clickToEnlarge.selector, e).attr('title') || '';
+            let img_old = $(data.clickToEnlarge.selector, e)[0].outerHTML;
+            let img_new = $(data.clickToEnlarge.selector, e).clone().removeAttr('title')[0].outerHTML;
+            let a = $('<a></a>');
+
+            a.attr('data-lightbox', name);
+            a.attr('href', href)
+            a.attr('title', title)
+            a.html(img_new)
+
+            e.html(e.html().replace(img_old, a[0].outerHTML))
         });
 
         // a标签禁止拖动
@@ -928,7 +939,7 @@ function Swiper(data) {
             // 鼠标松开后鼠标悬停设置成松手
             data.grabCursor && wrapper.css('cursor', 'grab');
 
-            if (time() - startTime < 200 && distance == 0) {
+            if (time() - startTime < 200 && distance == 0 && !data.clickToEnlarge) {
                 move = false;
                 moveType = 0;
                 setPositionByNativeIndex(true);
@@ -947,10 +958,12 @@ function Swiper(data) {
                 return dragCallback(direction);
             }
 
-            if (target.tagName === 'A') {
-                aClickDisabled(target);
-            } else if ($(target).parents('a').length) {
-                aClickDisabled($(target).parents('a')[0]);
+            if (!data.clickToEnlarge) {
+                if (target.tagName === 'A') {
+                    aClickDisabled(target);
+                } else if ($(target).parents('a').length) {
+                    aClickDisabled($(target).parents('a')[0]);
+                }
             }
 
             if (move) {
