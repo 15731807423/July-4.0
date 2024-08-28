@@ -32,8 +32,6 @@ function Swiper(data) {
 
     init();
 
-    // setInterval(() => console.log(index), 30)
-
     this.setThumbsIndex = i => {
         let callback = () => {
             native.removeClass('swiper-thumbs-index');
@@ -52,8 +50,8 @@ function Swiper(data) {
         queue.push(callback);
     };
 
-    this.setIndex = i => {
-        index = i;
+    this.setIndex = (i, j) => {
+        index = data.loop ? i : j;
         moveType = 9;
         setPositionByNativeIndex(true, () => moveType = 0);
     }
@@ -395,7 +393,7 @@ function Swiper(data) {
         setPositionByNativeIndex(false);
 
         // 拖动时不触发a标签点击事件
-        data.clickToEnlarge || $('a', wrapper).click(function (e) {
+        $('a', wrapper).click(function (e) {
             if (moveType == 2) {
                 event.preventDefault();
                 return false;
@@ -660,12 +658,7 @@ function Swiper(data) {
 
     // 初始化前进后退按钮
     function initNavigation() {
-        if (!data.navigation || (typeof data.slidesPerView == 'number' && data.slidesPerView >= native.length)) {
-            data.navigation.prev && $(data.navigation.prev, data.navigation.actionScope ? 'body' : container).hide();
-            data.navigation.next && $(data.navigation.next, data.navigation.actionScope ? 'body' : container).hide();
-
-            return prevButton = $(), nextButton = $();
-        }
+        if (!data.navigation) return prevButton = $(), nextButton = $();
 
         prevButton = $(data.navigation.prev, data.navigation.actionScope ? 'body' : container);
         nextButton = $(data.navigation.next, data.navigation.actionScope ? 'body' : container);
@@ -697,7 +690,7 @@ function Swiper(data) {
 
     // 初始化滑块点击事件
     function initClick() {
-        data.clickToEnlarge || slide.click(function (e) {
+        slide.click(function (e) {
             moveType == 0 && (() => {
                 let key = $(this).data('index');
 
@@ -723,19 +716,8 @@ function Swiper(data) {
         let name = 'lightbox-' + data.selector.substr(1)
 
         slide.each((index, value) => {
-            let e = slide.eq(index);
-            let href = $(data.clickToEnlarge.selector, e).attr('src') || '';
-            let title = $(data.clickToEnlarge.selector, e).attr('title') || '';
-            let img_old = $(data.clickToEnlarge.selector, e)[0].outerHTML;
-            let img_new = $(data.clickToEnlarge.selector, e).clone().removeAttr('title')[0].outerHTML;
-            let a = $('<a></a>');
-
-            a.attr('data-lightbox', name);
-            a.attr('href', href)
-            a.attr('title', title)
-            a.html(img_new)
-
-            e.html(e.html().replace(img_old, a[0].outerHTML))
+            let e = slide.eq(index), href = $(data.clickToEnlarge.selector, e).attr('src') || '';
+            e.html('<a data-lightbox="' + name + '" href="' + href + '">' + e.html() + '</a>');
         });
 
         // a标签禁止拖动
@@ -939,11 +921,16 @@ function Swiper(data) {
             // 鼠标松开后鼠标悬停设置成松手
             data.grabCursor && wrapper.css('cursor', 'grab');
 
-            if (time() - startTime < 200 && distance == 0 && !data.clickToEnlarge) {
+            if (time() - startTime < 200 && distance == 0 && move) {
                 move = false;
                 moveType = 0;
                 setPositionByNativeIndex(true);
 
+                return false;
+            }
+
+            // 单击
+            if (time() - startTime < 200 && distance == 0 && !move) {
                 if (target.tagName === 'A') {
                     window.location.href = $(target).attr('href');
                 } else if ($(target).parents('a').length) {
@@ -958,12 +945,10 @@ function Swiper(data) {
                 return dragCallback(direction);
             }
 
-            if (!data.clickToEnlarge) {
-                if (target.tagName === 'A') {
-                    aClickDisabled(target);
-                } else if ($(target).parents('a').length) {
-                    aClickDisabled($(target).parents('a')[0]);
-                }
+            if (target.tagName === 'A') {
+                aClickDisabled(target);
+            } else if ($(target).parents('a').length) {
+                aClickDisabled($(target).parents('a')[0]);
             }
 
             if (move) {
@@ -1356,7 +1341,7 @@ function Swiper(data) {
         for (var i = 0; i < list.length; i++) {
             let all = i == list.length - 1 ? $(list[i]).prevAll() : $(list[i]).next().prevAll();
 
-            if (parseInt(getWidthByElement(all, 3) + all.length * data.spaceBetween) == parseInt(position)) {
+            if (getWidthByElement(all, 3) + all.length * data.spaceBetween == position) {
                 return $(list[i + 1]).index();
             }
         }
@@ -1407,7 +1392,7 @@ function Swiper(data) {
         for (var i = 0; i < list.length; i++) {
             let all = i == list.length - 1 ? $(list[i]).prevAll() : $(list[i]).next().prevAll();
 
-            if (parseInt(getWidthByElement(all, 3) + all.length * data.spaceBetween) == parseInt(position)) {
+            if (getWidthByElement(all, 3) + all.length * data.spaceBetween == position) {
                 return $(list[i + 1]).index();
             }
         }
@@ -1637,14 +1622,12 @@ function Swiper(data) {
                 }
             }
 
-            setTimeout(() => {
-                data.change && data.change(self.index());
-                bind && (() => {
-                    for (let i = 0; i < bind.length; i++) {
-                        bind[i].setIndex(self.index());
-                    }
-                })();
-            }, 30);
+            data.change && data.change(index);
+            bind && (() => {
+                for (let i = 0; i < bind.length; i++) {
+                    bind[i].setIndex(target, index);
+                }
+            })();
         }
 
         indexOld = index;
