@@ -16,8 +16,8 @@ function Swiper(data) {
     // 拖拽方向 开始监听窗口变化
     var dragDirection, windowResize = false;
 
-    // 锁 缩略图对象 自动播放的定时任务 边缘
-    var lock = false, thumbs, timer, border = { left: [], right: [], center: [] };
+    // 锁 缩略图对象 自动播放的定时任务 自动播放是否工作 边缘
+    var lock = false, thumbs, timer, autoplay = true, border = { left: [], right: [], center: [] };
 
     // 绑定的对象 待办列队
     var bind, queue = [];
@@ -50,10 +50,17 @@ function Swiper(data) {
         queue.push(callback);
     };
 
-    this.setIndex = (i, j) => {
+    this.setIndex = (i, j, k) => {
         index = data.loop ? i : j;
         moveType = 9;
-        setPositionByNativeIndex(true, () => moveType = 0);
+
+        if (!k) {
+            return autoplay;
+        }
+
+        if (autoplay) {
+            setPositionByNativeIndex(true, () => moveType = 0);
+        }
     }
 
     this.bind = list => {
@@ -842,6 +849,9 @@ function Swiper(data) {
             // 此时元素可能正在移动 停止移动
             stop();
 
+            // 停止自动播放
+            autoplay = false;
+
             // 开始拖动 元素位置 开始时鼠标坐标 开始时间 上次鼠标坐标 整体移动距离 整体移动方向 惯性
             move = true;
             elPosition = getPosition();
@@ -911,6 +921,8 @@ function Swiper(data) {
 
         // 鼠标松开
         let endFunction = e => {
+            autoplay = true;
+
             if (!target) {
                 if (time() - otherTime < 200 && otherPosition[0] == e.changedTouches[0].clientX && otherPosition[1] == e.changedTouches[0].clientY) {
                     isMobile() && $(e.target).click();
@@ -1151,13 +1163,18 @@ function Swiper(data) {
 
     // 切换到下一个滑块
     function next(e) {
+        // this 自动播放时为window 点击按钮时为按钮元素
         let type = this != window, callback = () => {
             moveType = 0;
             type || (() => {
                 clearTimeout(timer);
                 timer = setTimeout(next, data.delay);
             })();
-        };
+        };console.log(type, autoplay)
+
+        if (!type && !autoplay) {
+            return false;
+        }
 
         // 点击按钮且按钮被禁用
         if (type && nextButton.hasClass('disabled')) return false;
@@ -1167,7 +1184,7 @@ function Swiper(data) {
         moveType = this == window ? 1 : 7;
 
         // 下一个的滑块索引
-        index = getTargetIndex('next');
+        index = getTargetIndex('next', 0, this == window);
 
         // 执行
         setPositionByNativeIndex(true, callback);
@@ -1524,7 +1541,7 @@ function Swiper(data) {
     }
 
     // 获取目标索引
-    function getTargetIndex(type, page) {
+    function getTargetIndex(type, page, autoplay) {
         let list = [];
         slide.each(i => {
             if (slide.eq(i).data('index') % data.slidesPerGroup == 0) {
@@ -1536,7 +1553,7 @@ function Swiper(data) {
             return data.loop ? list[list.indexOf(index) - 1] : (index == 0 ? (data.rewind ? pageTotal - 1 : index) : list[list.indexOf(index) - 1]);
         } else if (type == 'next') {
             // 倒带和移动类型前进后退
-            let rewind = this == window ? !data.stopOnLastSlide : data.rewind;
+            let rewind = autoplay ? !data.stopOnLastSlide : data.rewind;
 
             // return data.loop ? list[list.indexOf(index) + 1] : (index == list[list.length - 1] ? (rewind ? 0 : index) : list[list.indexOf(index) + 1]);
             return data.loop ? list[list.indexOf(index) + 1] : (index == list[list.length - 1] ? (rewind ? 0 : index) : list[list.indexOf(index) + 1]);
@@ -1590,10 +1607,7 @@ function Swiper(data) {
         if (lock) return false;
 
         // 属性当前的值 动画时长
-        let current, duration = animation ? (animation === true ? data.speed : animation) : 0;
-
-        native.removeClass('swiper-active');
-        native.eq(index).addClass('swiper-active');
+        let current, duration = animation ? (animation === true ? data.speed : animation) : 0, move = true;
 
         if (index !== indexOld && [1, 5, 6, 7, 8].indexOf(moveType) > -1) {
             let target = index, direction = null, diff = null;
@@ -1625,10 +1639,24 @@ function Swiper(data) {
             data.change && data.change(index);
             bind && (() => {
                 for (let i = 0; i < bind.length; i++) {
-                    bind[i].setIndex(target, index);
+                    move = bind[i].setIndex(target, index, false);
+                }
+
+                if (move) {
+                    for (let i = 0; i < bind.length; i++) {
+                        bind[i].setIndex(target, index, true);
+                    }
                 }
             })();
         }
+
+        if (!move) {
+            callback && callback();
+            return index = indexOld;
+        }
+
+        native.removeClass('swiper-active');
+        native.eq(index).addClass('swiper-active');
 
         indexOld = index;
 
