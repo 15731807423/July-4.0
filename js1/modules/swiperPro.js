@@ -833,12 +833,17 @@ function Swiper(data) {
         // 被拖动元素
         var target = null, otherTime = 0, otherPosition = [0, 0];
 
+        // 鼠标按下了开始了 点击的唯一标识
+        var start = false, id = Math.random();
+
         // 鼠标按下
         let startFunction = e => {
             if (e.pointerType == 'mouse' && e.button != 0) return false;
             // if (!((e.pointerType == 'mouse' && e.button == 0) || e.pointerType == 'touch')) return false;
 
             target = e.target;
+
+            start = id;
 
             // 贴边时不能拖动
             // if (moveType == 5) return false;
@@ -921,28 +926,25 @@ function Swiper(data) {
 
         // 鼠标松开
         let endFunction = e => {
-            autoplay = true;
-
-            if (!target) {
-                if (time() - otherTime < 200 && otherPosition[0] == e.changedTouches[0].clientX && otherPosition[1] == e.changedTouches[0].clientY) {
-                    isMobile() && $(e.target).click();
-                }
-                return false;
+            if (start === false || start !== id) {
+                return;
             }
+
+            autoplay = true;
 
             // 鼠标松开后鼠标悬停设置成松手
             data.grabCursor && wrapper.css('cursor', 'grab');
 
-            if (time() - startTime < 200 && distance == 0 && move) {
-                move = false;
-                moveType = 0;
-                setPositionByNativeIndex(true);
+            // if (time() - startTime < 200 && distance == 0 && move) {
+            //     move = false;
+            //     moveType = 0;
+            //     setPositionByNativeIndex(true);
 
-                return false;
-            }
+            //     return false;
+            // }
 
             // 单击
-            if (time() - startTime < 200 && distance == 0 && !move) {
+            if (time() - startTime < 200 && distance == 0 && start === id) {
                 if (target.tagName === 'A') {
                     window.location.href = $(target).attr('href');
                 } else if ($(target).parents('a').length) {
@@ -955,6 +957,15 @@ function Swiper(data) {
                 moveType = 0;
                 target = null;
                 return dragCallback(direction);
+            }
+
+            start = false;
+
+            if (!target) {
+                if (time() - otherTime < 200 && otherPosition[0] == e.changedTouches[0].clientX && otherPosition[1] == e.changedTouches[0].clientY) {
+                    isMobile() && $(e.target).click();
+                }
+                return false;
             }
 
             if (target.tagName === 'A') {
@@ -1170,7 +1181,7 @@ function Swiper(data) {
                 clearTimeout(timer);
                 timer = setTimeout(next, data.delay);
             })();
-        };console.log(type, autoplay)
+        };
 
         if (!type && !autoplay) {
             return false;
