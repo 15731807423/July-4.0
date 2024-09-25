@@ -1876,6 +1876,10 @@ function Swiper(data) {
             return value;
         }
 
+        if ('nodeType' in value && value.nodeType === 1) {
+            return value;
+        }
+
         let data = {};
 
         for (let key in value) {
