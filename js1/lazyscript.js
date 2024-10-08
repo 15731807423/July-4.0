@@ -460,12 +460,6 @@
         return task;
     }
 
-    // data.polyfill = function (features) {
-    //     return (
-    //         "https://polyfill.io/v3/polyfill.min.js?features=" + features.join("%2C")
-    //     );
-    // };
-
     // 批量处理 ScriptTask 对象
     // 集中处理的主要目的是合并 polyfill
     function batch(tasks) {
