@@ -319,9 +319,11 @@ class NodeController extends Controller
             try {
                 $node->translateTo($frontendLangcode)->render($twig);
             } catch (\Throwable $th) {
-                $result['_default'] = false;
-
-                Log::error($th->getMessage());
+                $result['_default'] = [
+                    'file' => $th->getFile(),
+                    'line' => $th->getLine(),
+                    'message' => $th->getMessage()
+                ];
             }
 
             if ($langs) {
@@ -330,7 +332,11 @@ class NodeController extends Controller
                         $node->translateTo($langcode)->render($twig, $langcode);
                         $result[$langcode] = true;
                     } catch (\Throwable $th) {
-                        $result[$langcode] = false;
+                        $result[$langcode] = [
+                            'file' => $th->getFile(),
+                            'line' => $th->getLine(),
+                            'message' => $th->getMessage()
+                        ];
 
                         Log::error($th->getMessage());
                     }

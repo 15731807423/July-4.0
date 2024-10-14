@@ -425,7 +425,9 @@
                 }
 
                 if (! nodes.length) {
-                    this.$message.info('未选中任何内容');
+                    setTimeout(() => {
+                        this.$message.info('未选中任何内容');
+                    }, 10)
                     return;
                 }
 
@@ -436,7 +438,9 @@
                 const count = 50, current = nodes.slice(i, i + count);
 
                 if (current.length == 0) {
-                    this.$message.success('生成完成');
+                    setTimeout(() => {
+                        this.$message.success('生成完成');
+                    }, 10)
                     return false;
                 }
 
@@ -448,12 +452,49 @@
 
                 axios.post("{{ short_url('nodes.render') }}", { nodes: current }).then((response) => {
                     loading.close();
+                    this.showRenderError(response.data)
                     this.renderRequest(nodes, i + count);
+
                 }).catch(err => {
                     loading.close();
                     console.error(err);
-                    this.$message.error('发生错误');
+                    setTimeout(() => {
+                        this.$message.error('发生错误');
+                    }, 10)
                 });
+            },
+
+            showRenderError(data) {
+                const list = [];
+
+                for (let page in data) {
+                    for (let language in data[page]) {
+                        if (data[page][language] !== true) {
+                            list.push({
+                                page: page,
+                                language: (language == '_default' ? '默认' : language),
+                                file: data[page][language].file,
+                                line: data[page][language].line,
+                                message: data[page][language].message
+                            })
+                        }
+                    }
+                }
+
+                if (list.length) {
+                    setTimeout(() => {
+                        this.$message.error('发生错误，控制台显示详细信息');
+                    }, 10)
+                }
+
+                for (var i = 0; i < list.length; i++) {
+                    console.log('页面：', list[i].page)
+                    console.log('语言：', list[i].language)
+                    console.log('文件：', list[i].file)
+                    console.log('行号：', list[i].line)
+                    console.log('信息：', list[i].message)
+                    console.log('------------------------')
+                }
             }
         },
     });
