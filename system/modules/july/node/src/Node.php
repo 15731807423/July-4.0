@@ -233,6 +233,11 @@ class Node extends TranslatableEntityBase
             '_multilingual' => $multiple
         ];
 
+        if (Node::first()->id == $this->id) {
+            $canonical = parse_url($globals['_canonical']);
+            $globals['_canonical'] = $canonical['scheme'] . '://' . $canonical['host'] . '/';
+        }
+
         $jit->mergeGlobals($globals);
 
         foreach ($globals as $key => $value) {
