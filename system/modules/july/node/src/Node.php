@@ -233,7 +233,7 @@ class Node extends TranslatableEntityBase
             '_multilingual' => $multiple
         ];
 
-        if (Node::first()->id == $this->id) {
+        if (Node::first()->id == $this->id && is_null($globals['_langcode'])) {
             $canonical = parse_url($globals['_canonical']);
             $globals['_canonical'] = $canonical['scheme'] . '://' . $canonical['host'] . '/';
         }
