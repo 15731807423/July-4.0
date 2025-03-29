@@ -217,7 +217,8 @@ function Swiper(data) {
                         type            : parseValue(value.type, 'pagination.type', 'bullets'),
                         renderBullet    : parseValue(value.renderBullet, 'function', () => { return '<span></span>'; }),
                         renderFraction  : parseValue(value.renderFraction, 'function', (i, t) => { return [i, '/', t]; }),
-                        actionScope     : parseValue(value.actionScope, 'boolean', false)
+                        actionScope     : parseValue(value.actionScope, 'boolean', false),
+                        html            : parseValue(value.html, 'boolean', false)
                     };
                 }
                 break;
@@ -629,10 +630,12 @@ function Swiper(data) {
 
             // 圆点
             if (data.pagination.type == 'bullets') {
-                // 添加ul元素 li元素和span元素
-                pagination.html('<ul></ul>');
-                for (var i = 0; i < pageTotal; i++) {
-                    $('ul', pagination).append('<li>' + data.pagination.renderBullet(i) + '</li>')
+                if (!data.pagination.html) {
+                    // 添加ul元素 li元素和span元素
+                    pagination.html('<ul></ul>');
+                    for (var i = 0; i < pageTotal; i++) {
+                        $('ul', pagination).append('<li>' + data.pagination.renderBullet(i) + '</li>')
+                    }
                 }
 
                 // 每个span元素添加点击事件
