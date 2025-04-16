@@ -4,11 +4,11 @@ function Swiper(data) {
     // 关闭边缘抵抗等同于抵抗率为1
     data.resistance || (data.resistance = true, data.resistanceRatio = 1);
 
-    // 容器 滑动元素 滑动元素宽 容器宽 容器高 滑块宽 滑块高 滑动元素滑动范围 前进按钮 后退按钮 分页
-    var container, wrapper, wrapperWidth, width, height, slideWidth, slideHeight, wrapperPositionRange, prevButton, nextButton, pagination;
+    // 容器 滑动元素 滑动元素宽 滑动元素高 容器宽 容器高 滑块宽 滑块高 滑动元素滑动范围 前进按钮 后退按钮 分页
+    var container, wrapper, wrapperWidth, wrapperHeight, width, height, slideWidth, slideHeight, wrapperPositionRange, prevButton, nextButton, pagination;
 
-    // 当前索引 滑块 原生滑块 前面复制的滑块 后面复制的滑块 原生滑块的总宽 前面复制的滑块的总宽 后面复制的滑块的总宽 分页数量 旧的索引
-    var index = 0, slide, native, prevAll = [], nextAll = [], nativeWidth = 0, prevWidth = 0, nextWidth = 0, pageTotal, indexOld;
+    // 当前索引 滑块 原生滑块 前面复制的滑块 后面复制的滑块 原生滑块的总宽 原生滑块的总高 前面复制的滑块的总宽 后面复制的滑块的总宽 前面复制的滑块的总高 后面复制的滑块的总高 分页数量 旧的索引
+    var index = 0, slide, native, prevAll = [], nextAll = [], nativeWidth = 0, nativeHeight = 0, prevWidth = 0, nextWidth = 0, prevHeight = 0, nextHeight = 0, pageTotal, indexOld;
 
     // 当前动画id   移动类型 0静止 1自动播放切换 2鼠标拖动 3惯性运动 4两侧超出反弹 5贴边 6分页切换 7前进切换 8后退切换 9绑定轮播图切换时带动
     var animateId, moveType = 0;
@@ -116,6 +116,7 @@ function Swiper(data) {
                     return {
                         selector                    : parseValue(value.selector, 'selector'),
 
+                        vertical                    : parseValue(value.vertical, 'boolean', false),
                         initialSlide                : parseValue(value.initialSlide, 'int', 0, [0, 999]),
                         grabCursor                  : parseValue(value.grabCursor, 'boolean', false),
                         speed                       : parseValue(value.speed, 'int', 300, [0, 10000]),
@@ -306,6 +307,7 @@ function Swiper(data) {
         windowResize || initWindowResize();
 
         container.width(parseInt(container.width()));
+        container.height(parseInt(container.height()));
 
         setThumbs();
 
@@ -326,6 +328,7 @@ function Swiper(data) {
             container.prepend('<div class="swiper-container"><div class="swiper-wrapper">' + html + '</div></div>');
         }
 
+        container.children('.swiper-container').css('height', '100%');
         wrapper                 = container.children('.swiper-container').css('overflow', 'hidden').children('.swiper-wrapper');
         width                   = container.width();
         height                  = container.height();
@@ -340,6 +343,12 @@ function Swiper(data) {
         //     data.slidesPerView = slide.length;
         // }
 
+        // 垂直
+        if (data.vertical) {
+            wrapper.css('width', '100%')
+            slide.css('width', '100%')
+        }
+
         if (data.slidesPerView === false) {
             container.css('overflow', 'unset');
             wrapper.css('width', '100%');
@@ -350,8 +359,8 @@ function Swiper(data) {
         // 原生滑块设置索引属性
         native.each((index, value) => native.eq(index).data('index', index));
 
-        // 初始化全部滑块的宽
-        initSlideWidth();
+        // 初始化全部滑块的宽或高
+        data.vertical ? initSlideHeight() : initSlideWidth();
 
         // 初始化无限循环
         data.loop && initLoop();
@@ -361,29 +370,54 @@ function Swiper(data) {
         // 初始化元素样式
         initElementStyle();
 
-        // 原生滑块的总宽
-        native.each((index, value) => (nativeWidth += native.eq(index).outerWidth()));
-        nativeWidth += data.spaceBetween * (native.length - 1);
+        // 原生滑块的总宽或高
+        if (data.vertical) {
+            native.each((index, value) => (nativeHeight += native.eq(index).outerHeight()));
+            nativeHeight += data.spaceBetween * (native.length - 1);
+        } else {
+            native.each((index, value) => (nativeWidth += native.eq(index).outerWidth()));
+            nativeWidth += data.spaceBetween * (native.length - 1);
+        }
 
-        // 滑动元素宽
-        wrapperWidth = wrapper.width();
+        // 滑动元素宽或高
+        if (data.vertical) {
+            wrapperHeight = wrapper.height();
+        } else {
+            wrapperWidth = wrapper.width();
+        }
 
         // 不循环 不足一屏 居中显示
-        !data.loop && wrapperWidth <= width && data.centerInsufficientSlides && (() => {
-            setPosition((width - wrapperWidth) / -2);
-            lock = true;
-        })();
+        if (data.vertical) {
+            !data.loop && wrapperHeight <= width && data.centerInsufficientSlides && (() => {
+                setPosition((height - wrapperHeight) / -2);
+                lock = true;
+            })();
+        } else {
+            !data.loop && wrapperWidth <= width && data.centerInsufficientSlides && (() => {
+                setPosition((width - wrapperWidth) / -2);
+                lock = true;
+            })();
+        }
 
         // 初始化分页
         initPagination();
 
         // 滑动元素滑动范围
-        wrapperPositionRange.push(wrapperWidth - width);
+        if (data.vertical) {
+            wrapperPositionRange.push(wrapperHeight - height);
 
-        data.centeredSlides && !data.loop && !data.centeredSlidesBounds && (() => {
-            wrapperPositionRange[0] -= (width - slideWidth[0]) / 2;
-            wrapperPositionRange[1] += (width - slideWidth[slideWidth.length - 1]) / 2;
-        })();
+            data.centeredSlides && !data.loop && !data.centeredSlidesBounds && (() => {
+                wrapperPositionRange[0] -= (height - slideHeight[0]) / 2;
+                wrapperPositionRange[1] += (height - slideHeight[slideHeight.length - 1]) / 2;
+            })();
+        } else {
+            wrapperPositionRange.push(wrapperWidth - width);
+
+            data.centeredSlides && !data.loop && !data.centeredSlidesBounds && (() => {
+                wrapperPositionRange[0] -= (width - slideWidth[0]) / 2;
+                wrapperPositionRange[1] += (width - slideWidth[slideWidth.length - 1]) / 2;
+            })();
+        }
 
         // 初始化前进后退按钮
         initNavigation();
@@ -446,7 +480,7 @@ function Swiper(data) {
 
         container.css('width', '100%').html(container.html());
 
-        wrapper = wrapperWidth = width = height = slideWidth = slideHeight = wrapperPositionRange = prevButton = nextButton = pagination = [];
+        wrapper = wrapperWidth = wrapperHeight = width = height = slideWidth = slideHeight = wrapperPositionRange = prevButton = nextButton = pagination = [];
         slide = native = null;
         prevAll = nextAll = [];
         nativeWidth = prevWidth = nextWidth = 0;
@@ -502,6 +536,26 @@ function Swiper(data) {
         }
     }
 
+    // 初始化全部滑块的高
+    function initSlideHeight() {
+        // 清空原有内容
+        slideHeight = [];
+
+        // 移除滑块的外边距 只能通过参数的间距设置
+        slide.css('margin', 0);
+
+        // 获取滑块的高
+        if (data.slidesPerView == 'auto') {
+            // 自动时 获取元素的宽
+            slide.each((index, value) => slideHeight.push(slide.eq(index).outerHeight()));
+        } else {
+            // 如果每页显示的滑块数量超过了滑块的总数量
+            // data.slidesPerView > slide.length && (data.slidesPerView = slide.length);
+            // 设置了数量时 根据数量和间距计算
+            slide.each((index, value) => slideHeight.push((height - data.spaceBetween * (data.slidesPerView - 1)) / data.slidesPerView));
+        }
+    }
+
     // 初始化无限循环
     function initLoop() {
         if (data.slidesPerView === false) return false;
@@ -532,26 +586,47 @@ function Swiper(data) {
         // prevAll.each((index, value) => $('span', prevAll.eq(index)).html('-' + $('span', prevAll.eq(index)).html()));
         // nextAll.each((index, value) => $('span', nextAll.eq(index)).html('+' + $('span', nextAll.eq(index)).html()));
 
-        // 初始化全部滑块的宽
-        initSlideWidth();
+        // 初始化全部滑块的宽或高
+        data.vertical ? initSlideHeight() : initSlideWidth();
 
         // 原生滑块的总宽 前面复制的滑块的总宽 后面复制的滑块的总宽
-        // nativeWidth = sum(slideWidth.slice(prevAll.length, prevAll.length + native.length)) + data.spaceBetween * (native.length - 1);
-        prevWidth = sum(slideWidth.slice(0, prevAll.length)) + data.spaceBetween * prevAll.length;
-        nextWidth = sum(slideWidth.slice(prevAll.length + native.length)) + data.spaceBetween * prevAll.length;
+        if (data.vertical) {
+            // nativeHeight = sum(slideHeight.slice(prevAll.length, prevAll.length + native.length)) + data.spaceBetween * (native.length - 1);
+            prevHeight = sum(slideHeight.slice(0, prevAll.length)) + data.spaceBetween * prevAll.length;
+            nextHeight = sum(slideHeight.slice(prevAll.length + native.length)) + data.spaceBetween * prevAll.length;
+        } else {
+            // nativeWidth = sum(slideWidth.slice(prevAll.length, prevAll.length + native.length)) + data.spaceBetween * (native.length - 1);
+            prevWidth = sum(slideWidth.slice(0, prevAll.length)) + data.spaceBetween * prevAll.length;
+            nextWidth = sum(slideWidth.slice(prevAll.length + native.length)) + data.spaceBetween * prevAll.length;
+        }
     }
 
     // 初始化元素样式
     function initElementStyle() {
-        // 元素到最左侧距离
-        let left = 0;
+        let before, after, slideSize;
+        if (data.vertical) {
+            before = 'margin-top';
+            after = 'margin-bottom';
+            slideSize = slideHeight;
 
-        // 滑块设置宽度 间距 定位
-        slide.each((index, value) => {
-            slide.eq(index).outerWidth(slideWidth[index]).css('margin-left', data.spaceBetween / 2).css('margin-right', data.spaceBetween / 2);
-        });
-        slide.first().css('margin-left', 0);
-        slide.last().css('margin-right', 0);
+            // 滑块设置宽度 间距 定位
+            slide.each((index, value) => {
+                slide.eq(index).outerHeight(slideSize[index]).css(before, data.spaceBetween / 2).css(after, data.spaceBetween / 2);
+            });
+        } else {
+            before = 'margin-left';
+            after = 'margin-right';
+            slideSize = slideWidth;
+
+            // 滑块设置宽度 间距 定位
+            slide.each((index, value) => {
+                slide.eq(index).outerWidth(slideSize[index]).css(before, data.spaceBetween / 2).css(after, data.spaceBetween / 2);
+            });
+        }
+
+
+        slide.first().css(before, 0);
+        slide.last().css(after, 0);
 
         // 设置滑动元素的样式
         wrapper.css('transform', 'translate3d(0px, 0px, 0px)').css('opacity', 1);
@@ -587,7 +662,11 @@ function Swiper(data) {
         for (let i = 0; i < list.length; i++) {
             let total = 0;
             for (let j = 0; j < list[i].length; j++) {
-                total += list[i][j].outerWidth() + data.spaceBetween;
+                if (data.vertical) {
+                    total += list[i][j].outerHeight() + data.spaceBetween;
+                } else {
+                    total += list[i][j].outerWidth() + data.spaceBetween;
+                }
             }
             border.left.push(border.left[border.left.length - 1] + total);
         }
@@ -616,7 +695,11 @@ function Swiper(data) {
         }
 
         // 最大页码
-        pageTotal = data.loop || data.centeredSlides ? native.length : (data.slidesPerView == 'auto' ? (nativeWidth <= width ? 1 : getNativeIndexByPosition(nativeWidth - width) + 2) : (native.length - data.slidesPerView + 1));
+        if (data.vertical) {
+            pageTotal = data.loop || data.centeredSlides ? native.length : (data.slidesPerView == 'auto' ? (nativeHeight <= height ? 1 : getNativeIndexByPosition(nativeHeight - height) + 2) : (native.length - data.slidesPerView + 1));
+        } else {
+            pageTotal = data.loop || data.centeredSlides ? native.length : (data.slidesPerView == 'auto' ? (nativeWidth <= width ? 1 : getNativeIndexByPosition(nativeWidth - width) + 2) : (native.length - data.slidesPerView + 1));
+        }
 
         // 一页多个后的最大页码
         if (data.slidesPerGroup > 1) {
@@ -806,7 +889,7 @@ function Swiper(data) {
         };
 
         // 全部内容小于一屏时
-        if (nativeWidth <= width) {
+        if ((!data.vertical && nativeWidth <= width) || (data.vertical && nativeHeight <= height)) {
             // 如果居中 可以拖动
             if (data.centeredSlides) {
                 // 如果无缺口 则不能拖动 因为左侧要贴边
@@ -825,7 +908,11 @@ function Swiper(data) {
         if (!status) return disabled();
 
         // 内容不足一屏幕且不居中 或关闭拖动时 没有拖动事件
-        if ((nativeWidth <= width && !data.centeredSlides) || !data.allowTouchMove) return disabled();
+        if (data.vertical) {
+            if ((nativeHeight <= height && !data.centeredSlides) || !data.allowTouchMove) return disabled();
+        } else {
+            if ((nativeWidth <= width && !data.centeredSlides) || !data.allowTouchMove) return disabled();
+        }
 
         // 鼠标悬停设置成手
         data.grabCursor && wrapper.css('cursor', 'grab');
@@ -863,9 +950,9 @@ function Swiper(data) {
             // 开始拖动 元素位置 开始时鼠标坐标 开始时间 上次鼠标坐标 整体移动距离 整体移动方向 惯性
             move = true;
             elPosition = getPosition();
-            startPosition = typeof e.clientX == 'number' ? e.clientX : e.touches[0].clientX;
+            startPosition = data.vertical ? typeof e.clientY == 'number' ? e.clientY : e.touches[0].clientY : typeof e.clientX == 'number' ? e.clientX : e.touches[0].clientX;
             startTime = time();
-            lastPosition = typeof e.clientX == 'number' ? e.clientX : e.touches[0].clientX;
+            lastPosition = data.vertical ? typeof e.clientY == 'number' ? e.clientY : e.touches[0].clientY : typeof e.clientX == 'number' ? e.clientX : e.touches[0].clientX;
             firstDirection = null;
             lastDirection = null;
             distance = 0;
@@ -878,7 +965,14 @@ function Swiper(data) {
             // 没有开始事件不执行
             if (!move) return $('html').select();
 
-            let x = typeof e.clientX == 'number' ? e.clientX : e.touches[0].clientX;
+            let x;
+
+            if (data.vertical) {
+                x = typeof e.clientY == 'number' ? e.clientY : e.touches[0].clientY;
+            } else {
+                x = typeof e.clientX == 'number' ? e.clientX : e.touches[0].clientX;
+            }
+
 
             // 本次移动方向
             let currentDirection = x - lastPosition;
@@ -1372,7 +1466,11 @@ function Swiper(data) {
         for (var i = 0; i < list.length; i++) {
             let all = i == list.length - 1 ? $(list[i]).prevAll() : $(list[i]).next().prevAll();
 
-            if (getWidthByElement(all, 3) + all.length * data.spaceBetween == position) {
+            if (!data.vertical && getWidthByElement(all, 3) + all.length * data.spaceBetween == position) {
+                return $(list[i + 1]).index();
+            }
+
+            if (data.vertical && getHeightByElement(all, 3) + all.length * data.spaceBetween == position) {
                 return $(list[i + 1]).index();
             }
         }
@@ -1383,15 +1481,15 @@ function Swiper(data) {
     // 根据位置获取全部滑块中当前滑块的索引 居中
     function getSlideIndexByPositionInCenter(x, list, direction = null) {
         // 滑块位置 切换阈值 间隔 中间
-        var position = null, fit = data.fitDistance, spaceBetween = data.spaceBetween, y = Math.round(x + width / 2);
+        var position = null, fit = data.fitDistance, spaceBetween = data.spaceBetween, y = data.vertical ? Math.round(x + height / 2) : Math.round(x + width / 2);
 
         for (var i = 0; i < list.length - 1; i++) {
             let center = 0;
             for (var j = 0; j < i * data.slidesPerGroup; j++) {
-                center += slideWidth[j] + spaceBetween;
+                center += (data.vertical ? slideHeight[j] : slideWidth[j]) + spaceBetween;
             }
 
-            center += slideWidth[i] / 2;
+            center += (data.vertical ? slideHeight[i] : slideWidth[i]) / 2;
             center = Math.round(center);
 
             if (direction == 'left') {
@@ -1423,7 +1521,11 @@ function Swiper(data) {
         for (var i = 0; i < list.length; i++) {
             let all = i == list.length - 1 ? $(list[i]).prevAll() : $(list[i]).next().prevAll();
 
-            if (getWidthByElement(all, 3) + all.length * data.spaceBetween == position) {
+            if (!data.vertical && getWidthByElement(all, 3) + all.length * data.spaceBetween == position) {
+                return $(list[i + 1]).index();
+            }
+
+            if (data.vertical && getHeightByElement(all, 3) + all.length * data.spaceBetween == position) {
                 return $(list[i + 1]).index();
             }
         }
@@ -1444,8 +1546,14 @@ function Swiper(data) {
     // 根据滑块获取位置
     function getPositionBySlide(el) {
         let position = 0;
-        el.prevAll().each((index, value) => position += el.prevAll().eq(index).outerWidth() + data.spaceBetween);
-        return data.centeredSlides ? position - width / 2 + slideWidth[el.index()] / 2 : position;
+
+        if (data.vertical) {
+            el.prevAll().each((index, value) => position += el.prevAll().eq(index).outerHeight() + data.spaceBetween);
+            return data.centeredSlides ? position - height / 2 + slideHeight[el.index()] / 2 : position;
+        } else {
+            el.prevAll().each((index, value) => position += el.prevAll().eq(index).outerWidth() + data.spaceBetween);
+            return data.centeredSlides ? position - width / 2 + slideWidth[el.index()] / 2 : position;
+        }
     }
 
     // 根据鼠标拖动距离计算轮播图当前位置
@@ -1593,27 +1701,54 @@ function Swiper(data) {
         return total;
     }
 
+    // 获取元素的高的和
+    function getHeightByElement(el, type = 1) {
+        let total = 0;
+        if (type == 1) el.each(i => total += el.eq(i).height());
+        if (type == 2) el.each(i => total += el.eq(i).innerHeight());
+        if (type == 3) el.each(i => total += el.eq(i).outerHeight());
+        if (type == 4) el.each(i => total += el.eq(i).outerHeight(true));
+        return total;
+    }
+
     // 头和尾互换 从前面的复制元素移动到后面的复制元素 从后面的复制元素移动到前面的复制元素
     function exchange(direction) {
         // 没开启无限循环不执行
         if (!data.loop) return false;
 
-        // 当前位置
-        let position = getPosition();
+        if (data.vertical) {
+            // 当前位置
+            let position = getPosition();
 
-        // 当前在头部 移动到尾部
-        if (position < prevWidth && direction == 'right') return setPosition(position + nativeWidth + data.spaceBetween) || true;
+            // 当前在头部 移动到尾部
+            if (position < prevHeight && direction == 'right') return setPosition(position + nativeHeight + data.spaceBetween) || true;
 
-        // 当前在尾部 移动到头部
-        // if (position > prevWidth + nativeWidth - width && direction == 'left') return setPosition(position - nativeWidth - data.spaceBetween) || true;
-        if (position > prevWidth + nativeWidth - slideWidth[slideWidth.length - 1] && direction == 'left') return setPosition(position - nativeWidth - data.spaceBetween) || true;
+            // 当前在尾部 移动到头部
+            // if (position > prevHeight + nativeHeight - height && direction == 'left') return setPosition(position - nativeHeight - data.spaceBetween) || true;
+            if (position > prevHeight + nativeHeight - slideHeight[slideHeight.length - 1] && direction == 'left') return setPosition(position - nativeHeight - data.spaceBetween) || true;
+        } else {
+            // 当前位置
+            let position = getPosition();
+
+            // 当前在头部 移动到尾部
+            if (position < prevWidth && direction == 'right') return setPosition(position + nativeWidth + data.spaceBetween) || true;
+
+            // 当前在尾部 移动到头部
+            // if (position > prevWidth + nativeWidth - width && direction == 'left') return setPosition(position - nativeWidth - data.spaceBetween) || true;
+            if (position > prevWidth + nativeWidth - slideWidth[slideWidth.length - 1] && direction == 'left') return setPosition(position - nativeWidth - data.spaceBetween) || true;
+        }
+
 
         return false;
     }
 
     // 获取当前轮播图位置
     function getPosition() {
-        return parseFloat(wrapper.css('transform').replace('matrix(', '').replace(')', '').split(', ')[4]) * -1;
+        if (data.vertical) {
+            return parseFloat(wrapper.css('transform').replace('matrix(', '').replace(')', '').split(', ')[5]) * -1;
+        } else {
+            return parseFloat(wrapper.css('transform').replace('matrix(', '').replace(')', '').split(', ')[4]) * -1;
+        }
     }
 
     // 设置轮播图位置和动画
@@ -1685,7 +1820,11 @@ function Swiper(data) {
         // wrapper.stop().animation({ marginLeft: x }, animation ? (animation === true ? data.speed : animation) : 0, easing, callback);
 
         // 移动
-        animate(wrapper, 'transform', 'translate3d({ x }px, 0px, 0px)', x * -1, duration, current * -1, type, callback);
+        if (data.vertical) {
+            animate(wrapper, 'transform', 'translate3d(0px, { x }px, 0px)', x * -1, duration, current * -1, type, callback);
+        } else {
+            animate(wrapper, 'transform', 'translate3d({ x }px, 0px, 0px)', x * -1, duration, current * -1, type, callback);
+        }
     }
 
     // 判断滑动元素是否超出范围
@@ -1705,13 +1844,23 @@ function Swiper(data) {
     function checkShowByElement(el) {
         let left = 0, right = 0, position = getPosition();
 
-        el.prevAll().each(function () {
-            left += $(this).outerWidth(true);
-        });
-        left += parseFloat(el.css('margin-left')) || 0;
-        right = left + el.outerWidth();
+        if (data.vertical) {
+            el.prevAll().each(function () {
+                left += $(this).outerHeight(true);
+            });
+            left += parseFloat(el.css('margin-left')) || 0;
+            right = left + el.outerHeight();
 
-        return between(left, position, position + width) === true || between(right, position, position + width) === true;
+            return between(left, position, position + height) === true || between(right, position, position + height) === true;
+        } else {
+            el.prevAll().each(function () {
+                left += $(this).outerWidth(true);
+            });
+            left += parseFloat(el.css('margin-left')) || 0;
+            right = left + el.outerWidth();
+
+            return between(left, position, position + width) === true || between(right, position, position + width) === true;
+        }
     }
 
     /**
