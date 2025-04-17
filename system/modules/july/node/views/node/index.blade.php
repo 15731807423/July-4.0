@@ -180,7 +180,7 @@
                 deleteUrl: "{{ short_url('nodes.destroy', '_ID_') }}",
                 translateUrl: "{{ short_url('nodes.choose_language', '_ID_') }}",
                 currentPage: 1,
-                perPage: 50,
+                perPage: 200,
                 langcodes: @jjson(array_keys($context['languages']), JSON_PRETTY_PRINT)
             };
         },
