@@ -19,8 +19,8 @@ function Swiper(data) {
     // 锁 缩略图对象 自动播放的定时任务 自动播放是否工作 边缘
     var lock = false, thumbs, timer, autoplay = true, border = { left: [], right: [], center: [] };
 
-    // 绑定的对象 待办列队
-    var bind, queue = [];
+    // 绑定的对象 待办列队 原本绑定的对象
+    var bind, queue = [], original_bind;
 
     // 不知道 是否工作 自己
     var enable = true, work = true, self = this;
@@ -29,8 +29,6 @@ function Swiper(data) {
 
     // 实例化完成
     this.complete = false;
-
-    init();
 
     this.setThumbsIndex = i => {
         let callback = () => {
@@ -51,6 +49,8 @@ function Swiper(data) {
     };
 
     this.setIndex = (i, j, k) => {
+        if (!work || container.is(':hidden')) return false;
+
         index = data.loop ? i : j;
         moveType = 9;
 
@@ -64,10 +64,29 @@ function Swiper(data) {
     }
 
     this.bind = list => {
-        bind = Array.isArray(list) ? list : [list];
+        original_bind = Array.isArray(list) ? list : [list];
+        bind = [];
+
+        for (var i = 0; i < original_bind.length; i++) {
+            if (original_bind[i].getContainer().is(':hidden')) {
+                continue;
+            }
+            if (!original_bind[i].work) {
+                continue;
+            }
+            bind.push(original_bind[i]);
+        }
     }
 
+    this.work = () => work;
     this.index = () => index;
+
+    this.getContainer = () => container;
+
+    if (!init()) {
+        return this;
+    }
+    // init();
 
     // 解析参数
     function parseValue(value, name, defaultValue = null, range = null) {
@@ -306,8 +325,16 @@ function Swiper(data) {
         // 窗口大小变化
         windowResize || initWindowResize();
 
+        if (container.is(':hidden')) {
+            return work = false;
+        } else {
+            work = true;
+        }
+
         container.width(parseInt(container.width()));
-        container.height(parseInt(container.height()));
+        if (data.vertical && data.slidesPerView == 'auto') {
+            data.slidesPerView = 1;
+        }
 
         setThumbs();
 
@@ -338,6 +365,11 @@ function Swiper(data) {
         native                  = $('.swiper-native', wrapper);
         index                   = resize ? index : (data.initialSlide < slide.length ? data.initialSlide : slide.length - 1);
         indexOld                = index;
+
+        if (data.vertical) {
+            wrapper.width('100%');
+            slide.each((index, value) => slide.eq(index).height((height - data.spaceBetween * (data.slidesPerView - 1)) / data.slidesPerView))
+        }
 
         // if (data.slidesPerView > slide.length) {
         //     data.slidesPerView = slide.length;
@@ -492,6 +524,7 @@ function Swiper(data) {
         data = deepClone(original);
 
         run(true);
+        self.bind(original_bind);
     }
 
     // 初始化自适应
@@ -544,16 +577,18 @@ function Swiper(data) {
         // 移除滑块的外边距 只能通过参数的间距设置
         slide.css('margin', 0);
 
+        slide.each((index, value) => slideHeight.push(slide.eq(0).outerHeight()));
+
         // 获取滑块的高
-        if (data.slidesPerView == 'auto') {
-            // 自动时 获取元素的宽
-            slide.each((index, value) => slideHeight.push(slide.eq(index).outerHeight()));
-        } else {
-            // 如果每页显示的滑块数量超过了滑块的总数量
-            // data.slidesPerView > slide.length && (data.slidesPerView = slide.length);
-            // 设置了数量时 根据数量和间距计算
-            slide.each((index, value) => slideHeight.push((height - data.spaceBetween * (data.slidesPerView - 1)) / data.slidesPerView));
-        }
+        // if (data.slidesPerView == 'auto') {
+        //     // 自动时 获取元素的宽
+        //     slide.each((index, value) => slideHeight.push(slide.eq(index).outerHeight()));
+        // } else {
+        //     // 如果每页显示的滑块数量超过了滑块的总数量
+        //     // data.slidesPerView > slide.length && (data.slidesPerView = slide.length);
+        //     // 设置了数量时 根据数量和间距计算
+        //     slide.each((index, value) => slideHeight.push((height - data.spaceBetween * (data.slidesPerView - 1)) / data.slidesPerView));
+        // }
     }
 
     // 初始化无限循环
@@ -1786,7 +1821,7 @@ function Swiper(data) {
             }
 
             data.change && data.change(index);
-            bind && (() => {
+            bind && work && (() => {
                 for (let i = 0; i < bind.length; i++) {
                     move = bind[i].setIndex(target, index, false);
                 }
