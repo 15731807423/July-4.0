@@ -412,16 +412,7 @@ abstract class ModelBase extends Model
      */
     public function gather(array $keys = ['*'])
     {
-        // 尝试从缓存获取数据
-        if ($attributes = $this->pocket()->get('gather')) {
-            $attributes = $attributes->value();
-        }
-
-        // 生成属性数组
-        else {
-            $attributes = $this->attributesToArray();
-            $this->pocket('gather')->put($attributes);
-        }
+        $attributes = $this->attributesToArray();
 
         if ($keys && $keys !== ['*']) {
             $attributes = Arr::only($attributes, $keys);
