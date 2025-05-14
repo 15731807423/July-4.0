@@ -90,6 +90,8 @@ class NodeController extends Controller
             'langcode' => langcode('content'),
         ];
 
+        $data['model']['view'] = $data['context']['mold']->default_tpl;
+
         return view('node::node.create-edit', $data);
     }
 

@@ -9,6 +9,7 @@
     <div id="main_form_left">
         <x-handle model="mold.model" :read-only="$context['mode']==='edit'" :unique-action="short_url('node_types.exists', '_ID_')" />
         <x-label model="mold.model" label="名称" />
+        <x-default-tpl model="mold.model" />
         <x-description model="mold.model" />
         <div class="el-form-item el-form-item--small has-helptext jc-embeded-field">
             <div class="el-form-item__content">
