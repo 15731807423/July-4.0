@@ -20,7 +20,7 @@ function Swiper(data) {
     var lock = false, thumbs, timer, autoplay = true, border = { left: [], right: [], center: [] };
 
     // 绑定的对象 待办列队 原本绑定的对象
-    var bind, queue = [], original_bind;
+    var bind, queue = [], original_bind = undefined;;
 
     // 不知道 是否工作 自己
     var enable = true, work = true, self = this;
@@ -36,8 +36,8 @@ function Swiper(data) {
             native.eq(i).addClass('swiper-thumbs-index');
 
             // if (!checkShowByElement(native.eq(i))) {
-                index = i;
-                setPositionByNativeIndex();
+            index = i;
+            setPositionByNativeIndex();
             // }
         };
 
@@ -133,53 +133,53 @@ function Swiper(data) {
             case 'data':
                 if (type == 'object') {
                     return {
-                        selector                    : parseValue(value.selector, 'selector'),
+                        selector: parseValue(value.selector, 'selector'),
 
-                        vertical                    : parseValue(value.vertical, 'boolean', false),
-                        initialSlide                : parseValue(value.initialSlide, 'int', 0, [0, 999]),
-                        grabCursor                  : parseValue(value.grabCursor, 'boolean', false),
-                        speed                       : parseValue(value.speed, 'int', 300, [0, 10000]),
-                        rewind                      : parseValue(value.rewind, 'boolean', false),
-                        click                       : parseValue(value.click, 'function'),
-                        clickToThis                 : parseValue(value.clickToThis, 'boolean', false),
-                        change                      : parseValue(value.change, 'function', null),
-                        fitDistance                 : parseValue(value.fitDistance, 'fitDistance'),
+                        vertical: parseValue(value.vertical, 'boolean', false),
+                        initialSlide: parseValue(value.initialSlide, 'int', 0, [0, 999]),
+                        grabCursor: parseValue(value.grabCursor, 'boolean', false),
+                        speed: parseValue(value.speed, 'int', 300, [0, 10000]),
+                        rewind: parseValue(value.rewind, 'boolean', false),
+                        click: parseValue(value.click, 'function'),
+                        clickToThis: parseValue(value.clickToThis, 'boolean', false),
+                        change: parseValue(value.change, 'function', null),
+                        fitDistance: parseValue(value.fitDistance, 'fitDistance'),
 
-                        slidesPerView               : parseValue(value.slidesPerView, 'slidesPerView'),
-                        spaceBetween                : parseValue(value.spaceBetween, 'number', 0, [0, 1000]),
-                        slidesPerGroup              : parseValue(value.slidesPerGroup, 'slidesPerGroup'),
-                        centeredSlides              : parseValue(value.centeredSlides, 'boolean', false),
-                        centeredSlidesBounds        : parseValue(value.centeredSlidesBounds, 'boolean', false),
-                        centerInsufficientSlides    : parseValue(value.centerInsufficientSlides, 'boolean', false),
+                        slidesPerView: parseValue(value.slidesPerView, 'slidesPerView'),
+                        spaceBetween: parseValue(value.spaceBetween, 'number', 0, [0, 1000]),
+                        slidesPerGroup: parseValue(value.slidesPerGroup, 'slidesPerGroup'),
+                        centeredSlides: parseValue(value.centeredSlides, 'boolean', false),
+                        centeredSlidesBounds: parseValue(value.centeredSlidesBounds, 'boolean', false),
+                        centerInsufficientSlides: parseValue(value.centerInsufficientSlides, 'boolean', false),
 
-                        loop                        : parseValue(value.loop, 'boolean', false),
+                        loop: parseValue(value.loop, 'boolean', false),
 
-                        allowTouchMove              : parseValue(value.allowTouchMove, 'boolean', true),
-                        touchRatio                  : parseValue(value.touchRatio, 'number', 1, [-3, 3]),
-                        resistance                  : parseValue(value.resistance, 'boolean', true),
-                        resistanceRatio             : parseValue(value.resistanceRatio, 'number', 0.25, [0, 1]),
+                        allowTouchMove: parseValue(value.allowTouchMove, 'boolean', true),
+                        touchRatio: parseValue(value.touchRatio, 'number', 1, [-3, 3]),
+                        resistance: parseValue(value.resistance, 'boolean', true),
+                        resistanceRatio: parseValue(value.resistanceRatio, 'number', 0.25, [0, 1]),
 
-                        autoplay                    : parseValue(value.autoplay, 'boolean', false),
-                        delay                       : parseValue(value.delay, 'number', 3000, [1, 100000]),
-                        stopOnLastSlide             : parseValue(value.stopOnLastSlide, 'boolean', false),
-                        pauseOnMouseEnter           : parseValue(value.pauseOnMouseEnter, 'boolean', false),
+                        autoplay: parseValue(value.autoplay, 'boolean', false),
+                        delay: parseValue(value.delay, 'number', 3000, [1, 100000]),
+                        stopOnLastSlide: parseValue(value.stopOnLastSlide, 'boolean', false),
+                        pauseOnMouseEnter: parseValue(value.pauseOnMouseEnter, 'boolean', false),
 
-                        freeMode                    : parseValue(value.freeMode, 'boolean', false),
+                        freeMode: parseValue(value.freeMode, 'boolean', false),
 
-                        momentum                    : parseValue(value.momentum, 'momentum', false),
+                        momentum: parseValue(value.momentum, 'momentum', false),
 
-                        pagination                  : parseValue(value.pagination, 'pagination', false),
+                        pagination: parseValue(value.pagination, 'pagination', false),
 
-                        navigation                  : parseValue(value.navigation, 'navigation', false),
+                        navigation: parseValue(value.navigation, 'navigation', false),
 
-                        clickToEnlarge              : parseValue(value.clickToEnlarge, 'clickToEnlarge', false),
+                        clickToEnlarge: parseValue(value.clickToEnlarge, 'clickToEnlarge', false),
 
-                        selfAdaption                : parseValue(value.selfAdaption, 'object'),
+                        selfAdaption: parseValue(value.selfAdaption, 'object'),
 
-                        thumbs                      : parseValue(value.thumbs, 'thumbs', false),
-                        image                       : parseValue(value.image, 'image', 'img'),
-                        text                        : parseValue(value.text, 'text', ''),
-                        parent                      : parseValue(value.parent, 'object', null),
+                        thumbs: parseValue(value.thumbs, 'thumbs', false),
+                        image: parseValue(value.image, 'image', 'img'),
+                        text: parseValue(value.text, 'text', ''),
+                        parent: parseValue(value.parent, 'object', null),
                     };
                 }
                 break;
@@ -196,13 +196,11 @@ function Swiper(data) {
                     if (value >= 1 && value % 1 == 0) return value;
                 }
                 return 0.2;
-                break;
 
             case 'slidesPerView':
                 if (value == 'auto') return 'auto';
                 if (value === false) return false;
                 return parseValue(value, 'int', 1);
-                break;
 
             case 'slidesPerGroup':
                 if (type == 'boolean') {
@@ -216,16 +214,15 @@ function Swiper(data) {
                 }
 
                 return parseValue(value, 'number', 1, [1, 999]);
-                break;
 
             case 'momentum':
                 if (value === true || type == 'object') {
                     return {
-                        ratio           : parseValue(value.ratio, 'number', 1000, [1, 10000]),
-                        bounce          : parseValue(value.bounce, 'boolean', true),
-                        bounceRatio     : parseValue(value.bounceRatio, 'int', 1, [1, 10]),
-                        minVelocity     : parseValue(value.minVelocity, 'number', 0.02, [0.001, 1]),
-                        velocityRatio   : parseValue(value.velocityRatio, 'int', 1, [1, 5])
+                        ratio: parseValue(value.ratio, 'number', 1000, [1, 10000]),
+                        bounce: parseValue(value.bounce, 'boolean', true),
+                        bounceRatio: parseValue(value.bounceRatio, 'int', 1, [1, 10]),
+                        minVelocity: parseValue(value.minVelocity, 'number', 0.02, [0.001, 1]),
+                        velocityRatio: parseValue(value.velocityRatio, 'int', 1, [1, 5])
                     };
                 }
                 break;
@@ -233,12 +230,12 @@ function Swiper(data) {
             case 'pagination':
                 if (type == 'object') {
                     return {
-                        selector        : parseValue(value.selector, 'string'),
-                        type            : parseValue(value.type, 'pagination.type', 'bullets'),
-                        renderBullet    : parseValue(value.renderBullet, 'function', () => { return '<span></span>'; }),
-                        renderFraction  : parseValue(value.renderFraction, 'function', (i, t) => { return [i, '/', t]; }),
-                        actionScope     : parseValue(value.actionScope, 'boolean', false),
-                        html            : parseValue(value.html, 'boolean', false)
+                        selector: parseValue(value.selector, 'string'),
+                        type: parseValue(value.type, 'pagination.type', 'bullets'),
+                        renderBullet: parseValue(value.renderBullet, 'function', () => { return '<span></span>'; }),
+                        renderFraction: parseValue(value.renderFraction, 'function', (i, t) => { return [i, '/', t]; }),
+                        actionScope: parseValue(value.actionScope, 'boolean', false),
+                        html: parseValue(value.html, 'boolean', false)
                     };
                 }
                 break;
@@ -252,12 +249,12 @@ function Swiper(data) {
             case 'navigation':
                 if (type == 'object') {
                     return {
-                        prev        : parseValue(value.prev, 'string'),
-                        next        : parseValue(value.next, 'string'),
-                        size        : parseValue(value.size, 'number', 50, [1, 99]),
-                        color       : parseValue(value.color, 'string'),
-                        hover       : parseValue(value.hover, 'navigation.hover', false),
-                        actionScope : parseValue(value.actionScope, 'boolean', false),
+                        prev: parseValue(value.prev, 'string'),
+                        next: parseValue(value.next, 'string'),
+                        size: parseValue(value.size, 'number', 50, [1, 99]),
+                        color: parseValue(value.color, 'string'),
+                        hover: parseValue(value.hover, 'navigation.hover', false),
+                        actionScope: parseValue(value.actionScope, 'boolean', false),
                     };
                 }
                 break;
@@ -265,7 +262,6 @@ function Swiper(data) {
             case 'navigation.hover':
                 if (value === false) return false;
                 return parseValue(value, 'number', false, [1, 1000]);
-                break;
 
             case 'clickToEnlarge':
                 if (value === true || type == 'object') {
@@ -308,7 +304,7 @@ function Swiper(data) {
             return work = false;
         }
 
-        const observer = new IntersectionObserver(function(entries) {
+        const observer = new IntersectionObserver(function (entries) {
             entries.forEach(entry => {
                 if (entry.isIntersecting && entry.target === container[0]) {
                     run();
@@ -356,15 +352,15 @@ function Swiper(data) {
         }
 
         container.children('.swiper-container').css('height', '100%');
-        wrapper                 = container.children('.swiper-container').css('overflow', 'hidden').children('.swiper-wrapper');
-        width                   = container.width();
-        height                  = container.height();
-        slideHeight             = [];
-        wrapperPositionRange    = [0];
-        slide                   = $('.swiper-cell', wrapper).addClass('swiper-native');
-        native                  = $('.swiper-native', wrapper);
-        index                   = resize ? index : (data.initialSlide < slide.length ? data.initialSlide : slide.length - 1);
-        indexOld                = index;
+        wrapper = container.children('.swiper-container').css('overflow', 'hidden').children('.swiper-wrapper');
+        width = container.width();
+        height = container.height();
+        slideHeight = [];
+        wrapperPositionRange = [0];
+        slide = $('.swiper-cell', wrapper).addClass('swiper-native');
+        native = $('.swiper-native', wrapper);
+        index = resize ? index : (data.initialSlide < slide.length ? data.initialSlide : slide.length - 1);
+        indexOld = index;
 
         if (data.vertical) {
             wrapper.width('100%');
@@ -397,7 +393,7 @@ function Swiper(data) {
         // 初始化无限循环
         data.loop && initLoop();
 
-        pagination              = $(data.pagination ? data.pagination.selector : '', data.pagination.actionScope ? 'body' : container);
+        pagination = $(data.pagination ? data.pagination.selector : '', data.pagination.actionScope ? 'body' : container);
 
         // 初始化元素样式
         initElementStyle();
@@ -524,7 +520,7 @@ function Swiper(data) {
         data = deepClone(original);
 
         run(true);
-        self.bind(original_bind);
+        // self.bind(original_bind);
     }
 
     // 初始化自适应
@@ -596,7 +592,7 @@ function Swiper(data) {
         if (data.slidesPerView === false) return false;
 
         // 需要复制的滑块的数量 如果显示的滑块为自动 则复制全部滑块
-        let length = data.slidesPerView == 'auto' ? slide.length : (data.slidesPerView < 5 ? 5 : data.slidesPerView);
+        let length = data.slidesPerView == 'auto' ? slide.length : (data.slidesPerView < 10 ? 10 : data.slidesPerView);
 
         if (slide.length <= data.slidesPerView) return false;
 
@@ -776,10 +772,10 @@ function Swiper(data) {
             else if (data.pagination.type == 'progressbar') {
                 // 添加元素 设置当前页和最大页
                 pagination
-                .css('width', '100%')
-                .css('height', 8)
-                .css('background', 'rgba(0, 0, 0, .25)')
-                .html('<div class="swiper-pagination-progressbar" style="height: 100%; background: red;"></div>');
+                    .css('width', '100%')
+                    .css('height', 8)
+                    .css('background', 'rgba(0, 0, 0, .25)')
+                    .html('<div class="swiper-pagination-progressbar" style="height: 100%; background: red;"></div>');
             }
         })() : pagination.remove();
     }
@@ -892,8 +888,8 @@ function Swiper(data) {
 
         $(window).resize(e => {
             // if (enable) {
-                clearTimeout(timer);
-                timer = setTimeout(() => resize(), 500)
+            clearTimeout(timer);
+            timer = setTimeout(() => resize(), 500)
             // }
         });
     }
@@ -1257,7 +1253,6 @@ function Swiper(data) {
             // 不是自由模式 贴边 根据方向找出切换到哪个滑块 根据滑块设置位置
             else {
                 // 根据位置获取全部滑块中当前滑块的索引
-                // console.log(position, getSlideIndexByPosition(position, direction))
                 index = getSlideIndexByPosition(position, direction);
 
                 // 移动类型贴边
@@ -1376,7 +1371,7 @@ function Swiper(data) {
             // 滑块的目标位置 回调函数
             x = getPositionBySlide(el);
 
-            let func = callback;
+            // let func = callback;
             // callback = () => (func && func(), setPositionByNativeIndex(false));
         }
 
@@ -1388,7 +1383,7 @@ function Swiper(data) {
             // 滑块的目标位置 回调函数
             x = getPositionBySlide(el);
 
-            let func = callback;
+            // let func = callback;
             // callback = () => (func && func(), setPositionByNativeIndex(false));
         }
 
@@ -1546,7 +1541,7 @@ function Swiper(data) {
                 }
             } else {
                 if (center == y) {
-                    position =  list[i];
+                    position = list[i];
                     break;
                 }
             }
@@ -1717,7 +1712,7 @@ function Swiper(data) {
         } else if (type == 'pagination') {
             return page * data.slidesPerGroup;
         } else if (type == 'freeMode') {
-            
+
         }
     }
 
@@ -1747,7 +1742,7 @@ function Swiper(data) {
     }
 
     // 头和尾互换 从前面的复制元素移动到后面的复制元素 从后面的复制元素移动到前面的复制元素
-    function exchange(direction) {
+    function exchange() {
         // 没开启无限循环不执行
         if (!data.loop) return false;
 
@@ -1756,21 +1751,21 @@ function Swiper(data) {
             let position = getPosition();
 
             // 当前在头部 移动到尾部
-            if (position < prevHeight && direction == 'right') return setPosition(position + nativeHeight + data.spaceBetween) || true;
+            if (position < prevHeight) return setPosition(position + nativeHeight + data.spaceBetween) || true;
 
             // 当前在尾部 移动到头部
             // if (position > prevHeight + nativeHeight - height && direction == 'left') return setPosition(position - nativeHeight - data.spaceBetween) || true;
-            if (position > prevHeight + nativeHeight - slideHeight[slideHeight.length - 1] && direction == 'left') return setPosition(position - nativeHeight - data.spaceBetween) || true;
+            if (position > toFixed(prevHeight + nativeHeight - slideHeight[slideHeight.length - 1], 2)) return setPosition(position - nativeHeight - data.spaceBetween) || true;
         } else {
             // 当前位置
             let position = getPosition();
 
             // 当前在头部 移动到尾部
-            if (position < prevWidth && direction == 'right') return setPosition(position + nativeWidth + data.spaceBetween) || true;
+            if (toFixed(position, 0) < toFixed(prevWidth, 0)) return setPosition(position + nativeWidth + data.spaceBetween) || true;
 
             // 当前在尾部 移动到头部
             // if (position > prevWidth + nativeWidth - width && direction == 'left') return setPosition(position - nativeWidth - data.spaceBetween) || true;
-            if (position > prevWidth + nativeWidth - slideWidth[slideWidth.length - 1] && direction == 'left') return setPosition(position - nativeWidth - data.spaceBetween) || true;
+            if (position > toFixed(prevWidth + nativeWidth - slideWidth[slideWidth.length - 1], 2)) return setPosition(position - nativeWidth - data.spaceBetween) || true;
         }
 
 
@@ -1954,7 +1949,7 @@ function Swiper(data) {
             set(completeProportion);
 
             // 收尾切换
-            exchange('left') || exchange('right')
+            exchange()
 
             // 如果完成了 执行回调 清空id并终止调用 否则继续运行
             if (completeProportion == 1) {
