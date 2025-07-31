@@ -1071,8 +1071,9 @@ function Swiper(data) {
             //     return false;
             // }
 
-            // 单击
-            if (time() - startTime < 200 && distance == 0 && start === id) {
+            // 单击 点击的同时拖拽 时间差是0 不知道为什么
+            const currentTime = time()
+            if (currentTime != startTime && currentTime - startTime < 200 && distance == 0 && start === id) {
                 if (target.tagName === 'A') {
                     window.location.href = $(target).attr('href');
                 } else if ($(target).parents('a').length) {
