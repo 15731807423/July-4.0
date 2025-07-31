@@ -398,90 +398,92 @@ function Swiper(data) {
         // 初始化元素样式
         initElementStyle();
 
-        // 原生滑块的总宽或高
-        if (data.vertical) {
-            native.each((index, value) => (nativeHeight += native.eq(index).outerHeight()));
-            nativeHeight += data.spaceBetween * (native.length - 1);
-        } else {
-            native.each((index, value) => (nativeWidth += native.eq(index).outerWidth()));
-            nativeWidth += data.spaceBetween * (native.length - 1);
-        }
-
-        // 滑动元素宽或高
-        if (data.vertical) {
-            wrapperHeight = wrapper.height();
-        } else {
-            wrapperWidth = wrapper.width();
-        }
-
-        // 不循环 不足一屏 居中显示
-        if (data.vertical) {
-            !data.loop && wrapperHeight <= width && data.centerInsufficientSlides && (() => {
-                setPosition((height - wrapperHeight) / -2);
-                lock = true;
-            })();
-        } else {
-            !data.loop && wrapperWidth <= width && data.centerInsufficientSlides && (() => {
-                setPosition((width - wrapperWidth) / -2);
-                lock = true;
-            })();
-        }
-
-        // 初始化分页
-        initPagination();
-
-        // 滑动元素滑动范围
-        if (data.vertical) {
-            wrapperPositionRange.push(wrapperHeight - height);
-
-            data.centeredSlides && !data.loop && !data.centeredSlidesBounds && (() => {
-                wrapperPositionRange[0] -= (height - slideHeight[0]) / 2;
-                wrapperPositionRange[1] += (height - slideHeight[slideHeight.length - 1]) / 2;
-            })();
-        } else {
-            wrapperPositionRange.push(wrapperWidth - width);
-
-            data.centeredSlides && !data.loop && !data.centeredSlidesBounds && (() => {
-                wrapperPositionRange[0] -= (width - slideWidth[0]) / 2;
-                wrapperPositionRange[1] += (width - slideWidth[slideWidth.length - 1]) / 2;
-            })();
-        }
-
-        // 初始化前进后退按钮
-        initNavigation();
-
-        // 初始化滑块点击事件
-        initClick();
-
-        // 初始化点击放大
-        initClickToEnlarge();
-
-        // 初始化缩略图
-        initThumbs();
-
-        // 设置当前显示的滑块的索引 因为可能有默认值 默认不是第一个滑块
-        setPositionByNativeIndex(false);
-
-        // 拖动时不触发a标签点击事件
-        $('a', wrapper).click(function (e) {
-            if (moveType == 2) {
-                event.preventDefault();
-                return false;
+        setTimeout(() => {
+            // 原生滑块的总宽或高
+            if (data.vertical) {
+                native.each((index, value) => (nativeHeight += native.eq(index).outerHeight()));
+                nativeHeight += data.spaceBetween * (native.length - 1);
+            } else {
+                native.each((index, value) => (nativeWidth += native.eq(index).outerWidth()));
+                nativeWidth += data.spaceBetween * (native.length - 1);
             }
-        });
 
-        // 初始化定时器
-        initTimer();
+            // 滑动元素宽或高
+            if (data.vertical) {
+                wrapperHeight = wrapper.height();
+            } else {
+                wrapperWidth = wrapper.width();
+            }
 
-        // 初始化拖动事件
-        initDrag();
+            // 不循环 不足一屏 居中显示
+            if (data.vertical) {
+                !data.loop && wrapperHeight <= width && data.centerInsufficientSlides && (() => {
+                    setPosition((height - wrapperHeight) / -2);
+                    lock = true;
+                })();
+            } else {
+                !data.loop && wrapperWidth <= width && data.centerInsufficientSlides && (() => {
+                    setPosition((width - wrapperWidth) / -2);
+                    lock = true;
+                })();
+            }
 
-        for (let i = 0; i < queue.length; i++) {
-            queue[i]()
-        }
-        queue = [];
+            // 初始化分页
+            initPagination();
 
-        self.complete = true;
+            // 滑动元素滑动范围
+            if (data.vertical) {
+                wrapperPositionRange.push(wrapperHeight - height);
+
+                data.centeredSlides && !data.loop && !data.centeredSlidesBounds && (() => {
+                    wrapperPositionRange[0] -= (height - slideHeight[0]) / 2;
+                    wrapperPositionRange[1] += (height - slideHeight[slideHeight.length - 1]) / 2;
+                })();
+            } else {
+                wrapperPositionRange.push(wrapperWidth - width);
+
+                data.centeredSlides && !data.loop && !data.centeredSlidesBounds && (() => {
+                    wrapperPositionRange[0] -= (width - slideWidth[0]) / 2;
+                    wrapperPositionRange[1] += (width - slideWidth[slideWidth.length - 1]) / 2;
+                })();
+            }
+
+            // 初始化前进后退按钮
+            initNavigation();
+
+            // 初始化滑块点击事件
+            initClick();
+
+            // 初始化点击放大
+            initClickToEnlarge();
+
+            // 初始化缩略图
+            initThumbs();
+
+            // 设置当前显示的滑块的索引 因为可能有默认值 默认不是第一个滑块
+            setPositionByNativeIndex(false);
+
+            // 拖动时不触发a标签点击事件
+            $('a', wrapper).click(function (e) {
+                if (moveType == 2) {
+                    event.preventDefault();
+                    return false;
+                }
+            });
+
+            // 初始化定时器
+            initTimer();
+
+            // 初始化拖动事件
+            initDrag();
+
+            for (let i = 0; i < queue.length; i++) {
+                queue[i]()
+            }
+            queue = [];
+
+            self.complete = true;
+        }, 500);
     }
 
     function setThumbs() {
@@ -994,7 +996,7 @@ function Swiper(data) {
         // 鼠标移动 获取移动距离 设置滑动元素移动距离
         let moveFunction = e => {
             // 没有开始事件不执行
-            if (!move) return $('html').select();
+            if (!move) return false
 
             let x;
 
@@ -1003,7 +1005,6 @@ function Swiper(data) {
             } else {
                 x = typeof e.clientX == 'number' ? e.clientX : e.touches[0].clientX;
             }
-
 
             // 本次移动方向
             let currentDirection = x - lastPosition;
@@ -1073,7 +1074,7 @@ function Swiper(data) {
 
             // 单击 点击的同时拖拽 时间差是0 不知道为什么
             const currentTime = time()
-            if (currentTime != startTime && currentTime - startTime < 200 && distance == 0 && start === id) {
+            if (currentTime - startTime < 200 && distance == 0 && start === id) {
                 if (target.tagName === 'A') {
                     window.location.href = $(target).attr('href');
                 } else if ($(target).parents('a').length) {
@@ -1388,6 +1389,7 @@ function Swiper(data) {
             // callback = () => (func && func(), setPositionByNativeIndex(false));
         }
 
+
         // 设置位置
         setPosition(x, animate, callback);
 
@@ -1604,6 +1606,11 @@ function Swiper(data) {
         // 根据比例计算移动距离
         distance *= touchRatio;
 
+        // 没有判断是否是无限循环，如果无限循环，到边缘时不应该降低拖拽效率
+        if (data.loop) {
+            resistanceRatio = 1
+        }
+
         // 向左拖动
         if (direction == 'left') {
             // 如果当前左侧已经超出
@@ -1743,7 +1750,7 @@ function Swiper(data) {
     }
 
     // 头和尾互换 从前面的复制元素移动到后面的复制元素 从后面的复制元素移动到前面的复制元素
-    function exchange() {
+    function exchange(direction) {
         // 没开启无限循环不执行
         if (!data.loop) return false;
 
@@ -1752,21 +1759,21 @@ function Swiper(data) {
             let position = getPosition();
 
             // 当前在头部 移动到尾部
-            if (position < prevHeight) return setPosition(position + nativeHeight + data.spaceBetween) || true;
+            if (toFixed(position, 0) < toFixed(prevHeight, 0) && direction == 'right') return setPosition(position + nativeHeight + data.spaceBetween) || true;
 
             // 当前在尾部 移动到头部
             // if (position > prevHeight + nativeHeight - height && direction == 'left') return setPosition(position - nativeHeight - data.spaceBetween) || true;
-            if (position > toFixed(prevHeight + nativeHeight - slideHeight[slideHeight.length - 1], 2)) return setPosition(position - nativeHeight - data.spaceBetween) || true;
+            if (position > toFixed(prevHeight + nativeHeight - slideHeight[slideHeight.length - 1], 2) && direction == 'left') return setPosition(position - nativeHeight - data.spaceBetween) || true;
         } else {
             // 当前位置
             let position = getPosition();
 
             // 当前在头部 移动到尾部
-            if (toFixed(position, 0) < toFixed(prevWidth, 0)) return setPosition(position + nativeWidth + data.spaceBetween) || true;
+            if (toFixed(position, 0) < toFixed(prevWidth, 0) && direction == 'right') return setPosition(position + nativeWidth + data.spaceBetween) || true;
 
             // 当前在尾部 移动到头部
             // if (position > prevWidth + nativeWidth - width && direction == 'left') return setPosition(position - nativeWidth - data.spaceBetween) || true;
-            if (position > toFixed(prevWidth + nativeWidth - slideWidth[slideWidth.length - 1], 2)) return setPosition(position - nativeWidth - data.spaceBetween) || true;
+            if (position > toFixed(prevWidth + nativeWidth - slideWidth[slideWidth.length - 1], 2) && direction == 'left') return setPosition(position - nativeWidth - data.spaceBetween) || true;
         }
 
 
@@ -1950,7 +1957,7 @@ function Swiper(data) {
             set(completeProportion);
 
             // 收尾切换
-            exchange()
+            exchange('left') || exchange('right');
 
             // 如果完成了 执行回调 清空id并终止调用 否则继续运行
             if (completeProportion == 1) {
