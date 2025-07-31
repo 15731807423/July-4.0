@@ -594,9 +594,9 @@ function Swiper(data) {
         if (data.slidesPerView === false) return false;
 
         // 需要复制的滑块的数量 如果显示的滑块为自动 则复制全部滑块
-        let length = data.slidesPerView == 'auto' ? slide.length : (data.slidesPerView < 10 ? 10 : data.slidesPerView);
+        let length = data.slidesPerView == 'auto' ? slide.length : (data.slidesPerView < 10 ? data.slidesPerView : 10);
 
-        if (slide.length <= data.slidesPerView) return false;
+        if (slide.length < data.slidesPerView) return data.loop = false;
 
         // 复制到前面的滑块 移除‘原生’class 添加‘复制’和‘开始’class
         let start = slide.slice(length * -1).clone(true).removeClass('swiper-native').addClass(['swiper-duplicate', 'swiper-start']);
@@ -729,9 +729,21 @@ function Swiper(data) {
 
         // 最大页码
         if (data.vertical) {
-            pageTotal = data.loop || data.centeredSlides ? native.length : (data.slidesPerView == 'auto' ? (nativeHeight <= height ? 1 : getNativeIndexByPosition(nativeHeight - height) + 2) : (native.length - data.slidesPerView + 1));
+            if (data.loop || data.centeredSlides) {
+                pageTotal = native.length
+            } else if (data.slidesPerView == 'auto') {
+                pageTotal = nativeHeight <= height ? 1 : getNativeIndexByPosition(nativeHeight - height) + 2
+            } else {
+                pageTotal = Math.ceil((native.length - data.slidesPerView) / data.slidesPerGroup) + 1
+            }
         } else {
-            pageTotal = data.loop || data.centeredSlides ? native.length : (data.slidesPerView == 'auto' ? (nativeWidth <= width ? 1 : getNativeIndexByPosition(nativeWidth - width) + 2) : (native.length - data.slidesPerView + 1));
+            if (data.loop || data.centeredSlides) {
+                pageTotal = native.length
+            } else if (data.slidesPerView == 'auto') {
+                pageTotal = nativeWidth <= width ? 1 : getNativeIndexByPosition(nativeWidth - width) + 2
+            } else {
+                pageTotal = Math.ceil((native.length - data.slidesPerView) / data.slidesPerGroup) + 1
+            }
         }
 
         // 一页多个后的最大页码
@@ -1317,7 +1329,7 @@ function Swiper(data) {
         }
 
         // 点击按钮且按钮被禁用
-        if (type && nextButton.hasClass('disabled')) return false;
+        if (nextButton.hasClass('disabled')) return false;
 
         // 倒带和移动类型前进后退
         let rewind = this == window ? !data.stopOnLastSlide : data.rewind;
@@ -1795,7 +1807,6 @@ function Swiper(data) {
 
         // 属性当前的值 动画时长
         let current, duration = animation ? (animation === true ? data.speed : animation) : 0, move = true;
-
         if (index !== indexOld && [1, 5, 6, 7, 8].indexOf(moveType) > -1) {
             let target = index, direction = null, diff = null;
 
