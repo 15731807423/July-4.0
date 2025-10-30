@@ -28,7 +28,11 @@ function init_mail(selector) {
             processData: false,
             url: $(this).attr('action'),
             success: data => {
-                alert(data.message)
+                if (data.status) {
+                    window.location.href = data.page;
+                } else {
+                    alert(data.message)
+                }
             },
             error: (jqXHR, textStatus, errorThrown) => {
                 alert(errorThrown)

@@ -109,15 +109,22 @@ class MessageController extends Controller
             Log::info($attributes);
         }
 
+        $page = ($langcode == langcode('frontend') ? '' : ('/' . $langcode)) . '/success.html';
+
         if ($api) {
-            return ['status' => true, 'message' => 'Message has been sent! We will contact you soon.'];
+            return [
+                'status' => true,
+                'message' => 'Message has been sent! We will contact you soon.',
+                'page' => $page
+            ];
         }
 
         // 获取返回网址
         $backTo = $request->input('_back_to') ?? URL::previous();
 
         // 返回成功页面，在此页面中嵌入返回地址
-        return view('message::success', ['back_to' => $backTo]);
+        // return view('message::success', ['back_to' => $backTo]);
+        return redirect($page);
     }
 
     /**
