@@ -19,14 +19,44 @@ class MessageController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
+        $perPage = min(max((int) $request->input('per_page', 200), 1), 1000);
+        $filterBy = $request->input('filter_by', '');
+        $query = Message::query();
+
+        switch ($filterBy) {
+            case 'subject':
+                if ($subject = trim((string) $request->input('subject'))) {
+                    $query->where('subject', 'like', '%'.$subject.'%');
+                }
+                break;
+
+            case 'mold':
+                if ($mold = $request->input('mold')) {
+                    $query->where('mold_id', $mold);
+                }
+                break;
+
+            case 'langcode':
+                if ($langcode = $request->input('langcode')) {
+                    $query->where('langcode', $langcode);
+                }
+                break;
+        }
+
         $data = [
-            'models' => Message::index(),
+            'models' => $query->orderByDesc('created_at')->orderByDesc('id')->paginate($perPage)->appends($request->query()),
             'context' => [
                 'molds' => MessageForm::query()->pluck('label', 'id')->all(),
                 'languages' => Lang::getTranslatableLangnames(),
                 'langcode' => langcode('frontend'),
+                'filters' => [
+                    'filter_by' => $filterBy,
+                    'subject' => $request->input('subject'),
+                    'mold' => $request->input('mold'),
+                    'langcode' => $request->input('langcode', langcode('frontend')),
+                ],
             ],
             'langcode' => langcode('frontend'),
         ];

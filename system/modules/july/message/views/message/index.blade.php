@@ -21,7 +21,8 @@
           size="small"
           native-size="20"
           placeholder="消息主题"
-          @input="filterModels"></el-input>
+          @change="filterModels"
+          @keyup.enter.native="filterModels"></el-input>
         <el-select v-if="filterBy=='mold'" v-model="filterValues.mold" size="small" placeholder="选择内容类型" @change="filterModels">
           <el-option
             v-for="(label, id) in molds"
@@ -95,27 +96,72 @@
       <x-menu-item title="删除" icon="remove_circle" theme="md-accent" click="deleteModel(contextmenu.target)" />
     </jc-contextmenu>
   </div>
+
+  <div class="c-pagination">
+    @if ($models->onFirstPage())
+      <button class="c-pagination__prev" disabled>&lsaquo;</button>
+    @else
+      <a class="c-pagination__prev" href="{{ $models->previousPageUrl() }}">&lsaquo;</a>
+    @endif
+
+    <div class="c-pagination__pagers">
+      @foreach (\Illuminate\Pagination\UrlWindow::make($models) as $element)
+        @if (is_string($element))
+          <div class="c-pagination__pager">{{ $element }}</div>
+        @endif
+        @if (is_array($element))
+          @foreach ($element as $page => $url)
+            @if ($page == $models->currentPage())
+              <div class="c-pagination__pager is-active">{{ $page }}</div>
+            @else
+              <a class="c-pagination__pager" href="{{ $url }}">{{ $page }}</a>
+            @endif
+          @endforeach
+        @endif
+      @endforeach
+    </div>
+
+    @if ($models->hasMorePages())
+      <a class="c-pagination__next" href="{{ $models->nextPageUrl() }}">&rsaquo;</a>
+    @else
+      <button class="c-pagination__next" disabled>&rsaquo;</button>
+    @endif
+
+    <select class="el-input__inner limit" :value="perPage" @change="changePerPage($event.target.value)">
+      <option value="15">15条/页</option>
+      <option value="30">30条/页</option>
+      <option value="50">50条/页</option>
+      <option value="100">100条/页</option>
+      <option value="200">200条/页</option>
+      <option value="300">300条/页</option>
+      <option value="500">500条/页</option>
+      <option value="1000">1000条/页</option>
+    </select>
+    <input class="el-input__inner jump" @keyup.enter="jumpPage($event.target.value)" placeholder="输入页码并回车">
+    <span style="color: #666;">共{{ $models->total() }}条，每页{{ $models->perPage() }}条，共{{ $models->lastPage() }}页</span>
+  </div>
 @endsection
 
 @section('script')
+<link rel="stylesheet" type="text/css" href="/themes/backend/css/c-pagination.css">
 <script>
   let app = new Vue({
     el: '#main_content',
 
     data() {
       return {
-        models: @jjson($models->values()->all()),
+        models: @jjson($models->getCollection()->values()->all()),
         molds: @jjson($context['molds']),
         contextmenu: {
           target: null,
           showUrl: null,
         },
 
-        filterBy: '',
+        filterBy: @jjson($context['filters']['filter_by']),
         filterValues: {
-          subject: null,
-          mold: null,
-          langcode: "{{ $context['langcode'] }}",
+          subject: @jjson($context['filters']['subject']),
+          mold: @jjson($context['filters']['mold']),
+          langcode: @jjson($context['filters']['langcode']),
         },
 
         // {{-- tags: @json($tags, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE), --}}
@@ -123,11 +169,9 @@
 
         showUrl: "{{ short_url('messages.show', '_ID_') }}",
         deleteUrl: "{{ short_url('messages.destroy', '_ID_') }}",
+        currentPage: {{ $models->currentPage() }},
+        perPage: {{ $models->perPage() }},
       };
-    },
-
-    created() {
-      this.original_models = this.models.slice();
     },
 
     methods: {
@@ -181,73 +225,38 @@
         this.$refs.contextmenu.show(event, this.$refs.contextmenu.$el);
       },
 
-      handleFilterByChange(value) {
-        if (value) {
-          this.filterValues[value] = null;
-        }
-        this.$set(this.$data, 'models', this.original_models.slice());
+      handleFilterByChange() {
+        this.filterModels();
       },
 
-      filterModels(value) {
-        let models = null;
-        switch (this.filterBy) {
-          case 'subject':
-            models = this.filterBySubject(value);
-          break;
-          case 'mold':
-            models = this.filterByMold(value);
-          break;
-          case 'langcode':
-            models = this.filterByLangcode(value);
-          break;
-        }
-        this.$set(this.$data, 'models', models || this.original_models.slice());
-      },
+      filterModels() {
+        const url = new URL(window.location.href);
 
-      filterBySubject(value) {
-        if (!value || !value.trim()) {
-          return this.original_models.slice();
-        }
+        ['subject', 'mold', 'langcode', 'filter_by', 'page'].forEach(key => url.searchParams.delete(key));
+        url.searchParams.set('per_page', this.perPage);
 
-        const models = [];
-        value = value.trim().toLowerCase();
-        this.original_models.forEach(model => {
-          if (model.subject.toLowerCase().indexOf(value) >= 0) {
-            models.push(model);
+        if (this.filterBy) {
+          const value = this.filterValues[this.filterBy];
+          url.searchParams.set('filter_by', this.filterBy);
+          if (value !== null && value !== '') {
+            url.searchParams.set(this.filterBy, value);
           }
-        });
-
-        return models;
-      },
-
-      filterByMold(value) {
-        if (!value) {
-          return this.original_models.slice();
         }
 
-        const models = [];
-        this.original_models.forEach(model => {
-          if (model.mold_id === value) {
-            models.push(model);
-          }
-        });
-
-        return models;
+        window.location.href = url.toString();
       },
 
-      filterByLangcode(langcode) {
-        if (!value) {
-          return this.original_models.slice();
-        }
+      changePerPage(perPage) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('per_page', perPage);
+        url.searchParams.delete('page');
+        window.location.href = url.toString();
+      },
 
-        const models = [];
-        this.original_models.forEach(model => {
-          if (model.langcode === langcode) {
-            models.push(model);
-          }
-        });
-
-        return models;
+      jumpPage(page) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('page', page || 1);
+        window.location.href = url.toString();
       },
     },
   });
