@@ -13,6 +13,19 @@
     RewriteBase /
 
     ##
+    ## Block sensitive files and folders
+    ##
+    RewriteRule (^|/)\.git(/|$) - [F,L,NC]
+    RewriteRule (^|/)\.svn(/|$) - [F,L,NC]
+    RewriteRule (^|/)\.hg(/|$) - [F,L,NC]
+    RewriteRule (^|/)\.env$ - [F,L,NC]
+    RewriteRule (^|/)\.htaccess$ - [F,L,NC]
+    RewriteRule (^|/)\.htpasswd$ - [F,L,NC]
+    RewriteRule (^|/)composer\.(json|lock)$ - [F,L,NC]
+    RewriteRule (^|/)package(-lock)?\.json$ - [F,L,NC]
+    RewriteRule (^|/)yarn\.lock$ - [F,L,NC]
+
+    ##
     ## 强制 HTTPS
     ##
     RewriteCond %{HTTP_HOST} !^127\.0\.0\.1
@@ -43,11 +56,11 @@
     ##
     RewriteRule ^system/.* index.php [L,NC]
     RewriteRule ^themes/.*/template/.* index.php [L,NC]
-    RewriteRule ^.editorconfig index.php [L,NC]
-    RewriteRule ^.gitignore index.php [L,NC]
-    RewriteRule ^LICENSE index.php [L,NC]
-    RewriteRule ^README.md index.php [L,NC]
-    RewriteRule ^time.txt index.php [L,NC]
+    RewriteRule ^\.editorconfig$ - [F,L,NC]
+    RewriteRule ^\.gitignore$ - [F,L,NC]
+    RewriteRule ^LICENSE$ - [F,L,NC]
+    RewriteRule ^README\.md$ - [F,L,NC]
+    RewriteRule ^time\.txt$ - [F,L,NC]
 
     # Handle Front Controller...
     RewriteCond %{REQUEST_FILENAME} !-d
