@@ -20,6 +20,7 @@
 /system/storage/settings/*
 /system/vendor/
 /system/.env
+/system/.phpunit.result.cache
 !/themes/
 /themes/frontend/vue/node_modules/
 /themes/frontend/template/*

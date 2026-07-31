@@ -20,9 +20,9 @@ class Translate
     //     'https://wangke006.vip/api/translate/get'
     // ];
     private $api = [
-        'http://wangke006.top/api/translate/translate',
-        'http://wangke006.top/api/translate/create',
-        'http://wangke006.top/api/translate/get'
+        'https://wangke006.top/api/v2/translate/translate',
+        'https://wangke006.top/api/v2/translate/create',
+        'https://wangke006.top/api/v2/translate/get'
     ];
 
     // 源语言
@@ -48,6 +48,9 @@ class Translate
 
     // 翻译结果
     private $result;
+
+    // 中转站是否返回失败
+    private bool $failed = false;
 
     // 当前模式是不是直接翻译
     private $mode;
@@ -264,7 +267,7 @@ class Translate
      */
     private function translate(string $html): void
     {
-        $result = post($this->api[0], [
+        $result = $this->request($this->api[0], [
             'html'          => $html,
             'source'        => $this->source,
             'target'        => $this->code($this->target),
@@ -273,15 +276,13 @@ class Translate
             'domain'        => $this->domain,
             'tool'          => $this->tool,
             'replace'       => $this->replace
-        ], ['user-host: ' . $this->domain]);
+        ]);
 
-        $result === false && $this->result = '翻译接口调用失败';
-
-        $result !== false && is_null(json_decode($result, true)) && exit(json_encode(['status' => false, 'message' => $result]));
-
-        $result = json_decode($result, true);
-
-        $result !== null && $this->result = $result['status'] ? $result['data'] : $result['message'];
+        $result = self::decodeResponse($result);
+        $this->failed = $result['status'] !== true;
+        $this->result = $result['status'] === true
+            ? $result['data']
+            : $result['message'];
     }
 
     /**
@@ -291,7 +292,7 @@ class Translate
      */
     private function create(string $html): void
     {
-        $result = post($this->api[1], [
+        $result = $this->request($this->api[1], [
             'html'          => $html,
             'source'        => $this->source,
             'target'        => $this->code($this->target),
@@ -300,15 +301,13 @@ class Translate
             'domain'        => $this->domain,
             'tool'          => $this->tool,
             'replace'       => $this->replace
-        ], ['user-host: ' . $this->domain]);
+        ]);
 
-        $result === false && $this->result = '翻译接口调用失败';
-
-        $result !== false && is_null(json_decode($result, true)) && exit(json_encode(['status' => false, 'message' => $result]));
-
-        $result = json_decode($result, true);
-
-        $result !== null && $this->result = $result['status'] ? $result['data'] : $result['message'];
+        $result = self::decodeResponse($result);
+        $this->failed = $result['status'] !== true;
+        $this->result = $result['status'] === true
+            ? $result['data']
+            : $result['message'];
     }
 
     /**
@@ -318,13 +317,51 @@ class Translate
      */
     private function get(string $data): void
     {
-        $result = post($this->api[2], ['data' => $data, 'tool' => $this->tool], ['user-host: ' . $this->domain]);
+        $result = $this->request($this->api[2], ['data' => $data, 'tool' => $this->tool]);
+        $this->result = self::decodeResponse($result);
+    }
 
-        $result === false && $this->result = '翻译接口调用失败';
+    public static function decodeResponse(string $response): array
+    {
+        $result = json_decode($response, true);
+        if (
+            !is_array($result)
+            || !array_key_exists('status', $result)
+            || !in_array($result['status'], [true, false, null], true)
+        ) {
+            return ['status' => false, 'message' => '翻译接口返回格式不正确'];
+        }
 
-        $result !== false && is_null(json_decode($result, true)) && exit(json_encode(['status' => false, 'message' => $result]));
+        if ($result['status'] === true) {
+            return is_string($result['data'] ?? null)
+                ? ['status' => true, 'data' => $result['data']]
+                : ['status' => false, 'message' => '翻译接口返回格式不正确'];
+        }
 
-        $this->result = json_decode($result, true);
+        if ($result['status'] === null) {
+            return is_string($result['message'] ?? null) && is_string($result['data'] ?? null)
+                ? ['status' => null, 'message' => $result['message'], 'data' => $result['data']]
+                : ['status' => false, 'message' => '翻译接口返回格式不正确'];
+        }
+
+        return [
+            'status' => false,
+            'message' => is_string($result['message'] ?? null) && $result['message'] !== ''
+                ? $result['message']
+                : '翻译接口调用失败',
+        ];
+    }
+
+    private function request(string $url, array $data): string
+    {
+        try {
+            return Authentication::post($url, $data, $this->domain);
+        } catch (\Throwable $exception) {
+            return json_encode([
+                'status' => false,
+                'message' => $exception->getMessage(),
+            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        }
     }
 
     /**
@@ -502,6 +539,10 @@ class Translate
      */
     private function end(string $type, bool $result = false): JsonResponse
     {
+        if ($this->failed) {
+            return $this->error(is_string($this->result) ? $this->result : '翻译失败');
+        }
+
         // 直接返回结果
         if ($this->mode || $result) {
             // 返回错误信息

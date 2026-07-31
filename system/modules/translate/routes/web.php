@@ -3,6 +3,10 @@
 use Illuminate\Support\Facades\Route;
 use Translate\Controllers\TaskController as Task;
 use Translate\Controllers\DirectController as Direct;
+use Translate\Controllers\PublicKeyController;
+
+Route::get('.well-known/july-translate-key', [PublicKeyController::class, 'show'])
+    ->name('translate.public_key');
 
 Route::prefix(config('app.management_prefix', 'admin'))
 ->name('manage.')
