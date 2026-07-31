@@ -407,7 +407,11 @@
                     nodes.push(element.id);
                 });
 
-                translate.frame(this.$loading, this.$message).batch(nodes);
+                translate.frame(this.$loading, this.$message).batch(
+                    nodes,
+                    null,
+                    @jjson(\Translate\Translate::batchTargetCodes())
+                );
             },
 
             render(node) {

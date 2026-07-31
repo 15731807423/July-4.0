@@ -24,22 +24,23 @@ class Translate extends SettingGroupBase
      * @var array
      */
     protected $items = [
+        // 页面不再展示翻译平台，但必须保留旧配置，避免保存时丢失该字段。
         'translate.tool' => [
             'key' => 'translate.tool',
-            'label' => '使用的工具',
-            'description' => '微软翻译不适用于twig标签和Vue标签，只能用来翻译页面'
+            'label' => '翻译平台',
+            'description' => '',
         ],
 
         'translate.mode' => [
             'key' => 'translate.mode',
-            'label' => '翻译的模式',
-            'description' => '先创建任务再获取任务结果（可能超时）或者直接返回任务结果'
+            'label' => '翻译模式',
+            'description' => '任务模式会创建任务并轮询结果，适合批量内容；直接模式会在单次请求中等待并返回结果，内容较多时可能超时。',
         ],
 
         'translate.code' => [
             'key' => 'translate.code',
             'label' => '代码转换',
-            'description' => '网站上用的代码和翻译平台的代码不一致时配置'
+            'description' => '网站语言代码与阿里云语言代码不一致时，可在此配置映射关系。',
         ],
 
         'translate.fields' => [

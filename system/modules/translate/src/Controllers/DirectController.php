@@ -5,12 +5,15 @@ namespace Translate\Controllers;
 use Translate\Translate;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Translate\Controllers\Concerns\ValidatesTranslationInput;
 
 /**
  * 翻译功能 直接返回结果
  */
 class DirectController extends Controller
 {
+    use ValidatesTranslationInput;
+
     private $translate;
 
     function __construct()
@@ -26,16 +29,13 @@ class DirectController extends Controller
         // 没有开启多语言
         if (!config('lang.multiple')) return $this->translate->error('没有开启多语言');
 
-        $id = $request->input('nodes');
+        $id = $this->translationNodeIds($request);
 
         // 没有要翻译的页面
-        if (count($id) == 0) return $this->translate->error('没有要翻译的页面');
+        if (!$id) return $this->translate->error('没有要翻译的页面');
 
-        $list   = [];
-        $front  = config('lang.frontend');
-
-        // 后台配置的语言
-        $code = collect(config('lang.available'))->filter(fn ($info, $code) => $code != $front && $info['translatable'])->keys()->get(0);
+        // 兼容旧调用；新版一键翻译会明确传入每个非翻译源语言。
+        $code = $this->translationBatchTarget($request);
 
         // 没有要翻译的语言
         if (!$code) return $this->translate->error('没有要翻译的语言');
@@ -53,11 +53,13 @@ class DirectController extends Controller
         if (!config('lang.multiple')) return $this->translate->error('没有开启多语言');
 
         // 获取数据
-        $from   = config('lang.content');
-        $code   = $request->input('code');
-        $text   = json_decode($request->input('text'), true);
+        $from = config('lang.translate');
+        $requestedCode = $request->input('code');
+        $code = $this->translationTarget($request);
+        $text = $this->translationText($request);
 
-        if ($from == $code || count($text) == 0) return $this->translate->error('不需要翻译');
+        if ($from === $requestedCode) return $this->translate->error('不需要翻译');
+        if (!$code || !$text) return $this->translate->error('参数有误');
 
         return $this->translate->setTo($code)->page($text);
     }
@@ -71,10 +73,12 @@ class DirectController extends Controller
         if (!config('lang.multiple')) return $this->translate->error('没有开启多语言');
 
         // 获取数据
-        $from   = config('lang.content');
-        $code   = $request->input('code');
+        $from = config('lang.translate');
+        $requestedCode = $request->input('code');
+        $code = $this->translationTarget($request);
 
-        if ($from == $code) return $this->translate->error('不需要翻译');;
+        if ($from === $requestedCode) return $this->translate->error('不需要翻译');
+        if (!$code) return $this->translate->error('参数有误');
 
         return $this->translate->setTo($code)->tpl();
     }

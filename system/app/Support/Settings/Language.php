@@ -44,8 +44,8 @@ class Language extends SettingGroupBase
 
         'lang.translate' => [
             'key' => 'lang.translate',
-            'label' => '翻译目标默认语言',
-            'description' => '后台翻译时的默认源语言。',
+            'label' => '翻译源语言',
+            'description' => '批量翻译和模板翻译所使用的原文语言。',
         ],
 
         'lang.icon' => [

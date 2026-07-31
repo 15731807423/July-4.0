@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\DB;
  */
 class Translate
 {
+    public const TOOL = 'alibabacloud';
+
     // 域名
     private $domain;
 
@@ -101,11 +103,67 @@ class Translate
         $this->tplPath      = base_path('../themes/frontend/template/');
         $this->mode         = $result;
 
-        $this->tool         = config('translate.tool');
+        $this->tool         = self::normalizeTool(config('translate.tool'));
 
-        $this->code         = json_decode(config('translate.code'), true);
-        $this->code         = is_array($this->code) ? $this->code : [];
-        $this->code         = $this->code[$this->tool] ?? [];
+        $code = json_decode(config('translate.code'), true);
+        $code = is_array($code) ? $code : [];
+        $this->code = is_array($code[$this->tool] ?? null)
+            ? $code[$this->tool]
+            : (count(array_filter($code, 'is_string')) === count($code) ? $code : []);
+    }
+
+    public static function normalizeTool(?string $tool): string
+    {
+        return self::TOOL;
+    }
+
+    public static function batchTargetCodes(?array $available = null, ?string $source = null): array
+    {
+        $available ??= (array) config('lang.available');
+        $source ??= (string) config('lang.translate');
+        $targets = [];
+
+        foreach ($available as $code => $info) {
+            if ((string) $code === $source
+                || !is_array($info)
+                || empty($info['translatable'])) {
+                continue;
+            }
+            $targets[] = (string) $code;
+        }
+
+        return $targets;
+    }
+
+    public static function legacyBatchTargetCode(
+        ?array $available = null,
+        ?string $source = null
+    ): ?string
+    {
+        return self::batchTargetCodes($available, $source)[0] ?? null;
+    }
+
+    public static function isTargetCode(?string $code): bool
+    {
+        return is_string($code) && in_array($code, self::batchTargetCodes(), true);
+    }
+
+    public static function mapLanguageCode(
+        string $code,
+        array $mapping,
+        bool $toPlatform = true
+    ): string {
+        if ($toPlatform) {
+            return is_string($mapping[$code] ?? null) ? $mapping[$code] : $code;
+        }
+
+        foreach ($mapping as $local => $platform) {
+            if ($code === $platform) {
+                return (string) $local;
+            }
+        }
+
+        return $code;
     }
 
     /**
@@ -269,7 +327,7 @@ class Translate
     {
         $result = $this->request($this->api[0], [
             'html'          => $html,
-            'source'        => $this->source,
+            'source'        => $this->code($this->source),
             'target'        => $this->code($this->target),
             'not'           => $this->getNotText(),
             'appoint'       => $this->getAppoint(),
@@ -294,7 +352,7 @@ class Translate
     {
         $result = $this->request($this->api[1], [
             'html'          => $html,
-            'source'        => $this->source,
+            'source'        => $this->code($this->source),
             'target'        => $this->code($this->target),
             'not'           => $this->getNotText(),
             'appoint'       => $this->getAppoint(),
@@ -417,9 +475,9 @@ class Translate
      * 翻译页面前处理页面数据返回需要翻译的内容
      * 
      * @param  array $html
-     * @return ?string
+     * @return string
      */
-    private function pageBefore(array $html): ?string
+    private function pageBefore(array $html): string
     {
         // 去掉不需要翻译的字段
         foreach ($html as $key => $value) {
@@ -428,7 +486,7 @@ class Translate
             }
         }
 
-        return count($html) == 0 ? null : implode($this->replace[0], $html);
+        return count($html) == 0 ? '' : implode($this->replace[0], $html);
     }
 
     /**
@@ -459,9 +517,9 @@ class Translate
     /**
      * 翻译模板前处理模板数据返回需要翻译的内容
      * 
-     * @return ?string
+     * @return string
      */
-    private function tplBefore(): ?string
+    private function tplBefore(): string
     {
         // 所有需要翻译的文件的绝对路径
         $files = $this->getTplFilePath();
@@ -471,7 +529,7 @@ class Translate
         // 所有需要翻译的文件的内容
         foreach ($files as $file) $html[] = file_get_contents($file);
 
-        return count($html) == 0 ? null : implode($this->replace[0], $html);
+        return count($html) == 0 ? '' : implode($this->replace[0], $html);
     }
 
     /**
@@ -569,7 +627,7 @@ class Translate
 
                     $local = $this->target;
                     $tool = $this->code($local, true);
-                    str_replace($tool, $local, $html);
+                    $html = str_replace($tool, $local, $html);
 
                     // 翻译失败的处理
                     if (!$html) return $this->error('翻译失败');
@@ -837,16 +895,7 @@ class Translate
      */
     private function code(string $code, bool $type = true): string
     {
-        if ($type) {
-            return $this->code[$code] ?? $code;
-        } else {
-            foreach ($this->code as $key => $value) {
-                if ($code == $value) {
-                    return $key;
-                }
-            }
-            return $code;
-        }
+        return self::mapLanguageCode($code, $this->code, $type);
     }
 
     /**

@@ -19,9 +19,11 @@
 /system/storage/logs/*
 /system/storage/settings/*
 /system/vendor/
+/system/node_modules/
 /system/.env
 /system/.phpunit.result.cache
 !/themes/
+/themes/mix-manifest.json
 /themes/frontend/vue/node_modules/
 /themes/frontend/template/*
 !/themes/frontend/template/message/

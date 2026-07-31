@@ -7,6 +7,12 @@ const translate = {
 
 	nodes: [],
 
+	batchCodes: [],
+
+	batchIndex: 0,
+
+	batchResults: [],
+
 	success(data) {
 		console.log(data)
 	},
@@ -27,8 +33,11 @@ const translate = {
 	},
 
 	// 直接翻译 获取翻译结果
-	batch(nodes, success = null) {
+	batch(nodes, success = null, codes = []) {
 		this.nodes = nodes;
+		this.batchCodes = Array.isArray(codes) && codes.length ? codes : [null];
+		this.batchIndex = 0;
+		this.batchResults = [];
 
 		this.success = function (data) {
 			// var status = [];
@@ -44,35 +53,50 @@ const translate = {
 			success ? success(data) : '';
 		}
 
+		this.runBatch();
+	},
+
+	runBatch() {
+		const code = this.batchCodes[this.batchIndex];
 		const loading = this.loading({
 			lock: true,
-			text: '开始翻译 ...',
+			text: (code ? '[' + code + '] ' : '') + '开始翻译 ...',
 			background: 'rgba(255, 255, 255, 0.7)',
 		});
+		const payload = { nodes: this.nodes };
+		if (code) payload.code = code;
 
 		// 直接翻译 获取翻译结果
-		axios.post('/manage/translate/direct/batch', { nodes: nodes }).then(response => {
-            loading.close();
-            // 准备需要的变量
-            var data = response.data, status = [];
+		axios.post('/manage/translate/direct/batch', payload).then(response => {
+			loading.close();
+			const data = response.data;
 
-            // 如果翻译失败 弹出错误信息
-            if (!data.status) {
-            	this.error(data.message);
-            	return false;
-            }
+			// 如果翻译失败 弹出错误信息
+			if (!data.status) {
+				this.error((code ? '[' + code + '] ' : '') + data.message);
+				return false;
+			}
 
-            // 整理每个语言的结果
-        	// for (let key in data.data) {
-        	// 	status.push(key + ':' + data.data[key].message);
-        	// }
+			this.batchResults.push(code);
+			this.batchIndex++;
+			if (this.batchIndex < this.batchCodes.length) {
+				this.runBatch();
+				return;
+			}
 
-        	// 弹出结果 执行回调函数
-        	this.success(data.data);
-        }).catch(err => {
-            loading.close();
-            console.error(err);
-        });
+			const completed = this.batchResults.filter(item => item);
+			this.success(completed.length
+				? '已完成 ' + completed.length + ' 种语言：' + completed.join('、')
+				: data.data);
+		}).catch(err => {
+			loading.close();
+			console.error(err);
+			this.error(
+				err.response && err.response.data && err.response.data.message
+					? err.response.data.message
+					: '翻译接口调用失败'
+			);
+		});
 	},
 
 	// 编辑页面翻译文本内容

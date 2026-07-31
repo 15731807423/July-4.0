@@ -7,6 +7,12 @@ const translate = {
 
 	nodes: [],
 
+	batchCodes: [],
+
+	batchIndex: 0,
+
+	batchResults: [],
+
 	success(data) {
 		console.log(data)
 	},
@@ -26,8 +32,11 @@ const translate = {
 		return this;
 	},
 
-	batch(nodes, success = null) {
+	batch(nodes, success = null, codes = []) {
 		this.nodes = nodes;
+		this.batchCodes = Array.isArray(codes) && codes.length ? codes : [null];
+		this.batchIndex = 0;
+		this.batchResults = [];
 
 		this.success = function (data) {
 			// var status = [];
@@ -43,48 +52,78 @@ const translate = {
 			success ? success(data) : '';
 		}
 
+		this.createBatchTask();
+	},
+
+	createBatchTask() {
+		const code = this.batchCodes[this.batchIndex];
 		const loading = this.loading({
 			lock: true,
-			text: '开始创建任务 ...',
+			text: (code ? '[' + code + '] ' : '') + '开始创建任务 ...',
 			background: 'rgba(255, 255, 255, 0.7)',
 		});
+		const payload = { nodes: this.nodes };
+		if (code) payload.code = code;
 
-		axios.post('/manage/translate/task/batch', { nodes: nodes }).then(response => {
+		axios.post('/manage/translate/task/batch', payload).then(response => {
 			loading.close();
-			var status = response.data;
+			const status = response.data;
 
 			if (!status.status) {
-				this.error(status.message);
+				this.error((code ? '[' + code + '] ' : '') + status.message);
 				return false;
 			}
 
-			this.getBatch({ nodes: nodes, data: status.data });
-        }).catch(err => {
-            loading.close();
-            console.error(err);
-        });
+			this.getBatch({ nodes: this.nodes, code: code, data: status.data });
+		}).catch(err => {
+			loading.close();
+			console.error(err);
+			this.error(
+				err.response && err.response.data && err.response.data.message
+					? err.response.data.message
+					: '翻译接口调用失败'
+			);
+		});
 	},
 
 	getBatch(data, status = null, i = 1) {
+		const code = data.code;
 		const loading = this.loading({
 			lock: true,
-			text: (status ? '第' + (i - 1) + '次结果为 ' + status + '，' : '') + '开始第' + i + '次获取结果 ...',
+			text: (code ? '[' + code + '] ' : '') + (status ? '第' + (i - 1) + '次结果为 ' + status + '，' : '') + '开始第' + i + '次获取结果 ...',
 			background: 'rgba(255, 255, 255, 0.7)',
 		});
 
 		setTimeout(() => {
 			axios.post('/manage/translate/task/batch/result', data).then(response => {
-	            loading.close();
-	            var status = response.data;
-	            data.data = status.data || data.data;
+				loading.close();
+				var status = response.data;
+				data.data = status.data || data.data;
 
-	            if (status.status === null) this.getBatch(data, status.message, i + 1);
-	            if (status.status === true) this.success(status.data);
-	            if (status.status === false) this.error(status.message);
-	        }).catch(err => {
-	            loading.close();
-	            console.error(err);
-	        });
+				if (status.status === null) this.getBatch(data, status.message, i + 1);
+				if (status.status === true) {
+					this.batchResults.push(code);
+					this.batchIndex++;
+					if (this.batchIndex < this.batchCodes.length) {
+						this.createBatchTask();
+						return;
+					}
+
+					const completed = this.batchResults.filter(item => item);
+					this.success(completed.length
+						? '已完成 ' + completed.length + ' 种语言：' + completed.join('、')
+						: status.data);
+				}
+				if (status.status === false) this.error((code ? '[' + code + '] ' : '') + status.message);
+			}).catch(err => {
+				loading.close();
+				console.error(err);
+				this.error(
+					err.response && err.response.data && err.response.data.message
+						? err.response.data.message
+						: '翻译接口调用失败'
+				);
+			});
 		}, 2000);
 	},
 
