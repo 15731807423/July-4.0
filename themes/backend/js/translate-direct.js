@@ -19,11 +19,35 @@ const translate = {
 
 	error(message = '翻译失败') {
 		this.message({
-			message: message,
+			message: typeof message === 'string' && message.trim() ? message : '翻译失败',
 			type: 'error',
 			duration: 0,
 			showClose: true
 		});
+	},
+
+	getErrorMessage(error, fallback = '翻译接口调用失败') {
+		if (!error || !error.response) {
+			return error && error.code === 'ECONNABORTED'
+				? '翻译请求超时，请检查网络后重试'
+				: '网络连接异常，请检查网络后重试';
+		}
+
+		const data = error.response.data;
+		if (data && typeof data.message === 'string' && data.message.trim()) {
+			return data.message;
+		}
+
+		if (data && data.errors && typeof data.errors === 'object') {
+			const keys = Object.keys(data.errors);
+			if (keys.length) {
+				const first = data.errors[keys[0]];
+				if (Array.isArray(first) && typeof first[0] === 'string') return first[0];
+				if (typeof first === 'string') return first;
+			}
+		}
+
+		return fallback;
 	},
 
 	frame(loading, message) {
@@ -50,8 +74,8 @@ const translate = {
 				duration: 0,
 				showClose: true
 			});
-			success ? success(data) : '';
-		}
+			if (success) success(data);
+		};
 
 		this.runBatch();
 	},
@@ -69,12 +93,12 @@ const translate = {
 		// 直接翻译 获取翻译结果
 		axios.post('/manage/translate/direct/batch', payload).then(response => {
 			loading.close();
-			const data = response.data;
+			const data = response && response.data ? response.data : {};
 
 			// 如果翻译失败 弹出错误信息
-			if (!data.status) {
-				this.error((code ? '[' + code + '] ' : '') + data.message);
-				return false;
+			if (data.status !== true) {
+				this.error((code ? '[' + code + '] ' : '') + (data.message || '翻译失败'));
+				return;
 			}
 
 			this.batchResults.push(code);
@@ -88,14 +112,9 @@ const translate = {
 			this.success(completed.length
 				? '已完成 ' + completed.length + ' 种语言：' + completed.join('、')
 				: data.data);
-		}).catch(err => {
+		}).catch(error => {
 			loading.close();
-			console.error(err);
-			this.error(
-				err.response && err.response.data && err.response.data.message
-					? err.response.data.message
-					: '翻译接口调用失败'
-			);
+			this.error(this.getErrorMessage(error));
 		});
 	},
 
@@ -111,13 +130,15 @@ const translate = {
 
 		// 编辑页面翻译文本内容
 		axios.post('/manage/translate/direct/page', data).then(response => {
-            loading.close();
-            var data = response.data;
-            data.status ? this.success(data.data) : this.error(data.message);
-        }).catch(err => {
-            loading.close();
-            console.error(err);
-        });
+			loading.close();
+			const status = response && response.data ? response.data : {};
+			status.status
+				? this.success(status.data)
+				: this.error(status.message || '页面翻译失败');
+		}).catch(error => {
+			loading.close();
+			this.error(this.getErrorMessage(error));
+		});
 	},
 
 	// 翻译模板文件并创建文件
@@ -129,8 +150,8 @@ const translate = {
 				duration: 0,
 				showClose: true
 			});
-			success ? success(data) : '';
-		}
+			if (success) success(data);
+		};
 
 		const loading = this.loading({
 			lock: true,
@@ -139,15 +160,17 @@ const translate = {
 		});
 
 		axios.post('/manage/translate/direct/tpl', { code: code }).then(response => {
-            loading.close();
-            var data = response.data;
+			loading.close();
+			const status = response && response.data ? response.data : {};
 
-        	// 弹出结果 执行回调函数
-        	data.status ? this.success(data.data || {}) : this.error(data.message);
-        }).catch(err => {
-            loading.close();
-            console.error(err);
-        });
+			// 弹出结果 执行回调函数
+			status.status
+				? this.success(status.data || {})
+				: this.error(status.message || '模板翻译失败');
+		}).catch(error => {
+			loading.close();
+			this.error(this.getErrorMessage(error));
+		});
 	},
 
 	inObject(value, object) {

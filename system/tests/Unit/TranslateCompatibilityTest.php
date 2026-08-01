@@ -51,4 +51,33 @@ class TranslateCompatibilityTest extends TestCase
     {
         $this->assertArrayHasKey('translate.tool', (new TranslateSettings())->getItems());
     }
+
+    public function test_current_and_legacy_json_setting_shapes_are_accepted(): void
+    {
+        $errors = TranslateSettings::jsonValidationErrors([
+            'translate.code' => '{"alibabacloud":{"en":"en","de":"de"},"azure":{"de":"de"}}',
+            'translate.fields' => '{"de":["url","image_src"]}',
+            'translate.text' => '["Brand name"]',
+            'translate.replace' => '{"de":[]}',
+        ]);
+
+        $this->assertSame([], $errors);
+    }
+
+    public function test_invalid_json_and_unsafe_setting_shapes_are_rejected(): void
+    {
+        $errors = TranslateSettings::jsonValidationErrors([
+            'translate.code' => '{invalid',
+            'translate.fields' => '{"de":"url"}',
+            'translate.text' => '["valid",42]',
+            'translate.replace' => '["not-a-map"]',
+        ]);
+
+        $this->assertSame([
+            'translate.code',
+            'translate.fields',
+            'translate.text',
+            'translate.replace',
+        ], array_keys($errors));
+    }
 }

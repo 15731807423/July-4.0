@@ -75,29 +75,148 @@
         },
 
         methods: {
+            isPlainObject(value) {
+                return value !== null && typeof value === 'object' && !Array.isArray(value);
+            },
+
+            isStringList(value) {
+                return Array.isArray(value) && value.every(item => typeof item === 'string');
+            },
+
+            isStringMap(value) {
+                return this.isPlainObject(value)
+                    && Object.keys(value).every(key => typeof value[key] === 'string');
+            },
+
+            isCodeMapping(value) {
+                if (Array.isArray(value) && value.length === 0) return true;
+                if (!this.isPlainObject(value)) return false;
+
+                const values = Object.keys(value).map(key => value[key]);
+                return values.every(item => typeof item === 'string')
+                    || values.every(item => this.isStringMap(item));
+            },
+
+            isStringListSetting(value) {
+                return this.isStringList(value)
+                    || (this.isPlainObject(value)
+                        && Object.keys(value).every(key => this.isStringList(value[key])));
+            },
+
+            isReplacementSetting(value) {
+                if (Array.isArray(value) && value.length === 0) return true;
+                if (!this.isPlainObject(value)) return false;
+
+                const values = Object.keys(value).map(key => value[key]);
+                return values.every(item => typeof item === 'string')
+                    || values.every(item => this.isStringMap(item)
+                        || (Array.isArray(item) && item.length === 0));
+            },
+
+            validateJsonSetting(key, label, validator, structureDescription) {
+                const raw = this.settings[key];
+                if (raw === null || typeof raw === 'undefined' || raw === '') return null;
+                if (typeof raw !== 'string') return label + '必须是 JSON 文本';
+                if (!raw.trim()) return null;
+
+                let value;
+                try {
+                    value = JSON.parse(raw);
+                } catch (error) {
+                    return label + '不是合法的 JSON，请检查引号、逗号和括号';
+                }
+
+                return validator(value) ? null : label + structureDescription;
+            },
+
+            validateJsonSettings() {
+                const checks = [
+                    {
+                        key: 'translate.code',
+                        label: '代码转换',
+                        validator: value => this.isCodeMapping(value),
+                        description: '应为语言代码映射对象'
+                    },
+                    {
+                        key: 'translate.fields',
+                        label: '全部不翻译的字段',
+                        validator: value => this.isStringListSetting(value),
+                        description: '应为字符串数组，或按语言分组的字符串数组对象'
+                    },
+                    {
+                        key: 'translate.text',
+                        label: '全部不翻译的内容',
+                        validator: value => this.isStringListSetting(value),
+                        description: '应为字符串数组，或按语言分组的字符串数组对象'
+                    },
+                    {
+                        key: 'translate.replace',
+                        label: '指定翻译结果',
+                        validator: value => this.isReplacementSetting(value),
+                        description: '应为原文与译文的映射对象，或按语言分组的映射对象'
+                    }
+                ];
+
+                for (let i = 0; i < checks.length; i++) {
+                    const check = checks[i];
+                    const error = this.validateJsonSetting(
+                        check.key,
+                        check.label,
+                        check.validator,
+                        check.description
+                    );
+                    if (error) {
+                        this.$message.error(error);
+                        return false;
+                    }
+                }
+
+                return true;
+            },
+
+            getRequestErrorMessage(error) {
+                if (!error || !error.response) return '网络连接异常，请检查网络后重试';
+
+                const data = error.response.data;
+                if (data && typeof data.message === 'string' && data.message.trim()) {
+                    return data.message;
+                }
+
+                if (data && data.errors && typeof data.errors === 'object') {
+                    const keys = Object.keys(data.errors);
+                    if (keys.length) {
+                        const first = data.errors[keys[0]];
+                        if (Array.isArray(first) && typeof first[0] === 'string') return first[0];
+                        if (typeof first === 'string') return first;
+                    }
+                }
+
+                return '保存翻译设置失败，请稍后重试';
+            },
+
             submitMainForm() {
+                if (!this.validateJsonSettings()) return;
+
                 let form = this.$refs.main_form;
 
-                const loading = app.$loading({
+                const loading = this.$loading({
                     lock: true,
                     text: '正在保存修改 ...',
                     background: 'rgba(255, 255, 255, 0.7)',
                 });
 
                 form.validate().then(() => {
-                    axios.post("{{ short_url('settings.update', $name) }}", this.settings).then(function(response) {
+                    axios.post("{{ short_url('settings.update', $name) }}", this.settings).then(() => {
                         loading.close();
                         this.original_settings = _.cloneDeep(this.settings);
-                        app.$message.success('设置已更新');
-                    }).catch(function(error) {
+                        this.$message.success('设置已更新');
+                    }).catch(error => {
                         loading.close();
-                        console.error(error);
-                        app.$message.error('发生错误，可查看控制台');
+                        this.$message.error(this.getRequestErrorMessage(error));
                     });
-                }).catch(function(error) {
+                }).catch(() => {
                     loading.close();
-                    console.error(error);
-                })
+                });
             },
         }
     });

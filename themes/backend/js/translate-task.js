@@ -13,15 +13,34 @@ const translate = {
 
 	batchResults: [],
 
+	pollOptions: {
+		initialDelay: 2000,
+		maxDelay: 10000,
+		maxAttempts: 100,
+		maxFailures: 3,
+		maxDuration: 15 * 60 * 1000,
+		requestTimeout: 30000
+	},
+
+	pollers: {},
+
+	escapeListener: null,
+
 	success(data) {
-		console.log(data)
+		console.log(data);
 	},
 
 	error(message = '翻译失败') {
+		this.notify(message, 'error', 0);
+	},
+
+	notify(message, type = 'warning', duration = 5000) {
+		if (typeof this.message !== 'function') return;
+
 		this.message({
-			message: message,
-			type: 'error',
-			duration: 0,
+			message: typeof message === 'string' && message.trim() ? message : '翻译失败',
+			type: type,
+			duration: duration,
 			showClose: true
 		});
 	},
@@ -29,28 +48,204 @@ const translate = {
 	frame(loading, message) {
 		this.loading = loading;
 		this.message = message;
+		this.bindPollingCancellation();
 		return this;
 	},
 
+	bindPollingCancellation() {
+		if (this.escapeListener || typeof window === 'undefined') return;
+
+		this.escapeListener = event => {
+			if (event.key === 'Escape') this.cancelPolling();
+		};
+		window.addEventListener('keydown', this.escapeListener);
+	},
+
+	getErrorMessage(error, fallback = '翻译接口调用失败') {
+		if (!error || !error.response) {
+			return error && error.code === 'ECONNABORTED'
+				? '翻译请求超时，请检查网络后重试'
+				: '网络连接异常，请检查网络后重试';
+		}
+
+		const data = error.response.data;
+		if (data && typeof data.message === 'string' && data.message.trim()) {
+			return data.message;
+		}
+
+		if (data && data.errors && typeof data.errors === 'object') {
+			const keys = Object.keys(data.errors);
+			if (keys.length) {
+				const first = data.errors[keys[0]];
+				if (Array.isArray(first) && typeof first[0] === 'string') return first[0];
+				if (typeof first === 'string') return first;
+			}
+		}
+
+		return fallback;
+	},
+
+	startPolling(type, initialAttempts = 0) {
+		this.stopPolling(type);
+
+		const poller = {
+			startedAt: Date.now(),
+			attempts: Math.max(0, initialAttempts),
+			failures: 0,
+			timer: null,
+			deadlineTimer: null,
+			loading: null,
+			cancelSource: null,
+			stopped: false
+		};
+		this.pollers[type] = poller;
+		poller.deadlineTimer = setTimeout(() => {
+			if (!this.isPolling(type, poller)) return;
+
+			this.stopPolling(type);
+			this.error('等待翻译结果超时，已停止自动查询，请稍后重试');
+		}, this.pollOptions.maxDuration);
+
+		return poller;
+	},
+
+	isPolling(type, poller) {
+		return this.pollers[type] === poller && !poller.stopped;
+	},
+
+	closePollLoading(poller) {
+		if (!poller || !poller.loading) return;
+
+		poller.loading.close();
+		poller.loading = null;
+	},
+
+	stopPolling(type) {
+		const poller = this.pollers[type];
+		if (!poller) return false;
+
+		poller.stopped = true;
+		if (poller.timer !== null) clearTimeout(poller.timer);
+		if (poller.deadlineTimer !== null) clearTimeout(poller.deadlineTimer);
+		if (poller.cancelSource) poller.cancelSource.cancel('已停止获取翻译结果');
+		poller.timer = null;
+		poller.deadlineTimer = null;
+		poller.cancelSource = null;
+		this.closePollLoading(poller);
+		delete this.pollers[type];
+
+		return true;
+	},
+
+	cancelPolling(type = null, showMessage = true) {
+		const types = type ? [type] : Object.keys(this.pollers);
+		let stopped = false;
+
+		types.forEach(item => {
+			stopped = this.stopPolling(item) || stopped;
+		});
+
+		if (stopped && showMessage) this.notify('已停止获取翻译结果', 'warning');
+
+		return stopped;
+	},
+
+	pollDelay(attempts) {
+		return Math.min(
+			this.pollOptions.initialDelay * Math.pow(1.5, attempts),
+			this.pollOptions.maxDelay
+		);
+	},
+
+	canContinuePolling(type, poller) {
+		if (!this.isPolling(type, poller)) return false;
+
+		const timedOut = Date.now() - poller.startedAt >= this.pollOptions.maxDuration;
+		const exhausted = poller.attempts >= this.pollOptions.maxAttempts;
+		if (!timedOut && !exhausted) return true;
+
+		this.stopPolling(type);
+		this.error(timedOut
+			? '等待翻译结果超时，已停止自动查询，请稍后重试'
+			: '获取翻译结果次数过多，已停止自动查询，请稍后重试');
+
+		return false;
+	},
+
+	schedulePoll(type, poller, text, callback) {
+		if (!this.canContinuePolling(type, poller)) return;
+
+		const attempt = poller.attempts + 1;
+		const delay = this.pollDelay(poller.attempts);
+		poller.loading = this.loading({
+			lock: true,
+			text: text + '（第' + attempt + '次，按 Esc 可停止等待）',
+			background: 'rgba(255, 255, 255, 0.7)'
+		});
+
+		poller.timer = setTimeout(() => {
+			poller.timer = null;
+			if (!this.isPolling(type, poller)) {
+				this.closePollLoading(poller);
+				return;
+			}
+
+			poller.attempts = attempt;
+			callback();
+		}, delay);
+	},
+
+	pollRequest(type, poller, endpoint, data, text, onResponse, retry) {
+		this.schedulePoll(type, poller, text, () => {
+			poller.cancelSource = axios.CancelToken ? axios.CancelToken.source() : null;
+			const requestOptions = { timeout: this.pollOptions.requestTimeout };
+			if (poller.cancelSource) requestOptions.cancelToken = poller.cancelSource.token;
+
+			axios.post(endpoint, data, requestOptions).then(response => {
+				poller.cancelSource = null;
+				this.closePollLoading(poller);
+				if (!this.isPolling(type, poller)) return;
+
+				poller.failures = 0;
+				onResponse(response && response.data ? response.data : {}, poller);
+			}).catch(error => {
+				poller.cancelSource = null;
+				this.closePollLoading(poller);
+				if (!this.isPolling(type, poller)) return;
+
+				poller.failures++;
+				const message = this.getErrorMessage(error);
+				if (poller.failures >= this.pollOptions.maxFailures) {
+					this.stopPolling(type);
+					this.error(message + '，已停止自动重试');
+					return;
+				}
+
+				this.notify(
+					message + '，稍后自动重试（' + poller.failures + '/' + this.pollOptions.maxFailures + '）',
+					'warning'
+				);
+				retry(message, poller);
+			});
+		});
+	},
+
 	batch(nodes, success = null, codes = []) {
+		this.cancelPolling(null, false);
 		this.nodes = nodes;
 		this.batchCodes = Array.isArray(codes) && codes.length ? codes : [null];
 		this.batchIndex = 0;
 		this.batchResults = [];
 
 		this.success = function (data) {
-			// var status = [];
-			// for (let key in data) {
-			// 	status.push(key + '：' + data[key].message);
-			// }
 			this.message({
 				message: data,
 				type: 'success',
 				duration: 0,
 				showClose: true
 			});
-			success ? success(data) : '';
-		}
+			if (success) success(data);
+		};
 
 		this.createBatchTask();
 	},
@@ -60,47 +255,52 @@ const translate = {
 		const loading = this.loading({
 			lock: true,
 			text: (code ? '[' + code + '] ' : '') + '开始创建任务 ...',
-			background: 'rgba(255, 255, 255, 0.7)',
+			background: 'rgba(255, 255, 255, 0.7)'
 		});
 		const payload = { nodes: this.nodes };
 		if (code) payload.code = code;
 
 		axios.post('/manage/translate/task/batch', payload).then(response => {
 			loading.close();
-			const status = response.data;
+			const status = response && response.data ? response.data : {};
 
-			if (!status.status) {
-				this.error((code ? '[' + code + '] ' : '') + status.message);
-				return false;
+			if (status.status !== true) {
+				this.error((code ? '[' + code + '] ' : '') + (status.message || '创建翻译任务失败'));
+				return;
 			}
 
 			this.getBatch({ nodes: this.nodes, code: code, data: status.data });
-		}).catch(err => {
+		}).catch(error => {
 			loading.close();
-			console.error(err);
-			this.error(
-				err.response && err.response.data && err.response.data.message
-					? err.response.data.message
-					: '翻译接口调用失败'
-			);
+			this.error(this.getErrorMessage(error));
 		});
 	},
 
-	getBatch(data, status = null, i = 1) {
+	getBatch(data, statusMessage = null, i = 1, poller = null) {
 		const code = data.code;
-		const loading = this.loading({
-			lock: true,
-			text: (code ? '[' + code + '] ' : '') + (status ? '第' + (i - 1) + '次结果为 ' + status + '，' : '') + '开始第' + i + '次获取结果 ...',
-			background: 'rgba(255, 255, 255, 0.7)',
-		});
+		const state = poller || this.startPolling('batch', i - 1);
+		const prefix = code ? '[' + code + '] ' : '';
+		const text = prefix
+			+ (statusMessage ? '上次结果：' + statusMessage + '，' : '')
+			+ '准备获取翻译结果 ...';
 
-		setTimeout(() => {
-			axios.post('/manage/translate/task/batch/result', data).then(response => {
-				loading.close();
-				var status = response.data;
-				data.data = status.data || data.data;
+		this.pollRequest(
+			'batch',
+			state,
+			'/manage/translate/task/batch/result',
+			data,
+			text,
+			status => {
+				if (Object.prototype.hasOwnProperty.call(status, 'data') && status.data !== null) {
+					data.data = status.data;
+				}
 
-				if (status.status === null) this.getBatch(data, status.message, i + 1);
+				if (status.status === null) {
+					this.getBatch(data, status.message, state.attempts + 1, state);
+					return;
+				}
+
+				this.stopPolling('batch');
 				if (status.status === true) {
 					this.batchResults.push(code);
 					this.batchIndex++;
@@ -113,71 +313,77 @@ const translate = {
 					this.success(completed.length
 						? '已完成 ' + completed.length + ' 种语言：' + completed.join('、')
 						: status.data);
+					return;
 				}
-				if (status.status === false) this.error((code ? '[' + code + '] ' : '') + status.message);
-			}).catch(err => {
-				loading.close();
-				console.error(err);
-				this.error(
-					err.response && err.response.data && err.response.data.message
-						? err.response.data.message
-						: '翻译接口调用失败'
-				);
-			});
-		}, 2000);
+
+				this.error(prefix + (status.message || '获取翻译结果失败'));
+			},
+			message => this.getBatch(data, message, state.attempts + 1, state)
+		);
 	},
 
 	page(data, success = null) {
+		this.cancelPolling(null, false);
 		this.success = success || this.success;
 
 		const loading = this.loading({
 			lock: true,
 			text: '开始创建任务 ...',
-			background: 'rgba(255, 255, 255, 0.7)',
+			background: 'rgba(255, 255, 255, 0.7)'
 		});
 
 		axios.post('/manage/translate/task/page', data).then(response => {
 			loading.close();
-			var status = response.data;
+			const status = response && response.data ? response.data : {};
 
-			if (!status.status) {
-				this.error(status.message);
-				return false;
+			if (status.status !== true) {
+				this.error(status.message || '创建翻译任务失败');
+				return;
 			}
 
 			data.data = status.data;
-
 			this.getPage(data);
-        }).catch(err => {
-            loading.close();
-            console.error(err);
-        });
+		}).catch(error => {
+			loading.close();
+			this.error(this.getErrorMessage(error));
+		});
 	},
 
-	getPage(data, status = null, i = 1) {
-		const loading = this.loading({
-			lock: true,
-			text: (status ? '第' + (i - 1) + '次结果为' + status + '，' : '') + '开始第' + i + '次获取结果 ...',
-			background: 'rgba(255, 255, 255, 0.7)',
-		});
+	getPage(data, statusMessage = null, i = 1, poller = null) {
+		const state = poller || this.startPolling('page', i - 1);
+		const text = (statusMessage ? '上次结果：' + statusMessage + '，' : '')
+			+ '准备获取页面翻译结果 ...';
 
-		setTimeout(() => {
-			axios.post('/manage/translate/task/page/result', data).then(response => {
-	            loading.close();
-	            var status = response.data;
-	            data.data = status.data || data.data;
+		this.pollRequest(
+			'page',
+			state,
+			'/manage/translate/task/page/result',
+			data,
+			text,
+			status => {
+				if (Object.prototype.hasOwnProperty.call(status, 'data') && status.data !== null) {
+					data.data = status.data;
+				}
 
-	            if (status.status === null) this.getPage(data, status.message, i + 1);
-	            if (status.status === true) this.success(status.data);
-	            if (status.status === false) this.error(status.message);
-	        }).catch(err => {
-	            loading.close();
-	            console.error(err);
-	        });
-		}, 2000);
+				if (status.status === null) {
+					this.getPage(data, status.message, state.attempts + 1, state);
+					return;
+				}
+
+				this.stopPolling('page');
+				if (status.status === true) {
+					this.success(status.data);
+					return;
+				}
+
+				this.error(status.message || '获取页面翻译结果失败');
+			},
+			message => this.getPage(data, message, state.attempts + 1, state)
+		);
 	},
 
 	tpl(code, success = null) {
+		this.cancelPolling(null, false);
 		this.success = function (data) {
 			this.message({
 				message: data.message ? data.message : '翻译成功',
@@ -185,52 +391,62 @@ const translate = {
 				duration: 0,
 				showClose: true
 			});
-			success ? success(data) : '';
-		}
+			if (success) success(data);
+		};
 
 		const loading = this.loading({
 			lock: true,
 			text: '开始创建任务 ...',
-			background: 'rgba(255, 255, 255, 0.7)',
+			background: 'rgba(255, 255, 255, 0.7)'
 		});
 
 		axios.post('/manage/translate/task/tpl', { code: code }).then(response => {
 			loading.close();
-			var status = response.data;
+			const status = response && response.data ? response.data : {};
 
-			if (!status.status) {
-				this.error(status.message);
-				return false;
+			if (status.status !== true) {
+				this.error(status.message || '创建翻译任务失败');
+				return;
 			}
 
 			this.getTpl({ code: code, data: status.data });
-        }).catch(err => {
-            loading.close();
-            console.error(err);
-        });
+		}).catch(error => {
+			loading.close();
+			this.error(this.getErrorMessage(error));
+		});
 	},
 
-	getTpl(data, status = null, i = 1) {
-		const loading = this.loading({
-			lock: true,
-			text: (status ? '第' + (i - 1) + '次结果为' + status + '，' : '') + '开始第' + i + '次获取结果 ...',
-			background: 'rgba(255, 255, 255, 0.7)',
-		});
+	getTpl(data, statusMessage = null, i = 1, poller = null) {
+		const state = poller || this.startPolling('tpl', i - 1);
+		const text = (statusMessage ? '上次结果：' + statusMessage + '，' : '')
+			+ '准备获取模板翻译结果 ...';
 
-		setTimeout(() => {
-			axios.post('/manage/translate/task/tpl/result', data).then(response => {
-	            loading.close();
-	            var status = response.data;
-	            data.data = status.data || data.data;
+		this.pollRequest(
+			'tpl',
+			state,
+			'/manage/translate/task/tpl/result',
+			data,
+			text,
+			status => {
+				if (Object.prototype.hasOwnProperty.call(status, 'data') && status.data !== null) {
+					data.data = status.data;
+				}
 
-	            if (status.status === null) this.getTpl(data, status.message, i + 1);
-	            if (status.status === true) this.success(status.data || {});
-	            if (status.status === false) this.error(status.message);
-	        }).catch(err => {
-	            loading.close();
-	            console.error(err);
-	        });
-		}, 2000);
+				if (status.status === null) {
+					this.getTpl(data, status.message, state.attempts + 1, state);
+					return;
+				}
+
+				this.stopPolling('tpl');
+				if (status.status === true) {
+					this.success(status.data || {});
+					return;
+				}
+
+				this.error(status.message || '获取模板翻译结果失败');
+			},
+			message => this.getTpl(data, message, state.attempts + 1, state)
+		);
 	},
 
 	inObject(value, object) {
