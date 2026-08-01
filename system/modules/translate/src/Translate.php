@@ -1,7 +1,9 @@
 <?php
 namespace Translate;
 
-use July\Node\Node;
+use App\EntityField\FieldTypes\Html;
+use App\EntityField\FieldTypes\Input;
+use App\EntityField\FieldTypes\Text;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 
@@ -11,6 +13,8 @@ use Illuminate\Support\Facades\DB;
 class Translate
 {
     public const TOOL = 'alibabacloud';
+
+    private const BATCH_TASK_ENVELOPE = '__july_batch_v1';
 
     // 域名
     private $domain;
@@ -274,7 +278,11 @@ class Translate
         }
 
         if ($this->result['status'] === null) {
-            return $this->running($this->result['message'], $this->result['data']);
+            $data = $type === 'batch'
+                ? $this->encodeBatchTaskData($this->result['data'])
+                : $this->result['data'];
+
+            return $this->running($this->result['message'], $data);
         }
     }
 
@@ -364,7 +372,7 @@ class Translate
         $result = self::decodeResponse($result);
         $this->failed = $result['status'] !== true;
         $this->result = $result['status'] === true
-            ? $result['data']
+            ? $this->encodeBatchTaskData($result['data'])
             : $result['message'];
     }
 
@@ -375,6 +383,12 @@ class Translate
      */
     private function get(string $data): void
     {
+        $data = $this->decodeBatchTaskData($data);
+        if ($data === null) {
+            $this->result = ['status' => false, 'message' => '翻译任务数据无效'];
+            return;
+        }
+
         $result = $this->request($this->api[2], ['data' => $data, 'tool' => $this->tool]);
         $this->result = self::decodeResponse($result);
     }
@@ -430,13 +444,21 @@ class Translate
     private function batchBefore(): string
     {
         $html = [];
+        $snapshot = [];
 
         // 循环每个页面 获取每个页面需要翻译的内容
         foreach ($this->nodes as $id) {
             $data = $this->getPageContent($id);
             if (!$data) continue;
+
+            $snapshot[] = [
+                'id' => (int) $id,
+                'fields' => array_keys($data),
+            ];
             $html[] = implode($this->replace[0], $data);
         }
+
+        $this->cache['batchSnapshot'] = $snapshot;
 
         return count($html) == 0 ? '' : implode($this->replace[1], $html);
     }
@@ -449,26 +471,192 @@ class Translate
      */
     private function batchAfter(string $html): string
     {
-        // $local = $this->code($this->target);
-
         $pages = explode($this->replace[1], $html);
+        $snapshot = $this->cache['batchSnapshot'] ?? $this->currentBatchSnapshot();
 
-        $nodes = [];
-        foreach ($this->nodes as $id) {
-            if ($this->getPageContent($id)) {
-                $nodes[] = $id;
-            }
-        }
-
-        if (count($pages) != count($nodes)) {
+        if (count($pages) !== count($snapshot)) {
             return '翻译前后页面数量不一致';
         }
 
-        foreach ($nodes as $key => $id) {
-            $this->setPageContent($id, explode($this->replace[0], $pages[$key]), $this->target);
+        $writes = [];
+        foreach ($snapshot as $key => $page) {
+            $fields = explode($this->replace[0], $pages[$key]);
+            if (count($fields) !== count($page['fields'])) {
+                return '翻译前后字段数量不一致';
+            }
+
+            $writes[] = [
+                'id' => $page['id'],
+                'fields' => $page['fields'],
+                'html' => $fields,
+            ];
+        }
+
+        try {
+            DB::transaction(function () use ($writes): void {
+                foreach ($writes as $write) {
+                    $this->setPageContent(
+                        $write['id'],
+                        $write['html'],
+                        $this->target,
+                        $write['fields']
+                    );
+                }
+            });
+        } catch (\Throwable $exception) {
+            report($exception);
+            return '翻译结果写入失败';
         }
 
         return '翻译成功';
+    }
+
+    /**
+     * 兼容升级前已经创建的任务：没有字段快照时按当前缺失字段生成一次。
+     */
+    private function currentBatchSnapshot(): array
+    {
+        $snapshot = [];
+
+        foreach ($this->nodes as $id) {
+            $data = $this->getPageContent($id);
+            if (!$data) continue;
+
+            $snapshot[] = [
+                'id' => (int) $id,
+                'fields' => array_keys($data),
+            ];
+        }
+
+        return $snapshot;
+    }
+
+    /**
+     * 异步任务需要跨请求保留字段顺序。任务数据由浏览器原样传回，签名用于防止字段名被篡改。
+     */
+    private function encodeBatchTaskData(string $data): string
+    {
+        if (!array_key_exists('batchSnapshot', $this->cache)) {
+            return $data;
+        }
+
+        $key = $this->taskSignatureKey();
+        if ($key === '') {
+            return $data;
+        }
+
+        $payload = json_encode([
+            'version' => 1,
+            'data' => $data,
+            'source' => $this->source,
+            'target' => $this->target,
+            'nodes' => array_values(array_map('intval', $this->nodes)),
+            'snapshot' => $this->cache['batchSnapshot'],
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        if (!is_string($payload)) {
+            return $data;
+        }
+
+        return json_encode([
+            self::BATCH_TASK_ENVELOPE => base64_encode($payload),
+            'signature' => hash_hmac('sha256', $payload, $key),
+        ], JSON_UNESCAPED_SLASHES) ?: $data;
+    }
+
+    /**
+     * 还原新版异步任务数据；不带新版标记的数据按旧任务原样处理。
+     */
+    private function decodeBatchTaskData(string $data): ?string
+    {
+        $envelope = json_decode($data, true);
+        if (!is_array($envelope) || !array_key_exists(self::BATCH_TASK_ENVELOPE, $envelope)) {
+            return $data;
+        }
+
+        $encoded = $envelope[self::BATCH_TASK_ENVELOPE] ?? null;
+        $signature = $envelope['signature'] ?? null;
+        $key = $this->taskSignatureKey();
+        if (!is_string($encoded) || !is_string($signature) || $key === '') {
+            return null;
+        }
+
+        $payloadJson = base64_decode($encoded, true);
+        if (!is_string($payloadJson)
+            || !hash_equals(hash_hmac('sha256', $payloadJson, $key), $signature)) {
+            return null;
+        }
+
+        $payload = json_decode($payloadJson, true);
+        if (!$this->isValidBatchTaskPayload($payload)) {
+            return null;
+        }
+
+        $this->cache['batchSnapshot'] = $payload['snapshot'];
+
+        return $payload['data'];
+    }
+
+    private function isValidBatchTaskPayload($payload): bool
+    {
+        if (!is_array($payload)
+            || ($payload['version'] ?? null) !== 1
+            || !is_string($payload['data'] ?? null)
+            || $payload['data'] === ''
+            || ($payload['source'] ?? null) !== $this->source
+            || ($payload['target'] ?? null) !== $this->target
+            || !is_array($payload['nodes'] ?? null)
+            || !is_array($payload['snapshot'] ?? null)
+            || !array_is_list($payload['nodes'])
+            || !array_is_list($payload['snapshot'])) {
+            return false;
+        }
+
+        $payloadNodes = $payload['nodes'];
+        $currentNodes = array_values(array_map('intval', $this->nodes ?? []));
+        if (count($payloadNodes) !== count(array_filter($payloadNodes, 'is_int'))) {
+            return false;
+        }
+
+        sort($payloadNodes);
+        sort($currentNodes);
+        if ($payloadNodes !== $currentNodes) {
+            return false;
+        }
+
+        $snapshotNodes = [];
+        foreach ($payload['snapshot'] as $page) {
+            if (!is_array($page)
+                || !is_int($page['id'] ?? null)
+                || $page['id'] < 1
+                || !is_array($page['fields'] ?? null)
+                || !$page['fields']
+                || !array_is_list($page['fields'])
+                || count($page['fields']) !== count(array_filter($page['fields'], function ($field): bool {
+                    return is_string($field) && $field !== '';
+                }))
+                || count($page['fields']) !== count(array_unique($page['fields']))) {
+                return false;
+            }
+
+            $snapshotNodes[] = $page['id'];
+        }
+
+        return count($snapshotNodes) === count(array_unique($snapshotNodes))
+            && !array_diff($snapshotNodes, $payloadNodes);
+    }
+
+    private function taskSignatureKey(): string
+    {
+        $key = (string) config('app.key');
+        if (str_starts_with($key, 'base64:')) {
+            $decoded = base64_decode(substr($key, 7), true);
+            if (is_string($decoded)) {
+                return $decoded;
+            }
+        }
+
+        return $key;
     }
 
     /**
@@ -614,11 +802,11 @@ class Translate
                     // 翻译完成 把每个语言写入对应数据库表 获取写入结果
                     $result = $this->batchAfter($this->result);
 
-                    // 所有页面都不需要翻译
-                    // if (!$result) return $this->error('没有要翻译的内容');
+                    if ($result !== '翻译成功') {
+                        return $this->error($result);
+                    }
 
                     return $this->batchSuccess($result);
-                    break;
 
                 case 'page':
                 case 'tpl':
@@ -719,21 +907,26 @@ class Translate
      */
     private function getPageContent(int $id, ?string $code = null): array
     {
-        $front = config('lang.frontend');
-
-        $node = Node::find($id);
-
         $code = $code ?? $this->target;
-
-        if ($node->title != $node->translateTo($code)->title) {
-            return [];
-        }
 
         // 结果
         $list = [];
 
-        // 获取页面的全部字段
-        $fields = Db::table('node_fields')->where('id' , '<>', 'url')->pluck('id')->toArray();
+        // 只翻译文字类字段。链接、文件、图片、引用和定时字段即使旧配置未排除也不会送去翻译。
+        $fields = Db::table('node_fields')
+            ->get(['id', 'field_type'])
+            ->filter(function ($field): bool {
+                $class = $field->field_type ?? null;
+                if (!is_string($class) || $class === '') {
+                    return false;
+                }
+
+                return is_a($class, Input::class, true)
+                    || is_a($class, Text::class, true)
+                    || is_a($class, Html::class, true);
+            })
+            ->pluck('id')
+            ->toArray();
 
         // 过滤不翻译的字段
         $fields = array_diff($fields, $this->getNotFields());
@@ -761,8 +954,10 @@ class Translate
             }
         }
 
-        // 过滤空字符串 返回结果
-        return array_filter($list);
+        // 只过滤真正的空值，字符串 "0" 也是需要翻译的有效内容。
+        return array_filter($list, function ($value): bool {
+            return $value !== null && $value !== '';
+        });
     }
 
     /**
@@ -773,23 +968,15 @@ class Translate
      * @param  string $code 语言代码
      * @return array
      */
-    private function setPageContent(int $id, array $html, string $code): ?array
+    private function setPageContent(int $id, array $html, string $code, ?array $fields = null): array
     {
-        // 获取翻译前的页面内容
-        $new = $old = $this->getPageContent($id, $code);
-
-        if (!$new) return [];
-
-        // 判断字段数量是否一致
-        if ($html == $this->replace[3] && $old[0] == $this->replace[3]) return null;
-
-        // 把翻以前的数据用翻译后的数据替换
-        foreach ($new as $key => $value) {
-            $new[$key] = array_splice($html, 0, 1)[0];
+        $fields ??= array_keys($this->getPageContent($id, $code));
+        if (count($html) !== count($fields)) {
+            throw new \UnexpectedValueException('翻译前后字段数量不一致');
         }
 
         // 设置页面字段并返回翻译了的字段名称
-        return $this->setPageFieldContent($id, $new, $code);
+        return $this->setPageFieldContent($id, array_combine($fields, $html), $code);
     }
 
     /**
@@ -802,38 +989,59 @@ class Translate
      */
     private function setPageFieldContent(int $id, array $list, $code): array
     {
+        $node = Db::table('nodes')->where('id', $id)->lockForUpdate()->first();
+        if (!$node) {
+            throw new \RuntimeException('页面不存在');
+        }
+
+        $written = [];
+
         // 循环每个字段并设置内容
         foreach ($list as $file => $html) {
             switch ($file) {
                 case 'title':
-                    $data = Db::table('nodes')->where('id', $id)->first();
+                    if (Db::table('node_translations')
+                        ->where('entity_id', $id)
+                        ->where('langcode', $code)
+                        ->exists()) {
+                        break;
+                    }
 
                     Db::table('node_translations')->insert([
                         'entity_id'     => $id,
-                        'mold_id'       => $data->mold_id,
+                        'mold_id'       => $node->mold_id,
                         'title'         => $html,
-                        'view'          => $data->view,
-                        'is_red'        => $data->is_red,
-                        'is_green'      => $data->is_green,
-                        'is_blue'       => $data->is_blue,
+                        'view'          => $node->view,
+                        'is_red'        => $node->is_red,
+                        'is_green'      => $node->is_green,
+                        'is_blue'       => $node->is_blue,
                         'langcode'      => $code,
                         'created_at'    => date('Y-m-d H:i:s')
                     ]);
+                    $written[] = $file;
                     break;
 
                 default:
+                    if (Db::table('node__' . $file)
+                        ->where('entity_id', $id)
+                        ->where('langcode', $code)
+                        ->exists()) {
+                        break;
+                    }
+
                     Db::table('node__' . $file)->insert([
                         'entity_id'     => $id,
                         $file           => $html,
                         'langcode'      => $code,
                         'created_at'    => date('Y-m-d H:i:s', time())
                     ]);
+                    $written[] = $file;
                     break;
             }
         }
 
         // 返回修改的字段
-        return array_keys($list);
+        return $written;
     }
 
     /**
@@ -950,8 +1158,11 @@ class Translate
         // 构建dom
         $dom = new \DOMDocument();
         $libxml_previous_state = libxml_use_internal_errors(true);
-        $dom->loadHTML(mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8'));
-        libxml_use_internal_errors($libxml_previous_state);
+        try {
+            $dom->loadHTML('<?xml encoding="UTF-8">' . $html, LIBXML_NONET);
+        } finally {
+            libxml_use_internal_errors($libxml_previous_state);
+        }
         return $dom;
     }
 }
