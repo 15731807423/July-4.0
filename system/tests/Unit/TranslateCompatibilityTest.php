@@ -57,10 +57,9 @@ class TranslateCompatibilityTest extends TestCase
         $errors = TranslateSettings::jsonValidationErrors([
             'translate.code' => '{"alibabacloud":{"en":"en","de":"de"},"azure":{"de":"de"}}',
             'translate.fields' => '{"de":["url","image_src"]}',
-            'translate.text' => '["Brand name"]',
+            'translate.text' => '   ',
             'translate.replace' => '{"de":[]}',
         ]);
-
         $this->assertSame([], $errors);
     }
 
@@ -72,7 +71,6 @@ class TranslateCompatibilityTest extends TestCase
             'translate.text' => '["valid",42]',
             'translate.replace' => '["not-a-map"]',
         ]);
-
         $this->assertSame([
             'translate.code',
             'translate.fields',

@@ -4,6 +4,7 @@ namespace Translate;
 use App\EntityField\FieldTypes\Html;
 use App\EntityField\FieldTypes\Input;
 use App\EntityField\FieldTypes\Text;
+use App\Support\Settings\Translate as TranslateSettings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 
@@ -15,6 +16,16 @@ class Translate
     public const TOOL = 'alibabacloud';
 
     private const BATCH_TASK_ENVELOPE = '__july_batch_v1';
+
+    private const TPL_TASK_ENVELOPE = '__july_tpl_v1';
+
+    private const NON_TRANSLATABLE_FIELDS = [
+        'url',
+        'meta_canonical',
+        'image_src',
+        'related_spec',
+        'timeout',
+    ];
 
     // 域名
     private $domain;
@@ -57,6 +68,9 @@ class Translate
 
     // 中转站是否返回失败
     private bool $failed = false;
+
+    // 翻译结果在本地处理失败时的稳定提示
+    private ?string $processingError = null;
 
     // 当前模式是不是直接翻译
     private $mode;
@@ -244,10 +258,17 @@ class Translate
      */
     public function tpl(): JsonResponse
     {
+        $html = $this->tplBefore();
+
+        // 只有无需翻译的模板副本缺失时，直接补齐，不调用翻译接口。
+        if ($html === '' && !empty($this->cache['tplSnapshot']['copies'])) {
+            return $this->tplAfter('')
+                ? $this->tplSuccess()
+                : $this->error($this->processingError ?: '模板处理失败');
+        }
+
         // 翻译
-        $result = $this->start($this->tplBefore(), function () {
-            if (is_dir($this->tplPath . $this->target)) return $this->error('目录已存在，请先删除目录');
-        });
+        $result = $this->start($html);
 
         if ($result !== true) return $result;
 
@@ -278,9 +299,7 @@ class Translate
         }
 
         if ($this->result['status'] === null) {
-            $data = $type === 'batch'
-                ? $this->encodeBatchTaskData($this->result['data'])
-                : $this->result['data'];
+            $data = $this->encodeTaskData($this->result['data']);
 
             return $this->running($this->result['message'], $data);
         }
@@ -372,7 +391,7 @@ class Translate
         $result = self::decodeResponse($result);
         $this->failed = $result['status'] !== true;
         $this->result = $result['status'] === true
-            ? $this->encodeBatchTaskData($result['data'])
+            ? $this->encodeTaskData($result['data'])
             : $result['message'];
     }
 
@@ -383,7 +402,7 @@ class Translate
      */
     private function get(string $data): void
     {
-        $data = $this->decodeBatchTaskData($data);
+        $data = $this->decodeTaskData($data);
         if ($data === null) {
             $this->result = ['status' => false, 'message' => '翻译任务数据无效'];
             return;
@@ -454,6 +473,9 @@ class Translate
             $snapshot[] = [
                 'id' => (int) $id,
                 'fields' => array_keys($data),
+                'source_hashes' => array_map(function ($value): string {
+                    return hash('sha256', (string) $value);
+                }, $data),
             ];
             $html[] = implode($this->replace[0], $data);
         }
@@ -488,6 +510,7 @@ class Translate
             $writes[] = [
                 'id' => $page['id'],
                 'fields' => $page['fields'],
+                'source_hashes' => $page['source_hashes'] ?? null,
                 'html' => $fields,
             ];
         }
@@ -495,6 +518,11 @@ class Translate
         try {
             DB::transaction(function () use ($writes): void {
                 foreach ($writes as $write) {
+                    $this->assertSourceContentUnchanged(
+                        $write['id'],
+                        $write['fields'],
+                        $write['source_hashes']
+                    );
                     $this->setPageContent(
                         $write['id'],
                         $write['html'],
@@ -503,6 +531,8 @@ class Translate
                     );
                 }
             });
+        } catch (\UnexpectedValueException $exception) {
+            return $exception->getMessage();
         } catch (\Throwable $exception) {
             report($exception);
             return '翻译结果写入失败';
@@ -525,10 +555,38 @@ class Translate
             $snapshot[] = [
                 'id' => (int) $id,
                 'fields' => array_keys($data),
+                'source_hashes' => array_map(function ($value): string {
+                    return hash('sha256', (string) $value);
+                }, $data),
             ];
         }
 
         return $snapshot;
+    }
+
+    private function encodeTaskData(string $data): string
+    {
+        if (array_key_exists('batchSnapshot', $this->cache)) {
+            return $this->encodeBatchTaskData($data);
+        }
+        if (array_key_exists('tplSnapshot', $this->cache)) {
+            return $this->encodeTplTaskData($data);
+        }
+
+        return $data;
+    }
+
+    private function decodeTaskData(string $data): ?string
+    {
+        $envelope = json_decode($data, true);
+        if (is_array($envelope) && array_key_exists(self::BATCH_TASK_ENVELOPE, $envelope)) {
+            return $this->decodeBatchTaskData($data);
+        }
+        if (is_array($envelope) && array_key_exists(self::TPL_TASK_ENVELOPE, $envelope)) {
+            return $this->decodeTplTaskData($data);
+        }
+
+        return $data;
     }
 
     /**
@@ -639,11 +697,106 @@ class Translate
                 return false;
             }
 
+            if (isset($page['source_hashes'])) {
+                if (!is_array($page['source_hashes'])
+                    || array_keys($page['source_hashes']) !== $page['fields']
+                    || count($page['source_hashes']) !== count(array_filter(
+                        $page['source_hashes'],
+                        function ($hash): bool {
+                            return is_string($hash) && preg_match('/^[a-f0-9]{64}$/', $hash);
+                        }
+                    ))) {
+                    return false;
+                }
+            }
+
             $snapshotNodes[] = $page['id'];
         }
 
         return count($snapshotNodes) === count(array_unique($snapshotNodes))
             && !array_diff($snapshotNodes, $payloadNodes);
+    }
+
+    private function encodeTplTaskData(string $data): string
+    {
+        $key = $this->taskSignatureKey();
+        if ($key === '') {
+            return $data;
+        }
+
+        $payload = json_encode([
+            'version' => 1,
+            'data' => $data,
+            'source' => $this->source,
+            'target' => $this->target,
+            'snapshot' => $this->cache['tplSnapshot'],
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if (!is_string($payload)) {
+            return $data;
+        }
+
+        return json_encode([
+            self::TPL_TASK_ENVELOPE => base64_encode($payload),
+            'signature' => hash_hmac('sha256', $payload, $key),
+        ], JSON_UNESCAPED_SLASHES) ?: $data;
+    }
+
+    private function decodeTplTaskData(string $data): ?string
+    {
+        $envelope = json_decode($data, true);
+        $encoded = is_array($envelope) ? ($envelope[self::TPL_TASK_ENVELOPE] ?? null) : null;
+        $signature = is_array($envelope) ? ($envelope['signature'] ?? null) : null;
+        $key = $this->taskSignatureKey();
+        if (!is_string($encoded) || !is_string($signature) || $key === '') {
+            return null;
+        }
+
+        $payloadJson = base64_decode($encoded, true);
+        if (!is_string($payloadJson)
+            || !hash_equals(hash_hmac('sha256', $payloadJson, $key), $signature)) {
+            return null;
+        }
+
+        $payload = json_decode($payloadJson, true);
+        if (!is_array($payload)
+            || ($payload['version'] ?? null) !== 1
+            || !is_string($payload['data'] ?? null)
+            || $payload['data'] === ''
+            || ($payload['source'] ?? null) !== $this->source
+            || ($payload['target'] ?? null) !== $this->target
+            || !$this->isValidTplSnapshot($payload['snapshot'] ?? null)) {
+            return null;
+        }
+
+        $this->cache['tplSnapshot'] = $payload['snapshot'];
+
+        return $payload['data'];
+    }
+
+    private function isValidTplSnapshot($snapshot): bool
+    {
+        if (!is_array($snapshot)
+            || !is_array($snapshot['files'] ?? null)
+            || !array_is_list($snapshot['files'])
+            || !is_array($snapshot['copies'] ?? null)
+            || !array_is_list($snapshot['copies'])) {
+            return false;
+        }
+
+        $paths = [];
+        foreach (array_merge($snapshot['files'], $snapshot['copies']) as $file) {
+            $path = is_array($file) ? ($file['path'] ?? null) : null;
+            $hash = is_array($file) ? ($file['hash'] ?? null) : null;
+            if (!$this->isSafeRelativeTemplatePath($path)
+                || !is_string($hash)
+                || !preg_match('/^[a-f0-9]{64}$/', $hash)
+                || in_array($path, $paths, true)) {
+                return false;
+            }
+            $paths[] = $path;
+        }
+
+        return true;
     }
 
     private function taskSignatureKey(): string
@@ -667,9 +820,27 @@ class Translate
      */
     private function pageBefore(array $html): string
     {
-        // 去掉不需要翻译的字段
+        $excluded = array_merge(self::NON_TRANSLATABLE_FIELDS, $this->getNotFields());
         foreach ($html as $key => $value) {
-            if (in_array($key, $this->getNotFields())) {
+            if (in_array($key, $excluded, true)) {
+                unset($html[$key]);
+            }
+        }
+        if (!$html) {
+            return '';
+        }
+
+        $fields = [];
+        if (!in_array('title', $this->getNotFields(), true)) {
+            $fields[] = 'title';
+        }
+        if (array_diff(array_keys($html), ['title'])) {
+            $fields = array_merge($fields, $this->getTranslatableFieldIds());
+        }
+
+        // 去掉不需要翻译或不是文字类型的字段
+        foreach ($html as $key => $value) {
+            if (!in_array($key, $fields, true)) {
                 unset($html[$key]);
             }
         }
@@ -686,9 +857,27 @@ class Translate
      */
     private function pageAfter(array $old, string $new): ?array
     {
-        // 去掉不需要翻译的字段
+        $excluded = array_merge(self::NON_TRANSLATABLE_FIELDS, $this->getNotFields());
         foreach ($old as $key => $value) {
-            if (in_array($key, $this->getNotFields())) {
+            if (in_array($key, $excluded, true)) {
+                unset($old[$key]);
+            }
+        }
+        if (!$old) {
+            return null;
+        }
+
+        $fields = [];
+        if (!in_array('title', $this->getNotFields(), true)) {
+            $fields[] = 'title';
+        }
+        if (array_diff(array_keys($old), ['title'])) {
+            $fields = array_merge($fields, $this->getTranslatableFieldIds());
+        }
+
+        // 去掉不需要翻译或不是文字类型的字段
+        foreach ($old as $key => $value) {
+            if (!in_array($key, $fields, true)) {
                 unset($old[$key]);
             }
         }
@@ -709,13 +898,38 @@ class Translate
      */
     private function tplBefore(): string
     {
-        // 所有需要翻译的文件的绝对路径
-        $files = $this->getTplFilePath();
-
         $html = [];
+        $snapshot = [
+            'files' => [],
+            'copies' => [],
+        ];
 
-        // 所有需要翻译的文件的内容
-        foreach ($files as $file) $html[] = file_get_contents($file);
+        foreach ($this->getTplFilePath(true) as $file) {
+            $content = file_get_contents($file);
+            if (!is_string($content)) {
+                continue;
+            }
+
+            $snapshot['files'][] = [
+                'path' => $this->relativeTemplatePath($file),
+                'hash' => hash('sha256', $content),
+            ];
+            $html[] = $content;
+        }
+
+        foreach ($this->getTplCopyFilePath(true) as $file) {
+            $content = file_get_contents($file);
+            if (!is_string($content)) {
+                continue;
+            }
+
+            $snapshot['copies'][] = [
+                'path' => $this->relativeTemplatePath($file),
+                'hash' => hash('sha256', $content),
+            ];
+        }
+
+        $this->cache['tplSnapshot'] = $snapshot;
 
         return count($html) == 0 ? '' : implode($this->replace[0], $html);
     }
@@ -728,44 +942,64 @@ class Translate
      */
     private function tplAfter(string $html): bool
     {
-        // 切割成每个文件的翻译结果
-        $html = explode($this->replace[0], $html);
-
-        // 所有需要翻译的文件的绝对路径
-        $files = $this->getTplFilePath();
-
-        // 如果翻译后的页面数量和被翻译的页面数量不一致
-        if (count($html) != count($files)) return false;
-
-        // 翻译后的模板文件写入内容
-        foreach ($files as $key => $file) {
-            $file = str_replace($this->tplPath . ($this->source == 'en' ? '' : $this->source . '/'), $this->tplPath . $this->target . '/', $file);
-            $this->setTplFileContent($file, $html[$key]);
+        $snapshot = $this->cache['tplSnapshot'] ?? $this->currentTplSnapshot();
+        $translated = $snapshot['files'] ? explode($this->replace[0], $html) : [];
+        if (count($translated) !== count($snapshot['files'])) {
+            $this->processingError = '翻译前后模板数量不一致';
+            return false;
         }
 
-        $dir = $this->tplPath . ($this->source == 'en' ? '' : $this->source . '/') . 'message/content/';
-        $list = array_slice(scandir($dir), 2);
-        foreach ($list as $key => $file) {
-            $source = $dir . $file;
-            $target = str_replace($this->tplPath . ($this->source == 'en' ? '' : $this->source . '/'), $this->tplPath . $this->target . '/', $source);
-            $this->setTplFileContent($target, file_get_contents($source));
-        }
+        $targetRoot = $this->targetTemplateRoot();
+        $stageRoot = rtrim($targetRoot, '/\\')
+            . '.translate-' . bin2hex(random_bytes(8)) . '/';
 
-        return true;
+        try {
+            if (!mkdir($stageRoot, 0755, true) && !is_dir($stageRoot)) {
+                throw new \RuntimeException('无法创建模板临时目录');
+            }
+
+            foreach ($snapshot['files'] as $key => $file) {
+                if (is_file($targetRoot . $file['path'])) {
+                    continue;
+                }
+                $this->assertTemplateSourceUnchanged($file);
+                $this->writeTemplateFile($stageRoot . $file['path'], $translated[$key]);
+            }
+
+            foreach ($snapshot['copies'] as $file) {
+                if (is_file($targetRoot . $file['path'])) {
+                    continue;
+                }
+                $content = $this->assertTemplateSourceUnchanged($file);
+                $this->writeTemplateFile($stageRoot . $file['path'], $content);
+            }
+
+            $this->commitStagedTemplates($stageRoot, $targetRoot);
+            return true;
+        } catch (\UnexpectedValueException $exception) {
+            $this->processingError = $exception->getMessage();
+            return false;
+        } catch (\Throwable $exception) {
+            report($exception);
+            $this->processingError = '模板写入失败，现有模板未被覆盖';
+            return false;
+        } finally {
+            $this->removeTemplateDirectory($stageRoot);
+        }
     }
 
     /**
      * 处理后开始翻译
      * 
      * @param  string $html   翻译的内容
-     * @param  object $bofore 处理的函数
+     * @param  object|null $before 处理的函数
      * @return JsonResponse|bool
      */
-    private function start(string $html, object $bofore = null): JsonResponse|bool
+    private function start(string $html, ?object $before = null): JsonResponse|bool
     {
-        if ($bofore) {
-            $bofore = $bofore();
-            if ($bofore) return $bofore;
+        if ($before) {
+            $result = $before();
+            if ($result) return $result;
         }
 
         // 没有要翻译的内容
@@ -825,7 +1059,9 @@ class Translate
                     if ($type == 'tpl') $result = $this->tplAfter($html);
 
                     // 处理失败
-                    if (!$result) return $this->error('翻译成功但处理失败');
+                    if (!$result) {
+                        return $this->error($this->processingError ?: '翻译成功但处理失败');
+                    }
 
                     // 翻译完成后处理数据
                     if ($type == 'page') return $this->pageSuccess($result);
@@ -883,19 +1119,26 @@ class Translate
      */
     private function getAppoint(): array
     {
-        if (count($this->appoint) == count($this->appoint, 1)) {
-            return $this->appoint;
-        } else {
-            if (is_string($this->target)) return $this->appoint[$this->target] ?? [];
-
-            $list = [];
-            foreach ($this->target as $key => $value) {
-                if (isset($this->appoint[$value])) {
-                    $list[$value] = $this->appoint[$value];
-                }
-            }
-            return $list;
+        if (is_string($this->target)) {
+            return TranslateSettings::replacementMapForCode(
+                $this->appoint,
+                $this->target,
+                $this->source,
+                (string) config('lang.frontend')
+            );
         }
+
+        $list = [];
+        foreach ($this->target as $value) {
+            $list[$value] = TranslateSettings::replacementMapForCode(
+                $this->appoint,
+                $value,
+                $this->source,
+                (string) config('lang.frontend')
+            );
+        }
+
+        return array_filter($list);
     }
 
     /**
@@ -912,24 +1155,7 @@ class Translate
         // 结果
         $list = [];
 
-        // 只翻译文字类字段。链接、文件、图片、引用和定时字段即使旧配置未排除也不会送去翻译。
-        $fields = Db::table('node_fields')
-            ->get(['id', 'field_type'])
-            ->filter(function ($field): bool {
-                $class = $field->field_type ?? null;
-                if (!is_string($class) || $class === '') {
-                    return false;
-                }
-
-                return is_a($class, Input::class, true)
-                    || is_a($class, Text::class, true)
-                    || is_a($class, Html::class, true);
-            })
-            ->pluck('id')
-            ->toArray();
-
-        // 过滤不翻译的字段
-        $fields = array_diff($fields, $this->getNotFields());
+        $fields = $this->getTranslatableFieldIds();
 
         // 判断title是否存在翻译版本
         $check = Db::table('node_translations')->where('entity_id', $id)->where('langcode', $code)->exists();
@@ -960,6 +1186,30 @@ class Translate
         });
     }
 
+    private function getTranslatableFieldIds(): array
+    {
+        // 链接、文件、图片、引用和定时字段即使旧配置未排除也不会送去翻译。
+        $fields = Db::table('node_fields')
+            ->get(['id', 'field_type'])
+            ->filter(function ($field): bool {
+                $class = $field->field_type ?? null;
+                if (!is_string($class)
+                    || $class === ''
+                    || in_array($field->id, self::NON_TRANSLATABLE_FIELDS, true)) {
+                    return false;
+                }
+
+                return is_a($class, Input::class, true)
+                    || is_a($class, Text::class, true)
+                    || is_a($class, Html::class, true);
+            })
+            ->pluck('id')
+            ->toArray();
+
+        // 过滤不翻译的字段
+        return array_values(array_diff($fields, $this->getNotFields()));
+    }
+
     /**
      * 为页面设置翻译后的内容
      * 
@@ -977,6 +1227,36 @@ class Translate
 
         // 设置页面字段并返回翻译了的字段名称
         return $this->setPageFieldContent($id, array_combine($fields, $html), $code);
+    }
+
+    private function assertSourceContentUnchanged(int $id, array $fields, ?array $hashes): void
+    {
+        if (!$hashes) {
+            return;
+        }
+
+        foreach ($fields as $field) {
+            if ($field === 'title') {
+                $query = $this->source === 'en'
+                    ? Db::table('nodes')->where('id', $id)
+                    : Db::table('node_translations')
+                        ->where('entity_id', $id)
+                        ->where('langcode', $this->source);
+                $value = $query->lockForUpdate()->value('title');
+            } else {
+                $value = Db::table('node__' . $field)
+                    ->where('entity_id', $id)
+                    ->where('langcode', $this->source)
+                    ->lockForUpdate()
+                    ->value($field);
+            }
+
+            $expected = $hashes[$field] ?? null;
+            $actual = hash('sha256', (string) $value);
+            if (!is_string($expected) || !hash_equals($expected, $actual)) {
+                throw new \UnexpectedValueException('翻译期间源内容已更新，请重新翻译');
+            }
+        }
     }
 
     /**
@@ -1049,17 +1329,21 @@ class Translate
      * 
      * @return array
      */
-    private function getTplFilePath(): array
+    private function getTplFilePath(bool $missingOnly = false): array
     {
+        $sourceRoot = $this->sourceTemplateRoot();
         $dirs = [
-            $this->tplPath . ($this->source == 'en' ? '' : $this->source . '/') . 'message/form/',
+            $sourceRoot . 'message/form/',
             // $this->tplPath . 'specs/',
-            $this->tplPath . ($this->source == 'en' ? '' : $this->source . '/')
+            $sourceRoot,
         ];
 
         $files = [];
 
         foreach ($dirs as $dir) {
+            if (!is_dir($dir)) {
+                continue;
+            }
             $list = array_slice(scandir($dir), 2);
             foreach ($list as $key => $file) {
                 $list[$key] = $dir . $file;
@@ -1068,30 +1352,254 @@ class Translate
             $files = array_merge($files, array_values($list));
         }
 
-        if (($i = array_search($this->tplPath . ($this->source == 'en' ? '' : $this->source . '/') . 'google-sitemap.twig', $files)) !== false) {
+        if (($i = array_search($sourceRoot . 'google-sitemap.twig', $files)) !== false) {
             unset($files[$i]);
+        }
+
+        if ($missingOnly) {
+            $targetRoot = $this->targetTemplateRoot();
+            $files = array_filter($files, function ($file) use ($targetRoot): bool {
+                return !is_file($targetRoot . $this->relativeTemplatePath($file));
+            });
         }
 
         return array_values($files);
     }
 
-    /**
-     * 翻译后的模板文件写入内容
-     * 
-     * @param  string $path 文件路径
-     * @param  string $html 文件内容
-     * @return void
-     */
-    private function setTplFileContent(string $path, string $html): void
+    private function getTplCopyFilePath(bool $missingOnly = false): array
     {
-        // 路径信息
-        $pathinfo = pathinfo($path);
+        $directory = $this->sourceTemplateRoot() . 'message/content/';
+        if (!is_dir($directory)) {
+            return [];
+        }
 
-        // 创建不存在的路径
-        if (!is_dir($pathinfo['dirname'])) mkdir($pathinfo['dirname'], 0755, true);
+        $files = [];
+        foreach (array_slice(scandir($directory), 2) as $file) {
+            $path = $directory . $file;
+            if (is_file($path)) {
+                $files[] = $path;
+            }
+        }
 
-        // 创建文件 写入文件
-        if (touch($path)) file_put_contents($path, $html);
+        if ($missingOnly) {
+            $targetRoot = $this->targetTemplateRoot();
+            $files = array_filter($files, function ($file) use ($targetRoot): bool {
+                return !is_file($targetRoot . $this->relativeTemplatePath($file));
+            });
+        }
+
+        return array_values($files);
+    }
+
+    private function currentTplSnapshot(): array
+    {
+        $snapshot = ['files' => [], 'copies' => []];
+
+        foreach ($this->getTplFilePath(true) as $file) {
+            $content = file_get_contents($file);
+            if (is_string($content)) {
+                $snapshot['files'][] = [
+                    'path' => $this->relativeTemplatePath($file),
+                    'hash' => hash('sha256', $content),
+                ];
+            }
+        }
+        foreach ($this->getTplCopyFilePath(true) as $file) {
+            $content = file_get_contents($file);
+            if (is_string($content)) {
+                $snapshot['copies'][] = [
+                    'path' => $this->relativeTemplatePath($file),
+                    'hash' => hash('sha256', $content),
+                ];
+            }
+        }
+
+        return $snapshot;
+    }
+
+    private function sourceTemplateRoot(): string
+    {
+        return rtrim($this->tplPath, '/\\') . '/'
+            . ($this->source === 'en' ? '' : $this->source . '/');
+    }
+
+    private function targetTemplateRoot(): string
+    {
+        return rtrim($this->tplPath, '/\\') . '/' . $this->target . '/';
+    }
+
+    private function relativeTemplatePath(string $path): string
+    {
+        $sourceRoot = str_replace('\\', '/', $this->sourceTemplateRoot());
+        $path = str_replace('\\', '/', $path);
+        if (!str_starts_with($path, $sourceRoot)) {
+            throw new \InvalidArgumentException('模板文件不在源目录中');
+        }
+
+        $relative = substr($path, strlen($sourceRoot));
+        if (!$this->isSafeRelativeTemplatePath($relative)) {
+            throw new \InvalidArgumentException('模板相对路径不合法');
+        }
+
+        return $relative;
+    }
+
+    private function isSafeRelativeTemplatePath($path): bool
+    {
+        if (!is_string($path)
+            || $path === ''
+            || str_starts_with($path, '/')
+            || str_contains($path, '\\')
+            || str_contains($path, "\0")) {
+            return false;
+        }
+
+        foreach (explode('/', $path) as $segment) {
+            if ($segment === '' || $segment === '.' || $segment === '..') {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function assertTemplateSourceUnchanged(array $file): string
+    {
+        if (!$this->isSafeRelativeTemplatePath($file['path'] ?? null)) {
+            throw new \UnexpectedValueException('模板任务路径无效');
+        }
+
+        $path = $this->sourceTemplateRoot() . $file['path'];
+        $content = is_file($path) ? file_get_contents($path) : false;
+        if (!is_string($content)
+            || !is_string($file['hash'] ?? null)
+            || !hash_equals($file['hash'], hash('sha256', $content))) {
+            throw new \UnexpectedValueException('翻译期间源模板已更新，请重新翻译');
+        }
+
+        return $content;
+    }
+
+    protected function writeTemplateFile(string $path, string $content): void
+    {
+        $directory = dirname($path);
+        if (!is_dir($directory)
+            && !mkdir($directory, 0755, true)
+            && !is_dir($directory)) {
+            throw new \RuntimeException('无法创建模板目录');
+        }
+        if (file_put_contents($path, $content, LOCK_EX) === false) {
+            throw new \RuntimeException('无法写入模板文件');
+        }
+    }
+
+    private function commitStagedTemplates(string $stageRoot, string $targetRoot): void
+    {
+        $files = $this->templateFilesRecursively($stageRoot);
+        if (!$files) {
+            return;
+        }
+
+        if (!is_dir($targetRoot)) {
+            $parent = dirname(rtrim($targetRoot, '/\\'));
+            if (!is_dir($parent) && !mkdir($parent, 0755, true) && !is_dir($parent)) {
+                throw new \RuntimeException('无法创建模板目标目录');
+            }
+            if (!rename(rtrim($stageRoot, '/\\'), rtrim($targetRoot, '/\\'))) {
+                throw new \RuntimeException('无法提交模板目录');
+            }
+            return;
+        }
+
+        $lockDirectory = storage_path('framework/cache');
+        if (!is_dir($lockDirectory)) {
+            mkdir($lockDirectory, 0755, true);
+        }
+        $lock = fopen($lockDirectory . '/translate-template-'
+            . hash('sha256', $targetRoot) . '.lock', 'c+');
+        if (!$lock || !flock($lock, LOCK_EX)) {
+            if ($lock) fclose($lock);
+            throw new \RuntimeException('无法锁定模板目录');
+        }
+
+        $moved = [];
+        try {
+            foreach ($files as $source) {
+                $relative = substr(str_replace('\\', '/', $source), strlen(str_replace('\\', '/', $stageRoot)));
+                $relative = ltrim($relative, '/');
+                if (!$this->isSafeRelativeTemplatePath($relative)) {
+                    throw new \RuntimeException('模板提交路径不合法');
+                }
+
+                $target = $targetRoot . $relative;
+                if (is_file($target)) {
+                    continue;
+                }
+
+                $directory = dirname($target);
+                if (!is_dir($directory)
+                    && !mkdir($directory, 0755, true)
+                    && !is_dir($directory)) {
+                    throw new \RuntimeException('无法创建模板目标目录');
+                }
+
+                $this->moveTemplateFile($source, $target);
+                $moved[] = $target;
+            }
+        } catch (\Throwable $exception) {
+            foreach (array_reverse($moved) as $path) {
+                if (is_file($path)) {
+                    unlink($path);
+                }
+            }
+            throw $exception;
+        } finally {
+            flock($lock, LOCK_UN);
+            fclose($lock);
+        }
+    }
+
+    protected function moveTemplateFile(string $source, string $target): void
+    {
+        if (!rename($source, $target)) {
+            throw new \RuntimeException('无法提交模板文件');
+        }
+    }
+
+    private function templateFilesRecursively(string $directory): array
+    {
+        if (!is_dir($directory)) {
+            return [];
+        }
+
+        $files = [];
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($directory, \FilesystemIterator::SKIP_DOTS)
+        );
+        foreach ($iterator as $file) {
+            if ($file->isFile()) {
+                $files[] = $file->getPathname();
+            }
+        }
+
+        sort($files);
+        return $files;
+    }
+
+    private function removeTemplateDirectory(string $directory): void
+    {
+        if (!is_dir($directory)) {
+            return;
+        }
+
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($directory, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::CHILD_FIRST
+        );
+        foreach ($iterator as $path) {
+            $path->isDir() ? rmdir($path->getPathname()) : unlink($path->getPathname());
+        }
+        rmdir($directory);
     }
 
     /**

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\EntityField\FieldTypes\Html;
 use App\EntityField\FieldTypes\Image;
+use App\EntityField\FieldTypes\Input;
 use App\EntityField\FieldTypes\Timeout;
 use App\EntityField\FieldTypes\Url;
 use Illuminate\Database\Schema\Blueprint;
@@ -127,6 +128,7 @@ class TranslateDataConsistencyTest extends TestCase
             ['id' => 'canonical', 'field_type' => Url::class],
             ['id' => 'image', 'field_type' => Image::class],
             ['id' => 'publish_at', 'field_type' => Timeout::class],
+            ['id' => 'related_spec', 'field_type' => Input::class],
         ]);
 
         $content = $this->invokePrivate($this->translate(), 'getPageContent', 1, 'de');
@@ -135,6 +137,29 @@ class TranslateDataConsistencyTest extends TestCase
             'title' => 'Source title',
             'body' => 'Source body',
         ], $content);
+    }
+
+    public function testSinglePageTranslationAlsoExcludesNonTextFields(): void
+    {
+        DB::table('node_fields')->insert([
+            ['id' => 'canonical', 'field_type' => Url::class],
+            ['id' => 'image', 'field_type' => Image::class],
+            ['id' => 'publish_at', 'field_type' => Timeout::class],
+        ]);
+        $translate = $this->translate();
+
+        $html = $this->invokePrivate($translate, 'pageBefore', [
+            'title' => 'Source title',
+            'body' => 'Source body',
+            'canonical' => 'https://example.com',
+            'image' => '/images/example.jpg',
+            'publish_at' => '1700000000',
+        ]);
+
+        $this->assertSame(
+            'Source title<div class="translate-field-cutting"></div>Source body',
+            $html
+        );
     }
 
     public function testBatchResultRejectsAPageWithTheWrongFieldCountBeforeWriting(): void
@@ -205,6 +230,28 @@ class TranslateDataConsistencyTest extends TestCase
             'Translated body',
             DB::table('node__body')->where('langcode', 'de')->value('body')
         );
+    }
+
+    public function testBatchRejectsStaleResultsWhenSourceContentChanges(): void
+    {
+        $this->putSourceBody('Source body');
+        $translate = $this->translate();
+        $this->invokePrivate($translate, 'batchBefore');
+
+        DB::table('node__body')
+            ->where('entity_id', 1)
+            ->where('langcode', 'en')
+            ->update(['body' => 'Updated source body']);
+
+        $result = $this->invokePrivate(
+            $translate,
+            'batchAfter',
+            'Titel<div class="translate-field-cutting"></div>Translated body'
+        );
+
+        $this->assertSame('翻译期间源内容已更新，请重新翻译', $result);
+        $this->assertSame(0, DB::table('node_translations')->count());
+        $this->assertSame(0, DB::table('node__body')->where('langcode', 'de')->count());
     }
 
     public function testSignedTaskDataRestoresTheSnapshotInALaterRequest(): void

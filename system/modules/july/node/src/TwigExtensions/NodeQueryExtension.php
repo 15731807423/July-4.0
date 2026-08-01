@@ -2,6 +2,7 @@
 
 namespace July\Node\TwigExtensions;
 
+use App\Support\Settings\Translate as TranslateSettings;
 use Illuminate\Support\Str;
 use July\Message\MessageForm;
 use July\Node\Catalog;
@@ -36,9 +37,12 @@ class NodeQueryExtension extends AbstractExtension implements GlobalsInterface
                 $data = config($key) ?? config('app.'.$key) ?? null;
 
                 if ($code) {
-                    $list = eval('return ' . str_replace("\n", '', config('translate.replace')) . ';');
-                    $list = is_array($list) ? (count($list) == count($list, 1) ? $list : (isset($list[$code]) ? $list[$code] : [])) : [];
-                    $list = (is_array($list) && isset($list[$code])) ? $list[$code] : [];
+                    $list = TranslateSettings::replacementMapForCode(
+                        config('translate.replace'),
+                        (string) $code,
+                        (string) config('lang.translate'),
+                        (string) config('lang.frontend')
+                    );
                 } else {
                     $list = [];
                 }

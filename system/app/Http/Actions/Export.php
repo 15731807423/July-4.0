@@ -333,7 +333,7 @@ class Export extends ActionBase
             'code' => config('translate.code'),
             'fields' => config('translate.fields'),
             'text' => config('translate.text'),
-            'replace' => collect(json_decode(config('translate.replace'), true))->mapWithKeys(fn ($list, $code) => [config('lang.frontend') . '_to_' . $code => $list])->toJson(),
+            'replace' => config('translate.replace'),
         ];
     }
 

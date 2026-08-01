@@ -37,6 +37,9 @@ class CreateNodeTranslationsTable extends Migration
             $table->string('langcode', 12);
 
             $table->timestamps();
+
+            // 新安装从数据库层保证每个页面每种语言只有一条标题译文。
+            $table->unique(['entity_id', 'langcode']);
         });
     }
 

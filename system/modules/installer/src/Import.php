@@ -2,6 +2,7 @@
 
 namespace Installer;
 
+use App\Support\Settings\Translate as TranslateSettings;
 use Illuminate\Support\Facades\Schema;
 
 use App\EntityValue\EntityPathAlias;
@@ -350,7 +351,10 @@ class Import
             'translate.code' => $data['code'],
             'translate.fields' => $data['fields'],
             'translate.text' => $data['text'],
-            'translate.replace' => $data['replace'],
+            'translate.replace' => TranslateSettings::normalizeImportedReplacementJson(
+                (string) $data['replace'],
+                (string) self::$defaultLanguage['code']
+            ),
         ]);
     }
 

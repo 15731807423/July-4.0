@@ -119,6 +119,9 @@ class Translate extends SettingGroupBase
                 $errors[$key] = $definition['label'] . '必须是 JSON 文本';
                 continue;
             }
+            if (trim($raw) === '') {
+                continue;
+            }
 
             try {
                 $value = json_decode($raw, false, 512, JSON_THROW_ON_ERROR);
@@ -133,6 +136,81 @@ class Translate extends SettingGroupBase
         }
 
         return $errors;
+    }
+
+    public static function normalizeImportedReplacementJson(string $json, string $source): string
+    {
+        $decoded = json_decode($json, true);
+        if (!is_array($decoded)) {
+            return $json;
+        }
+
+        $prefix = $source . '_to_';
+        $normalized = [];
+        // 先保留新格式；新旧键同时存在时，以明确的目标语言键为准。
+        foreach ($decoded as $key => $value) {
+            if (
+                !is_string($key)
+                || (is_array($value) && str_starts_with($key, $prefix))
+            ) {
+                continue;
+            }
+            $normalized[$key] = $value;
+        }
+
+        foreach ($decoded as $key => $value) {
+            if (
+                !is_string($key)
+                || !is_array($value)
+                || !str_starts_with($key, $prefix)
+            ) {
+                continue;
+            }
+
+            $target = substr($key, strlen($prefix));
+            if ($target !== '' && !array_key_exists($target, $normalized)) {
+                $normalized[$target] = $value;
+            }
+        }
+
+        return json_encode(
+            $normalized,
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+        ) ?: $json;
+    }
+
+    public static function replacementMapForCode(
+        $setting,
+        string $code,
+        ?string $source = null,
+        ?string $frontend = null
+    ): array {
+        $decoded = is_string($setting) ? json_decode($setting, true) : $setting;
+        if (!is_array($decoded)) {
+            return [];
+        }
+
+        $containsGroups = count(array_filter($decoded, 'is_array')) > 0;
+        if (!$containsGroups) {
+            return array_filter($decoded, 'is_string');
+        }
+
+        $keys = [$code];
+        $sources = array_filter([$source, $frontend], function ($from): bool {
+            return is_string($from) && $from !== '';
+        });
+        foreach (array_unique($sources) as $from) {
+            $keys[] = $from . '_to_' . $code;
+        }
+
+        foreach ($keys as $key) {
+            $map = $decoded[$key] ?? null;
+            if (is_array($map)) {
+                return array_filter($map, 'is_string');
+            }
+        }
+
+        return [];
     }
 
     private static function isStringList($value): bool
