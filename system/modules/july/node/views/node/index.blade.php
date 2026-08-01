@@ -191,6 +191,7 @@
 
         mounted() {
             this.to();
+            this.resumeTranslationTask();
         },
 
         watch: {
@@ -203,6 +204,14 @@
         },
 
         methods: {
+            resumeTranslationTask() {
+                if (typeof translate.resume !== 'function') return;
+
+                translate.frame(this.$loading, this.$message).resume('batch', (data, task) => {
+                    this.renderRequest(task.nodes, 0);
+                });
+            },
+
             to() {
                 // $('#main_content').scrollTop(0);
                 this.nodes = JSON.parse(JSON.stringify(this.nodesAll)).splice((this.currentPage-1)*this.perPage, this.perPage);
@@ -409,7 +418,7 @@
 
                 translate.frame(this.$loading, this.$message).batch(
                     nodes,
-                    null,
+                    () => this.renderRequest(nodes, 0),
                     @jjson(\Translate\Translate::batchTargetCodes())
                 );
             },

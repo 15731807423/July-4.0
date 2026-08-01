@@ -195,6 +195,12 @@ const app = new Vue({
         this.original_settings = _.cloneDeep(this.settings);
     },
 
+    mounted() {
+        if (typeof translate.resume === 'function') {
+            translate.frame(this.$loading, this.$message).resume('tpl');
+        }
+    },
+
     computed: {
         isLangcodeSelectable() {
             const code = this.langcode, name = this.selected;

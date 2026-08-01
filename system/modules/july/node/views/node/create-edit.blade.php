@@ -120,7 +120,23 @@
             this.original_model = _.cloneDeep(this.model);
         },
 
+        mounted() {
+            if (typeof translate.resume === 'function') {
+                translate.frame(this.$loading, this.$message).resume(
+                    'page',
+                    data => this.applyTranslationResult(data)
+                );
+            }
+        },
+
         methods: {
+            applyTranslationResult(data) {
+                for (let key in data) {
+                    this.model[key] = data[key];
+                }
+                this.$message.success('翻译结果已填入，请确认内容后保存');
+            },
+
             getChanged() {
                 const changed = [];
                 for (const key in this.model) {
@@ -157,11 +173,7 @@
                 translate.frame(this.$loading, this.$message).page({
                     text: JSON.stringify(data),
                     code: '{{ $langcode }}'
-                }, (data) => {
-                    for (let key in data) {
-                        this.model[key] = data[key];
-                    }
-                });
+                }, data => this.applyTranslationResult(data));
             },
 
             submit() {

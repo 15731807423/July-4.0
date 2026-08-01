@@ -26,6 +26,8 @@ const translate = {
 
 	escapeListener: null,
 
+	pendingTaskKey: 'july.translate.pending-task.v1',
+
 	success(data) {
 		console.log(data);
 	},
@@ -85,13 +87,163 @@ const translate = {
 		return fallback;
 	},
 
-	startPolling(type, initialAttempts = 0) {
+	readPendingTask(type = null) {
+		if (typeof window === 'undefined' || !window.sessionStorage) return null;
+
+		let task;
+		try {
+			task = JSON.parse(window.sessionStorage.getItem(this.pendingTaskKey));
+		} catch (error) {
+			window.sessionStorage.removeItem(this.pendingTaskKey);
+			return null;
+		}
+
+		const valid = task
+			&& task.version === 1
+			&& ['batch', 'page', 'tpl'].includes(task.type)
+			&& Number.isFinite(task.startedAt)
+			&& Number.isFinite(task.expiresAt)
+			&& task.expiresAt > Date.now()
+			&& task.request
+			&& typeof task.request === 'object'
+			&& typeof task.request.data === 'string'
+			&& task.request.data.length > 0;
+
+		if (!valid) {
+			window.sessionStorage.removeItem(this.pendingTaskKey);
+			return null;
+		}
+
+		return type && task.type !== type ? null : task;
+	},
+
+	writePendingTask(task) {
+		if (typeof window === 'undefined' || !window.sessionStorage) return false;
+
+		try {
+			window.sessionStorage.setItem(this.pendingTaskKey, JSON.stringify(task));
+			return true;
+		} catch (error) {
+			return false;
+		}
+	},
+
+	clearPendingTask(type = null) {
+		if (typeof window === 'undefined' || !window.sessionStorage) return false;
+
+		const task = this.readPendingTask();
+		if (type && task && task.type !== type) return false;
+
+		window.sessionStorage.removeItem(this.pendingTaskKey);
+		return Boolean(task);
+	},
+
+	storePendingTask(type, request, details = {}) {
+		const startedAt = Date.now();
+		return this.writePendingTask(Object.assign({
+			version: 1,
+			type: type,
+			startedAt: startedAt,
+			expiresAt: startedAt + this.pollOptions.maxDuration,
+			attempts: 0,
+			failures: 0,
+			request: request
+		}, details));
+	},
+
+	updatePendingTask(type, request, poller, details = {}) {
+		const task = this.readPendingTask(type);
+		if (!task) return false;
+
+		return this.writePendingTask(Object.assign(task, details, {
+			request: request,
+			attempts: poller ? poller.attempts : task.attempts,
+			failures: poller ? poller.failures : task.failures
+		}));
+	},
+
+	resume(type, success = null) {
+		const task = this.readPendingTask(type);
+		if (!task) return false;
+
+		this.cancelPolling(null, false, false);
+		this.notify('检测到未完成的翻译任务，正在继续获取结果', 'info');
+
+		if (type === 'batch') {
+			if (!Array.isArray(task.nodes)
+				|| !Array.isArray(task.batchCodes)
+				|| !Number.isInteger(task.batchIndex)
+				|| task.batchIndex < 0
+				|| task.batchIndex >= task.batchCodes.length
+				|| !Array.isArray(task.batchResults)) {
+				this.clearPendingTask(type);
+				return false;
+			}
+
+			this.nodes = task.nodes;
+			this.batchCodes = task.batchCodes;
+			this.batchIndex = task.batchIndex;
+			this.batchResults = task.batchResults;
+			this.success = data => {
+				this.message({
+					message: data,
+					type: 'success',
+					duration: 0,
+					showClose: true
+				});
+				if (success) success(data, task);
+			};
+			this.getBatch(
+				task.request,
+				'已恢复未完成任务',
+				task.attempts + 1,
+				null,
+				task.startedAt,
+				task.failures
+			);
+			return true;
+		}
+
+		if (type === 'page') {
+			this.success = success || this.success;
+			this.getPage(
+				task.request,
+				'已恢复未完成任务',
+				task.attempts + 1,
+				null,
+				task.startedAt,
+				task.failures
+			);
+			return true;
+		}
+
+		this.success = data => {
+			this.message({
+				message: data && data.message ? data.message : '翻译成功',
+				type: 'success',
+				duration: 0,
+				showClose: true
+			});
+			if (success) success(data, task);
+		};
+		this.getTpl(
+			task.request,
+			'已恢复未完成任务',
+			task.attempts + 1,
+			null,
+			task.startedAt,
+			task.failures
+		);
+		return true;
+	},
+
+	startPolling(type, initialAttempts = 0, startedAt = null, initialFailures = 0) {
 		this.stopPolling(type);
 
 		const poller = {
-			startedAt: Date.now(),
+			startedAt: Number.isFinite(startedAt) ? startedAt : Date.now(),
 			attempts: Math.max(0, initialAttempts),
-			failures: 0,
+			failures: Math.max(0, initialFailures),
 			timer: null,
 			deadlineTimer: null,
 			loading: null,
@@ -99,12 +251,14 @@ const translate = {
 			stopped: false
 		};
 		this.pollers[type] = poller;
+		const remaining = Math.max(0, this.pollOptions.maxDuration - (Date.now() - poller.startedAt));
 		poller.deadlineTimer = setTimeout(() => {
 			if (!this.isPolling(type, poller)) return;
 
 			this.stopPolling(type);
+			this.clearPendingTask(type);
 			this.error('等待翻译结果超时，已停止自动查询，请稍后重试');
-		}, this.pollOptions.maxDuration);
+		}, remaining);
 
 		return poller;
 	},
@@ -137,12 +291,15 @@ const translate = {
 		return true;
 	},
 
-	cancelPolling(type = null, showMessage = true) {
+	cancelPolling(type = null, showMessage = true, clearPending = true) {
 		const types = type ? [type] : Object.keys(this.pollers);
+		const pending = this.readPendingTask();
+		if (!type && pending && !types.includes(pending.type)) types.push(pending.type);
 		let stopped = false;
 
 		types.forEach(item => {
 			stopped = this.stopPolling(item) || stopped;
+			if (clearPending) stopped = this.clearPendingTask(item) || stopped;
 		});
 
 		if (stopped && showMessage) this.notify('已停止获取翻译结果', 'warning');
@@ -165,6 +322,7 @@ const translate = {
 		if (!timedOut && !exhausted) return true;
 
 		this.stopPolling(type);
+		this.clearPendingTask(type);
 		this.error(timedOut
 			? '等待翻译结果超时，已停止自动查询，请稍后重试'
 			: '获取翻译结果次数过多，已停止自动查询，请稍后重试');
@@ -217,6 +375,7 @@ const translate = {
 				const message = this.getErrorMessage(error);
 				if (poller.failures >= this.pollOptions.maxFailures) {
 					this.stopPolling(type);
+					this.clearPendingTask(type);
 					this.error(message + '，已停止自动重试');
 					return;
 				}
@@ -269,16 +428,29 @@ const translate = {
 				return;
 			}
 
-			this.getBatch({ nodes: this.nodes, code: code, data: status.data });
+			const request = { nodes: this.nodes, code: code, data: status.data };
+			this.storePendingTask('batch', request, {
+				nodes: this.nodes,
+				batchCodes: this.batchCodes,
+				batchIndex: this.batchIndex,
+				batchResults: this.batchResults
+			});
+			this.getBatch(request);
 		}).catch(error => {
 			loading.close();
 			this.error(this.getErrorMessage(error));
 		});
 	},
 
-	getBatch(data, statusMessage = null, i = 1, poller = null) {
+	getBatch(data, statusMessage = null, i = 1, poller = null, startedAt = null, failures = 0) {
 		const code = data.code;
-		const state = poller || this.startPolling('batch', i - 1);
+		const state = poller || this.startPolling('batch', i - 1, startedAt, failures);
+		this.updatePendingTask('batch', data, state, {
+			nodes: this.nodes,
+			batchCodes: this.batchCodes,
+			batchIndex: this.batchIndex,
+			batchResults: this.batchResults
+		});
 		const prefix = code ? '[' + code + '] ' : '';
 		const text = prefix
 			+ (statusMessage ? '上次结果：' + statusMessage + '，' : '')
@@ -309,6 +481,7 @@ const translate = {
 						return;
 					}
 
+					this.clearPendingTask('batch');
 					const completed = this.batchResults.filter(item => item);
 					this.success(completed.length
 						? '已完成 ' + completed.length + ' 种语言：' + completed.join('、')
@@ -316,6 +489,7 @@ const translate = {
 					return;
 				}
 
+				this.clearPendingTask('batch');
 				this.error(prefix + (status.message || '获取翻译结果失败'));
 			},
 			message => this.getBatch(data, message, state.attempts + 1, state)
@@ -342,6 +516,7 @@ const translate = {
 			}
 
 			data.data = status.data;
+			this.storePendingTask('page', data);
 			this.getPage(data);
 		}).catch(error => {
 			loading.close();
@@ -349,8 +524,9 @@ const translate = {
 		});
 	},
 
-	getPage(data, statusMessage = null, i = 1, poller = null) {
-		const state = poller || this.startPolling('page', i - 1);
+	getPage(data, statusMessage = null, i = 1, poller = null, startedAt = null, failures = 0) {
+		const state = poller || this.startPolling('page', i - 1, startedAt, failures);
+		this.updatePendingTask('page', data, state);
 		const text = (statusMessage ? '上次结果：' + statusMessage + '，' : '')
 			+ '准备获取页面翻译结果 ...';
 
@@ -372,10 +548,12 @@ const translate = {
 
 				this.stopPolling('page');
 				if (status.status === true) {
+					this.clearPendingTask('page');
 					this.success(status.data);
 					return;
 				}
 
+				this.clearPendingTask('page');
 				this.error(status.message || '获取页面翻译结果失败');
 			},
 			message => this.getPage(data, message, state.attempts + 1, state)
@@ -409,15 +587,18 @@ const translate = {
 				return;
 			}
 
-			this.getTpl({ code: code, data: status.data });
+			const request = { code: code, data: status.data };
+			this.storePendingTask('tpl', request);
+			this.getTpl(request);
 		}).catch(error => {
 			loading.close();
 			this.error(this.getErrorMessage(error));
 		});
 	},
 
-	getTpl(data, statusMessage = null, i = 1, poller = null) {
-		const state = poller || this.startPolling('tpl', i - 1);
+	getTpl(data, statusMessage = null, i = 1, poller = null, startedAt = null, failures = 0) {
+		const state = poller || this.startPolling('tpl', i - 1, startedAt, failures);
+		this.updatePendingTask('tpl', data, state);
 		const text = (statusMessage ? '上次结果：' + statusMessage + '，' : '')
 			+ '准备获取模板翻译结果 ...';
 
@@ -439,10 +620,12 @@ const translate = {
 
 				this.stopPolling('tpl');
 				if (status.status === true) {
+					this.clearPendingTask('tpl');
 					this.success(status.data || {});
 					return;
 				}
 
+				this.clearPendingTask('tpl');
 				this.error(status.message || '获取模板翻译结果失败');
 			},
 			message => this.getTpl(data, message, state.attempts + 1, state)
