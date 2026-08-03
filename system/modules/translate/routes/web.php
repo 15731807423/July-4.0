@@ -8,6 +8,9 @@ use Translate\Controllers\PublicKeyController;
 Route::get('.well-known/july-translate-key', [PublicKeyController::class, 'show'])
     ->name('translate.public_key');
 
+Route::get('.well-known/july-translate-key-browser', [PublicKeyController::class, 'show'])
+    ->name('translate.public_key.browser');
+
 Route::prefix(config('app.management_prefix', 'admin'))
 ->name('manage.')
 ->middleware(['admin','auth'])

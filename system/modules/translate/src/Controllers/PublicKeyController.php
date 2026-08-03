@@ -12,6 +12,7 @@ class PublicKeyController
         return response(Authentication::publicKey(), 200, [
             'Content-Type' => 'text/plain; charset=utf-8',
             'Cache-Control' => 'no-store',
+            'Access-Control-Allow-Origin' => '*',
             'X-Content-Type-Options' => 'nosniff',
         ]);
     }
