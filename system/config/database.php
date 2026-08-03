@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Str;
 
+$sqliteDatabase = env('DB_SQLITE_DATABASE', 'database.db3');
+
 return [
 
     /*
@@ -38,7 +40,9 @@ return [
         'sqlite' => [
             'driver' => 'sqlite',
             'url' => env('DATABASE_URL'),
-            'database' => database_path(env('DB_SQLITE_DATABASE')),
+            'database' => $sqliteDatabase === ':memory:'
+                ? $sqliteDatabase
+                : database_path($sqliteDatabase),
             'prefix' => '',
             'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
         ],
