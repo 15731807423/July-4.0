@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
+use Translate\Authentication;
 
 class Installer
 {
@@ -98,6 +99,7 @@ class Installer
             '--force' => true,
         ]);
 
+        Authentication::initialize();
         Storage::disk('system')->append('.env', "APP_INSTALLED=true\n");
         Artisan::call('cache:clear');
     }

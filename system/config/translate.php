@@ -1,6 +1,9 @@
 <?php
 
 return [
+	'private_root'	=> env('JULY_TRANSLATE_PRIVATE_ROOT'),
+	'public_key_path' => env('JULY_TRANSLATE_PUBLIC_KEY_PATH'),
+
 	'fields'	=> '["url","meta_canonical","image_src","timeout"]',
 	'text'		=> '',
 	'replace'	=> '',

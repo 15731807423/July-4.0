@@ -24,7 +24,38 @@ class Authentication
     public static function publicKey(): string
     {
         self::ensureKeyPair();
+        $key = self::readPublicKey();
+        self::publishPublicKeyFile($key);
 
+        return $key;
+    }
+
+    public static function initialize(): void
+    {
+        self::ensureKeyPair();
+        self::publishPublicKeyFile(self::readPublicKey());
+    }
+
+    public static function privateRootPath(): string
+    {
+        $configured = config('translate.private_root');
+        if (is_string($configured) && trim($configured) !== '') {
+            return rtrim(trim($configured), '\\/');
+        }
+
+        $home = $_SERVER['HOME'] ?? $_SERVER['USERPROFILE'] ?? null;
+        if (!is_string($home) || trim($home) === '') {
+            $home = getenv('HOME') ?: getenv('USERPROFILE');
+        }
+        if (is_string($home) && trim($home) !== '') {
+            return rtrim(trim($home), '\\/') . '/.july-private';
+        }
+
+        return dirname(base_path(), 3) . '/.july-private';
+    }
+
+    private static function readPublicKey(): string
+    {
         $key = file_get_contents(self::publicKeyPath());
         if (!is_string($key) || openssl_pkey_get_public($key) === false) {
             throw new RuntimeException('翻译鉴权公钥读取失败');
@@ -41,7 +72,7 @@ class Authentication
         $nonce = bin2hex(random_bytes(16));
         $payload = self::signaturePayload($site, 'POST', $path, $timestamp, $nonce, $body);
 
-        self::ensureKeyPair();
+        self::initialize();
         $privateKey = openssl_pkey_get_private((string) file_get_contents(self::privateKeyPath()));
         if ($privateKey === false || !openssl_sign($payload, $signature, $privateKey, OPENSSL_ALGO_SHA256)) {
             throw new RuntimeException('翻译请求签名失败');
@@ -162,9 +193,11 @@ class Authentication
     private static function directory(): string
     {
         $projectRoot = dirname(base_path());
-        $privateRoot = dirname($projectRoot) . '/.july-private';
         $siteDirectory = substr(hash('sha256', realpath($projectRoot) ?: $projectRoot), 0, 24);
-        $directory = $privateRoot . '/' . $siteDirectory . '/translate-auth';
+        $directory = self::privateRootPath() . '/' . $siteDirectory . '/translate-auth';
+        $legacyDirectory = dirname($projectRoot) . '/.july-private/' . $siteDirectory . '/translate-auth';
+
+        self::migrateLegacyDirectory($legacyDirectory, $directory);
         if (!is_dir($directory) && !mkdir($directory, 0700, true) && !is_dir($directory)) {
             throw new RuntimeException('翻译鉴权目录创建失败');
         }
@@ -182,12 +215,172 @@ class Authentication
         return self::directory() . '/public.pem';
     }
 
+    private static function publishedPublicKeyPath(): string
+    {
+        $configured = config('translate.public_key_path');
+        if (is_string($configured) && trim($configured) !== '') {
+            return trim($configured);
+        }
+
+        return dirname(base_path()) . '/.well-known/july-translate-key';
+    }
+
+    private static function publishPublicKeyFile(string $key): bool
+    {
+        try {
+            $path = self::publishedPublicKeyPath();
+            $directory = dirname($path);
+            if (!is_dir($directory) && !mkdir($directory, 0755, true) && !is_dir($directory)) {
+                return false;
+            }
+
+            $publishedKey = is_file($path) ? file_get_contents($path) : null;
+            if (!is_string($publishedKey) || !hash_equals(trim($key), trim($publishedKey))) {
+                self::atomicWrite($path, trim($key) . PHP_EOL);
+                @chmod($path, 0644);
+            }
+
+            return true;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    private static function migrateLegacyDirectory(string $legacy, string $target): void
+    {
+        if (self::samePath($legacy, $target) || !is_dir($legacy)) {
+            return;
+        }
+
+        $parent = dirname($target);
+        if (!is_dir($parent) && !mkdir($parent, 0700, true) && !is_dir($parent)) {
+            throw new RuntimeException('翻译鉴权目录迁移失败');
+        }
+
+        $lock = fopen($parent . '/migration.lock', 'c+');
+        if (!$lock || !flock($lock, LOCK_EX)) {
+            if ($lock) {
+                fclose($lock);
+            }
+            throw new RuntimeException('翻译鉴权目录迁移锁定失败');
+        }
+
+        try {
+            if (!is_dir($legacy)) {
+                return;
+            }
+            if (is_dir($target)) {
+                $legacyPrivateKey = is_file($legacy . '/private.pem')
+                    ? file_get_contents($legacy . '/private.pem')
+                    : null;
+                $legacyPublicKey = is_file($legacy . '/public.pem')
+                    ? file_get_contents($legacy . '/public.pem')
+                    : null;
+                $targetPrivateKey = is_file($target . '/private.pem')
+                    ? file_get_contents($target . '/private.pem')
+                    : null;
+                $targetPublicKey = is_file($target . '/public.pem')
+                    ? file_get_contents($target . '/public.pem')
+                    : null;
+                if (
+                    !is_string($legacyPrivateKey)
+                    || !is_string($legacyPublicKey)
+                    || !is_string($targetPrivateKey)
+                    || !is_string($targetPublicKey)
+                    || !self::keyPairMatches($legacyPrivateKey, $legacyPublicKey)
+                    || !self::keyPairMatches($targetPrivateKey, $targetPublicKey)
+                    || !hash_equals(trim($legacyPublicKey), trim($targetPublicKey))
+                ) {
+                    throw new RuntimeException('翻译鉴权密钥迁移冲突');
+                }
+
+                self::removeLegacyKeyMaterial($legacy);
+                return;
+            }
+            if (@rename($legacy, $target)) {
+                @chmod($target, 0700);
+                @chmod($target . '/private.pem', 0600);
+                return;
+            }
+
+            $privateKey = file_get_contents($legacy . '/private.pem');
+            $publicKey = file_get_contents($legacy . '/public.pem');
+            if (
+                !is_string($privateKey)
+                || !is_string($publicKey)
+                || !self::keyPairMatches($privateKey, $publicKey)
+            ) {
+                throw new RuntimeException('旧翻译鉴权密钥校验失败');
+            }
+            if (!is_dir($target) && !mkdir($target, 0700, true) && !is_dir($target)) {
+                throw new RuntimeException('翻译鉴权目录迁移失败');
+            }
+
+            self::atomicWrite($target . '/private.pem', $privateKey);
+            self::atomicWrite($target . '/public.pem', $publicKey);
+            @chmod($target . '/private.pem', 0600);
+            if (
+                !self::keyPairMatches(
+                    (string) file_get_contents($target . '/private.pem'),
+                    (string) file_get_contents($target . '/public.pem')
+                )
+            ) {
+                throw new RuntimeException('翻译鉴权密钥迁移校验失败');
+            }
+
+            self::removeLegacyKeyMaterial($legacy);
+        } finally {
+            flock($lock, LOCK_UN);
+            fclose($lock);
+        }
+    }
+
+    private static function removeLegacyKeyMaterial(string $directory): void
+    {
+        if (is_file($directory . '/private.pem') && !@unlink($directory . '/private.pem')) {
+            throw new RuntimeException('旧翻译鉴权私钥删除失败');
+        }
+
+        @unlink($directory . '/public.pem');
+        @unlink($directory . '/key-pair.lock');
+        @rmdir($directory);
+    }
+
+    private static function samePath(string $first, string $second): bool
+    {
+        $normalize = static function (string $path): string {
+            $path = str_replace('\\', '/', rtrim($path, '\\/'));
+
+            return DIRECTORY_SEPARATOR === '\\' ? strtolower($path) : $path;
+        };
+
+        return $normalize($first) === $normalize($second);
+    }
+
     private static function atomicWrite(string $path, string $content): void
     {
         $temporary = $path . '.' . bin2hex(random_bytes(8)) . '.tmp';
-        if (file_put_contents($temporary, $content, LOCK_EX) === false || !rename($temporary, $path)) {
+        if (file_put_contents($temporary, $content, LOCK_EX) === false) {
             @unlink($temporary);
             throw new RuntimeException('翻译鉴权密钥保存失败');
         }
+        if (@rename($temporary, $path)) {
+            return;
+        }
+
+        $backup = $path . '.' . bin2hex(random_bytes(8)) . '.bak';
+        if (
+            !is_file($path)
+            || !@rename($path, $backup)
+            || !@rename($temporary, $path)
+        ) {
+            if (is_file($backup) && !is_file($path)) {
+                @rename($backup, $path);
+            }
+            @unlink($temporary);
+            throw new RuntimeException('翻译鉴权密钥保存失败');
+        }
+
+        @unlink($backup);
     }
 }
