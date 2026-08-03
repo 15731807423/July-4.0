@@ -4,7 +4,6 @@ title JulyCMS Setup
 
 set "ROOT_DIR=%~dp0"
 set "SYSTEM_DIR=%ROOT_DIR%system"
-set "COMPOSER_CMD=%ROOT_DIR%..\..\bin\php-all\composer81.bat"
 set "LOG_FILE=%ROOT_DIR%run-error.log"
 set "FAILED_STEP=Initialize setup"
 set "EXIT_CODE=1"
@@ -12,7 +11,6 @@ set "EXIT_CODE=1"
 > "%LOG_FILE%" (
     echo [%date% %time%] Setup started
     echo Project directory: "%ROOT_DIR%"
-    echo Composer command: "%COMPOSER_CMD%"
 )
 
 echo [1/3] Checking the project directory...
@@ -40,13 +38,14 @@ if not "%EXIT_CODE%"=="0" (
 
 :environment_ready
 echo [3/3] Installing Composer dependencies. Please wait...
-if not exist "%COMPOSER_CMD%" (
-    set "FAILED_STEP=Find the PHP 8.1 Composer command"
-    set "EXIT_CODE=2"
+where composer >nul 2>> "%LOG_FILE%"
+set "EXIT_CODE=%ERRORLEVEL%"
+if not "%EXIT_CODE%"=="0" (
+    set "FAILED_STEP=Find the Composer command"
     goto :failed
 )
 
-call "%COMPOSER_CMD%" install --no-interaction --prefer-dist --optimize-autoloader
+call composer install --no-interaction --prefer-dist --optimize-autoloader
 set "EXIT_CODE=%ERRORLEVEL%"
 if not "%EXIT_CODE%"=="0" (
     set "FAILED_STEP=Install Composer dependencies"
